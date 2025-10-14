@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/libtorch_linux/include/torch/csrc/api/include",
+                "${workspaceFolder}/torchffi/src/include",
+                "${workspaceFolder}/torchffi/libtorch/include/torch/csrc/api/include",
+                "${workspaceFolder}/torchffi/libtorch/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}
