@@ -9,3 +9,4 @@ pubspec.lock
 /libtorch_linux
 
 .DS_Store
+build

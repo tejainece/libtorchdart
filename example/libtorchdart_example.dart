@@ -1,5 +1,6 @@
 import 'package:libtorchdart/libtorchdart.dart';
 
 void main() {
-  final tensor = Tensor();
+  final tensor = Tensor.eye(7);
+  print(tensor);
 }

@@ -21,7 +21,8 @@ at::Device device_of_int(int d) {
     return at::Device(at::kCUDA, /*index=*/d);
 }
 
-void torchffi_new_tensor_eye(tensor *out__, int64_t n, int options_kind, int options_device) {
-    at::Tensor outputs__ = torch::eye(n, at::device(device_of_int(options_device)).dtype(at::ScalarType(options_kind)));
-    out__[0] = new torch::Tensor(outputs__);
+void torchffi_new_tensor_eye(tensor *out, int64_t n) {
+    // at::device(device_of_int(options_device)).dtype(at::ScalarType(options_kind))
+    at::Tensor outputs__ = torch::eye(n, at::device(device_of_int(-1)));
+    out[0] = new torch::Tensor(outputs__);
 }
