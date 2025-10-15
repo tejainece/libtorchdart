@@ -42,5 +42,6 @@
         "*.inc": "cpp",
         "__preprocessor": "cpp",
         "torch_ffi.h": "c"
-    }
+    },
+    "cmake.sourceDirectory": "/Users/tejag/projects/dart/libtorchdart/torchffi/src"
 }

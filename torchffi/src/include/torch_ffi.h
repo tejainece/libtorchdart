@@ -1,6 +1,7 @@
 #ifndef __TORCH_FFI_H__
 #define __TORCH_FFI_H__
 #include<stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 #include<torch/torch.h>
