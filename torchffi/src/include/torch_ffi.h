@@ -8,32 +8,20 @@
 
 using namespace std;
 
-typedef enum DataType_t {
-    Uint8 = 0,
-    Int8 = 1,
-    Int16 = 2,
-    Int = 3,
-    Int64 = 4,
-    Half = 5,
-    Float = 6,
-    Double = 7,
-    ComplexHalf = 8,
-    ComplexFloat = 9,
-    ComplexDouble = 10,
-    Bool = 11,
-    QInt8 = 12,
-    QUInt8 = 13,
-    QInt32 = 14,
-    BFloat16 = 15,
-    Float8e5m2 = 23,
-    Float8e4m3fn = 24,
-    Float8e5m2fnuz= 25,
-    Float8e4m3fnuz = 26,
-} DataType;
+typedef struct Device_t {
+    int8_t type;
+    int8_t index;
+} Device;
 
 typedef struct TensorOptions_t {
-    // TODO
-    // TODO data type DataType 
+    int8_t dtype;
+    int8_t deviceType;
+    int8_t deviceIndex;
+    int8_t layout;
+    // TODO layout
+    // TODO memory format
+    // TODO required autograd
+    // TODO pinned memory
 } TensorOptions;
 
 extern "C" {
@@ -53,9 +41,11 @@ tensor torchffi_new_tensor(void);
 
 size_t torchffi_tensor_dim(tensor t);
 
-void torchffi_tensor_shape(tensor t, int64_t *dims);
+void torchffi_tensor_sizes(tensor t, size_t dim, int64_t *shape);
 
-void torchffi_new_tensor_eye(tensor *out__, int64_t n);
+Device torchffi_tensor_device(tensor t);
+
+tensor torchffi_new_tensor_eye(int64_t n, int64_t m, TensorOptions options);
 #ifdef __cplusplus
 }
 #endif

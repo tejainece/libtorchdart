@@ -6,23 +6,61 @@ tensor torchffi_new_tensor() {
 }
 
 size_t torchffi_tensor_dim(tensor t) {
-    return t->dim();
+  return t->dim();
 }
 
-void torchffi_tensor_shape(tensor t, int64_t *dims) {
+void torchffi_tensor_sizes(tensor t, size_t dim, int64_t *shape) {
     int i = 0;
-    for (int64_t dim : t->sizes()) dims[i++] = dim;
+    for (int64_t dimShape : t->sizes()) {
+        if(i == dim) {
+            break;
+        }
+        shape[i++] = dimShape;
+    }
+    for(; i < dim; i++) {
+        shape[i] = 0;
+    }
 }
 
+Device torchffi_tensor_device(tensor t) {
+    auto device = t->device();
+    return Device{int8_t(device.type()), device.index()};
+}
+
+tensor torchffi_new_tensor_eye(int64_t n, int64_t m, TensorOptions options) {
+    // at::device(device_of_int(options_device)).dtype(at::ScalarType(options_kind))
+    // auto options = at::device(at::Device(at::DeviceType(device.type), device.index));
+    auto to = at::TensorOptions();
+    at::Tensor tensor = torch::eye(n, m, to);
+    return new torch::Tensor(tensor);
+}
+
+/*
 at::Device device_of_int(int d) {
     if (d == -3) return at::Device(at::kVulkan);
     if (d == -2) return at::Device(at::kMPS);
     if (d < 0) return at::Device(at::kCPU);
-    return at::Device(at::kCUDA, /*index=*/d);
+    return at::Device(at::kCUDA, d);
+}*/
+
+/*
+tensor torchffi_tensor_new_from_array(void *data, int64_t *dims, size_t ndims, int64_t *strides, size_t nstrides, int type, int device) {
+    at::TensorOptions blobOptions = at::TensorOptions()
+        //.device(device_of_int(device))
+        .dtype(torch::ScalarType(type));
+    if (nstrides == 0) {
+      return new torch::Tensor(torch::for_blob(data, torch::IntArrayRef(dims, ndims)).options(blobOptions).make_tensor());
+    } else {
+      return new torch::Tensor(torch::from_blob(data, torch::IntArrayRef(dims, ndims), torch::IntArrayRef(strides, nstrides), blobOptions));
+    }
 }
 
-void torchffi_new_tensor_eye(tensor *out, int64_t n) {
-    // at::device(device_of_int(options_device)).dtype(at::ScalarType(options_kind))
-    at::Tensor outputs__ = torch::eye(n, at::device(device_of_int(-1)));
-    out[0] = new torch::Tensor(outputs__);
+tensor torchffi_tensor_of_data(void *vs, int64_t *dims, size_t ndims, size_t element_size_in_bytes, int type) {
+    torch::Tensor tensor = torch::zeros(torch::IntArrayRef(dims, ndims), torch::ScalarType(type));
+    if ((int64_t)element_size_in_bytes != tensor.element_size())
+        throw std::invalid_argument("incoherent element sizes in bytes");
+    void *tensor_data = tensor.data_ptr();
+    memcpy(tensor_data, vs, tensor.numel() * element_size_in_bytes);
+    return new torch::Tensor(tensor);
 }
+    */
