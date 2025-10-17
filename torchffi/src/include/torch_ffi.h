@@ -18,7 +18,6 @@ typedef struct TensorOptions_t {
     int8_t deviceType;
     int8_t deviceIndex;
     int8_t layout;
-    // TODO layout
     // TODO memory format
     // TODO required autograd
     // TODO pinned memory

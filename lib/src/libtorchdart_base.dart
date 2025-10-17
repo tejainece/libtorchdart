@@ -12,7 +12,6 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
       TensorFFI.sizes(_tensor, dim, sizesPtr);
       return sizesPtr.asTypedList(dim).toList();
     } finally {
-      print('sizes freed');
       ffi.malloc.free(sizesPtr);
     }
   }

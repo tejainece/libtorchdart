@@ -28,20 +28,14 @@ Device torchffi_tensor_device(tensor t) {
 }
 
 tensor torchffi_new_tensor_eye(int64_t n, int64_t m, TensorOptions options) {
-    // at::device(device_of_int(options_device)).dtype(at::ScalarType(options_kind))
-    // auto options = at::device(at::Device(at::DeviceType(device.type), device.index));
-    auto to = at::TensorOptions();
-    at::Tensor tensor = torch::eye(n, m, to);
+    at::TensorOptions tensorOptions = at::device(at::Device(at::DeviceType(options.deviceType), options.deviceIndex)).dtype(at::ScalarType(options.dtype)).layout(at::Layout(options.layout));
+    // TODO memory layout
+    // TODO autograd
+    // TODO pinned memory
+
+    at::Tensor tensor = torch::eye(n, m, tensorOptions);
     return new torch::Tensor(tensor);
 }
-
-/*
-at::Device device_of_int(int d) {
-    if (d == -3) return at::Device(at::kVulkan);
-    if (d == -2) return at::Device(at::kMPS);
-    if (d < 0) return at::Device(at::kCPU);
-    return at::Device(at::kCUDA, d);
-}*/
 
 /*
 tensor torchffi_tensor_new_from_array(void *data, int64_t *dims, size_t ndims, int64_t *strides, size_t nstrides, int type, int device) {
