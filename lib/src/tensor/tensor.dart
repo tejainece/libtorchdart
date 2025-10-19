@@ -26,6 +26,35 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     );
   }
 
+  bool get isScalar => shape.isEmpty;
+
+  dynamic get scalar {
+    if (!isScalar) {
+      throw Exception('Tensor is not a scalar');
+    }
+    final scalar = TensorFFI.item(_tensor);
+    return scalar.value;
+  }
+
+  Tensor operator [](int index) => get(index);
+
+  Tensor get(int index) {
+    if (isScalar) {
+      throw Exception('Scalar tensor cannot be indexed');
+    }
+    final int max = shape[0];
+    if (index >= max) {
+      throw IndexError.withLength(index, max);
+    }
+    try {
+      final tensor = TensorFFI.get(_tensor, index);
+      return Tensor(tensor);
+    } catch (e) {
+      print(e);
+      throw Exception('Index out of bounds');
+    }
+  }
+
   static Tensor eye(
     int n, {
     int? m,
@@ -37,16 +66,50 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     // TODO pinned memory
   }) {
     m ??= n;
-    final options = FFITensorOptions.make(
-      dataType: dtype,
-      device: device,
-      layout: layout,
-    );
+    final arena = ffi.Arena();
     try {
+      final options = FFITensorOptions.make(
+        dataType: dtype,
+        device: device,
+        layout: layout,
+        allocator: arena,
+      );
       final tensor = TensorFFI.eye(n, m, options.ref);
       return Tensor(tensor);
     } finally {
-      ffi.malloc.free(options);
+      arena.releaseAll();
+    }
+  }
+
+  static Tensor fromBlob(
+    ffi.Pointer<ffi.Void> dataPointer,
+    List<int> sizes, {
+    required DataType dtype,
+    Device device = Device.cpu,
+    Layout layout = Layout.strided,
+    // TODO memory format
+    // TODO autograd
+    // TODO pinned memory
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final options = FFITensorOptions.make(
+        dataType: dtype,
+        device: device,
+        layout: layout,
+        allocator: arena,
+      );
+      final sizesPointer = arena.allocate<ffi.Int64>(sizes.length);
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = TensorFFI.fromBlob(
+        dataPointer,
+        sizesPointer,
+        sizes.length,
+        options.ref,
+      );
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
     }
   }
 }
@@ -138,33 +201,93 @@ class Device {
 }
 
 class DataType {
-  final String name;
+  final String? name;
   final int type;
+  final String? safetensorName;
+  final int numBytes;
 
-  const DataType(this.name, this.type);
+  const DataType({
+    required this.name,
+    required this.type,
+    required this.safetensorName,
+    this.numBytes = 0,
+  });
 
-  static const uint8 = DataType('Uint8', 0);
-  static const int8 = DataType('Int8', 1);
-  static const int16 = DataType('Int16', 2);
-  static const int32 = DataType('Int32', 3);
-  static const int64 = DataType('Int64', 4);
-  static const half = DataType('Half', 5);
-  static const float = DataType('Float', 6);
-  static const float64 = DataType('Float64', 7);
-  static const complexHalf = DataType('ComplexHalf', 8);
-  static const complexFloat = DataType('ComplexFloat', 9);
-  static const complexDouble = DataType('ComplexDouble', 10);
-  static const boolean = DataType('Bool', 11);
-  static const qInt8 = DataType('QInt8', 12);
-  static const qUInt8 = DataType('QUInt8', 13);
-  static const qInt32 = DataType('QInt32', 14);
-  static const bFloat16 = DataType('BFloat16', 15);
-  static const float8e5m2 = DataType('Float8e5m2', 23);
-  static const float8e4m3fn = DataType('Float8e4m3fn', 24);
-  static const float8e5m2fnuz = DataType('Float8e5m2fnuz', 25);
-  static const float8e4m3fnuz = DataType('Float8e4m3fnuz', 26);
+  @override
+  String toString() =>
+      'DataType{name: $name, type: $type, safetensorName: $safetensorName}';
 
-  static DataType fromId(int type) => _byId[type] ?? DataType('Unknown', type);
+  static const uint8 = DataType(name: 'Uint8', type: 0, safetensorName: 'U8');
+  static const int8 = DataType(name: 'Int8', type: 1, safetensorName: 'I8');
+  static const int16 = DataType(name: 'Int16', type: 2, safetensorName: 'I16');
+  static const int32 = DataType(name: 'Int32', type: 3, safetensorName: 'I32');
+  static const int64 = DataType(name: 'Int64', type: 4, safetensorName: 'I64');
+  static const half = DataType(name: 'Half', type: 5, safetensorName: 'F16');
+  static const float = DataType(name: 'Float', type: 6, safetensorName: 'F32');
+  static const float64 = DataType(
+    name: 'Float64',
+    type: 7,
+    safetensorName: 'F64',
+  );
+  static const complexHalf = DataType(
+    name: 'ComplexHalf',
+    type: 8,
+    safetensorName: null,
+  );
+  static const complexFloat = DataType(
+    name: 'ComplexFloat',
+    type: 9,
+    safetensorName: null,
+  );
+  static const complexDouble = DataType(
+    name: 'ComplexDouble',
+    type: 10,
+    safetensorName: null,
+  );
+  static const boolean = DataType(
+    name: 'Bool',
+    type: 11,
+    safetensorName: 'BOOL',
+  );
+  static const qInt8 = DataType(name: 'QInt8', type: 12, safetensorName: null);
+  static const qUInt8 = DataType(
+    name: 'QUInt8',
+    type: 13,
+    safetensorName: null,
+  );
+  static const qInt32 = DataType(
+    name: 'QInt32',
+    type: 14,
+    safetensorName: null,
+  );
+  static const bFloat16 = DataType(
+    name: 'BFloat16',
+    type: 15,
+    safetensorName: 'BF16',
+  );
+  static const float8e5m2 = DataType(
+    name: 'Float8e5m2',
+    type: 23,
+    safetensorName: 'F8_E5M2',
+  );
+  static const float8e4m3fn = DataType(
+    name: 'Float8e4m3fn',
+    type: 24,
+    safetensorName: null,
+  );
+  static const float8e5m2fnuz = DataType(
+    name: 'Float8e5m2fnuz',
+    type: 25,
+    safetensorName: null,
+  );
+  static const float8e4m3fnuz = DataType(
+    name: 'Float8e4m3fnuz',
+    type: 26,
+    safetensorName: null,
+  );
+
+  static DataType fromId(int type) =>
+      _byId[type] ?? DataType(name: null, type: type, safetensorName: null);
 
   static final Map<int, DataType> _byId = Map.fromEntries(
     list.map((v) => MapEntry(v.type, v)),
@@ -192,6 +315,14 @@ class DataType {
     float8e5m2fnuz,
     float8e4m3fnuz,
   ];
+
+  static final Map<String, DataType> _bySafeTensorName = Map.fromEntries(
+    list
+        .where((v) => v.safetensorName != null)
+        .map((v) => MapEntry(v.safetensorName!, v)),
+  );
+
+  static DataType? fromSafeTensorName(String name) => _bySafeTensorName[name];
 }
 
 class Layout {

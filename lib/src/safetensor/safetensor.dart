@@ -1,7 +1,6 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:libtorchdart/libtorchdart.dart';
+import 'package:libtorchdart/src/safetensor/metadata.dart';
+import 'package:libtorchdart/src/safetensor/storage.dart';
 import 'package:universal_io/io.dart';
 
 abstract class SafeTensors {
@@ -13,94 +12,64 @@ abstract class SafeTensors {
 
 /// File-backed safetensors. The tensor data is read from file/harddisk on demand.
 /// Recommended when the tensors are read once into memory. Not recommended when
-/// the 
-class RandomAccessSafeTensors implements SafeTensors {
+/// the
+class SafeTensorsFile {
   final SafeTensorHeader header;
-  final RandomAccessFile _file;
+  final String path;
+  final int fileLength;
 
-  RandomAccessSafeTensors({required this.header, required RandomAccessFile file}): _file = file;
+  SafeTensorsFile({
+    required this.header,
+    required this.path,
+    required this.fileLength,
+  });
+
+  SafeTensorLoader cpuLoader() {
+    if (Platform.isLinux ||
+        Platform.isMacOS ||
+        Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isFuchsia) {
+      return MmapSafeTensorLoader.make(
+        header: header,
+        path: path,
+        fileLength: fileLength,
+      );
+    }
+    return FileIOSafeTensorLoader(header: header);
+  }
+
+  SafeTensorLoader cudaLoader() {
+    // TODO if GDS is supported use GDS
+    if (false) {
+      return CudaGDSSafeTensorLoader(header: header);
+    }
+    return cpuLoader();
+  }
+
+  MmapSafeTensorLoader mmapTensorLoader() => MmapSafeTensorLoader.make(
+    header: header,
+    path: path,
+    fileLength: fileLength,
+  );
 
   Tensor getTensor(String name) {
     // TODO read tensor
     throw UnimplementedError();
   }
 
-  static Future<RandomAccessSafeTensors> load(String path) async {
+  static Future<SafeTensorsFile> load(String path) async {
     RandomAccessFile file = await File(path).open();
-    final header = await SafeTensorHeader.read(file);
-    return RandomAccessSafeTensors(header: header, file: file);
-  }
-}
-
-class SafeTensorInfo {
-  final String dtype;
-  final List<int> shape;
-  final int startOffset;
-  final int endOffset;
-
-  SafeTensorInfo({
-    required this.dtype,
-    required this.shape,
-    required this.startOffset,
-    required this.endOffset,
-  });
-
-  static SafeTensorInfo fromMap(Map map) => SafeTensorInfo(
-    dtype: map['dtype'],
-    shape: (map['shape'] as List).cast<int>(),
-    startOffset: map['data_offsets'][0],
-    endOffset: map['data_offsets'][1],
-  );
-
-  static Map<String, SafeTensorInfo> fromMapOfMap(Map map) =>
-      map.map<String, SafeTensorInfo>(
-        (k, v) => MapEntry(k, SafeTensorInfo.fromMap(v)),
+    final fileLength = await file.length();
+    try {
+      final header = await SafeTensorHeader.read(file);
+      return SafeTensorsFile(
+        header: header,
+        path: path,
+        fileLength: fileLength,
       );
-
-  static List<SafeTensorInfo> fromList(List list) =>
-      list.map((e) => SafeTensorInfo.fromMap(e)).toList();
-
-  Map<String, dynamic> toJson() => {
-    'dtype': dtype,
-    'shape': shape,
-    'data_offsets': [startOffset, endOffset],
-  };
-}
-
-class SafeTensorHeader {
-  final Map<String, String> metadata;
-  final Map<String, SafeTensorInfo> tensorInfos;
-
-  SafeTensorHeader({required this.metadata, required this.tensorInfos});
-
-  static Future<SafeTensorHeader> read(RandomAccessFile file) async {
-    await file.setPosition(0);
-    final headerLenBuffer = Uint8List(8);
-    final headerLengthReadCount = await file.readInto(
-      headerLenBuffer,
-      0,
-      headerLenBuffer.length,
-    );
-    if (headerLengthReadCount != 8) {
-      throw Exception(
-        'expected to read 8 bytes but got $headerLengthReadCount bytes',
-      );
+    } finally {
+      await file.close();
     }
-    int headerLen = ByteData.sublistView(
-      headerLenBuffer,
-    ).getUint64(0, Endian.little);
-    final buffer = Uint8List(headerLen);
-    final headerBytesCount = await file.readInto(buffer, 0, buffer.length);
-    if (headerBytesCount != headerLen) {
-      throw Exception('expected to read ${headerLen - 8} bytes but got $headerBytesCount bytes');
-    }
-    final headerJson = utf8.decode(buffer);
-    final Map map = json.decode(headerJson);
-    final metadata = (map.remove('__metadata__') ?? {}).cast<String, String>();
-    final tensorMap = SafeTensorInfo.fromMapOfMap(map);
-    return SafeTensorHeader(
-      metadata: metadata,
-      tensorInfos: tensorMap,
-    );
   }
 }

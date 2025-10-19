@@ -23,6 +23,15 @@ typedef struct TensorOptions_t {
     // TODO pinned memory
 } TensorOptions;
 
+typedef struct Scalar_t {
+    int8_t dtype;
+    union {
+        bool b;
+        int64_t i;
+        double d;
+    } value;
+} Scalar;
+
 extern "C" {
 typedef torch::Tensor *tensor;
 typedef torch::Scalar *scalar;
@@ -36,15 +45,21 @@ typedef void *scalar;
 #ifdef __cplusplus
 extern "C" {
 #endif
-tensor torchffi_new_tensor(void);
+extern tensor torchffi_new_tensor(void);
 
-size_t torchffi_tensor_dim(tensor t);
+extern size_t torchffi_tensor_dim(tensor t);
 
-void torchffi_tensor_sizes(tensor t, size_t dim, int64_t *shape);
+extern void torchffi_tensor_sizes(tensor t, size_t dim, int64_t *shape);
 
-Device torchffi_tensor_device(tensor t);
+extern Device torchffi_tensor_device(tensor t);
 
-tensor torchffi_new_tensor_eye(int64_t n, int64_t m, TensorOptions options);
+extern tensor torchffi_new_tensor_eye(int64_t n, int64_t m, TensorOptions options);
+
+extern tensor torchffi_tensor_new_from_blob(void *data, int64_t *dims, size_t ndims, TensorOptions options);
+
+extern Scalar_t torchffi_tensor_item(tensor t);
+
+extern tensor torchffi_tensor_get(tensor t, int index);
 #ifdef __cplusplus
 }
 #endif
