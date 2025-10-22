@@ -55,6 +55,23 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     }
   }
 
+  Tensor operator *(dynamic /* Tensor | num */ other) {
+    if (other is Tensor) {
+      throw UnimplementedError('operator*num not implemented for Tensor');
+    } else if (other is num) {
+      throw UnimplementedError('operator*Tensor not implemented for Tensor');
+    }
+    throw UnimplementedError('operator*(${other.runtimeType}) not implemented for Tensor');
+  }
+
+  Tensor sigmoid() {
+    throw UnimplementedError('sigmoid not implemented for Tensor');
+  }
+
+  Tensor gelu() {
+    throw UnimplementedError('sigmoid not implemented for Tensor');
+  }
+
   static Tensor eye(
     int n, {
     int? m,

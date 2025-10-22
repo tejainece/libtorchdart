@@ -10,6 +10,13 @@
             "type": "dart",
             "program": "example/safetensor_example.dart",
             "args": [],
+        },
+        {
+            "name": "clip",
+            "request": "launch",
+            "type": "dart",
+            "program": "example/clip.dart",
+            "args": [],
         }
     ]
 }
