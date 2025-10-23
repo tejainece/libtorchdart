@@ -61,7 +61,9 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     } else if (other is num) {
       throw UnimplementedError('operator*Tensor not implemented for Tensor');
     }
-    throw UnimplementedError('operator*(${other.runtimeType}) not implemented for Tensor');
+    throw UnimplementedError(
+      'operator*(${other.runtimeType}) not implemented for Tensor',
+    );
   }
 
   Tensor sigmoid() {
@@ -129,6 +131,24 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
       arena.releaseAll();
     }
   }
+}
+
+Tensor embedding(
+  Tensor weights,
+  Tensor indices,
+  int paddingIdx,
+  bool scaleGradByFreq,
+  bool sparse,
+) {
+  final tensorPtr = TensorFFI.embedding(
+    weights._tensor,
+    indices._tensor,
+    paddingIdx,
+    scaleGradByFreq,
+    sparse,
+  );
+
+  return Tensor(tensorPtr);
 }
 
 class DeviceType {

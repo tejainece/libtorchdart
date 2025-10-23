@@ -101,6 +101,11 @@ tensor torchffi_tensor_get(tensor t, int index) {
   return new torch::Tensor((*t)[index]);
 }
 
+tensor torchffi_embedding(tensor weights, tensor indices, int64_t paddingIdx, bool scaleGradByFreq, bool sparse) {
+    at::Tensor tensor = torch::embedding(*weights, *indices, paddingIdx, scaleGradByFreq, sparse);
+    return new torch::Tensor(tensor);
+}
+
 /*
 void _scratch(tensor t) {
     t->view;

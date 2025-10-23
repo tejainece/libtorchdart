@@ -34,12 +34,10 @@ typedef struct Scalar_t {
 
 extern "C" {
 typedef torch::Tensor *tensor;
-typedef torch::Scalar *scalar;
 }
 
 #else
 typedef void *tensor;
-typedef void *scalar;
 #endif
 
 #ifdef __cplusplus
@@ -60,6 +58,9 @@ extern tensor torchffi_tensor_new_from_blob(void *data, int64_t *dims, size_t nd
 extern Scalar_t torchffi_tensor_item(tensor t);
 
 extern tensor torchffi_tensor_get(tensor t, int index);
+
+tensor torchffi_embedding(tensor weights, tensor indices, int64_t paddingIdx, uint8_t scaleGradByFreq, uint8_t sparse);
+
 #ifdef __cplusplus
 }
 #endif

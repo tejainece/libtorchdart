@@ -126,4 +126,16 @@ abstract class TensorFFI {
         CTensor Function(CTensor, Int64),
         CTensor Function(CTensor tensor, int index)
       >('torchffi_tensor_get');
+
+  static final embedding = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor, Int64, Bool, Bool),
+        CTensor Function(
+          CTensor tensor,
+          CTensor weights,
+          int paddingIdx,
+          bool scaleGradByFreq,
+          bool sparse,
+        )
+      >('torchffi_embedding');
 }
