@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
@@ -9,7 +10,7 @@ abstract class SafeTensorLoader {
 
   Map<String, SafeTensorInfo> get tensorInfos => header.tensorInfos;
 
-  Tensor loadByName(String name);
+  FutureOr<Tensor> loadByName(String name);
 }
 
 class FileIOSafeTensorLoader extends SafeTensorLoader {

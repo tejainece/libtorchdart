@@ -2,6 +2,36 @@ import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
+void main() async {
+  final file = await File(
+    'torchffi/gen/Declarations-v2.8.0.yaml',
+  ).readAsBytes();
+  final YamlList list = loadYaml(String.fromCharCodes(file));
+  List<TorchFunctionDeclaration> functions = TorchFunctionDeclaration.fromList(list);
+  functions.removeWhere((function) {
+    if (function.deprecated) return true;
+    if (excludePrefixes.any((prefix) => function.name.startsWith(prefix))) {
+      return true;
+    }
+    if (excludeSuffixes.any((suffix) => function.name.endsWith(suffix))) {
+      return true;
+    }
+    if(excludeFunctions.contains(function.name)) return true;
+    return false;
+  });
+  print(functions.length);
+  /*for (final function in functions) {
+    // TODO
+
+    if(function.returns.length > 1) {
+      print('${function.name}');
+    }
+  }*/
+  final eye = functions.firstWhere((function) => function.name == 'eye');
+  print(eye.toCFFISignature());
+  print(eye.toCFFIImplementation());
+}
+
 Map<String, String> cTypeNameMapping = {
   'at::Tensor': 'tensor',
   'int64_t': 'int64_t',
@@ -78,6 +108,7 @@ class TorchFunctionDeclaration {
       sb.write(typeName(arg.dynamicType));
       sb.write(' ');
       sb.write(arg.name);
+      sb.write(', ');
     }
     // TODO write arguments
     sb.write(')');
@@ -181,36 +212,6 @@ class TorchFunctionReturn {
       dynamicType: map['dynamic_type'],
     );
   }
-}
-
-void main() async {
-  final file = await File(
-    'torchffi/gen/Declarations-v2.8.0.yaml',
-  ).readAsBytes();
-  final YamlList list = loadYaml(String.fromCharCodes(file));
-  List<TorchFunctionDeclaration> functions = TorchFunctionDeclaration.fromList(list);
-  functions.removeWhere((function) {
-    if (function.deprecated) return true;
-    if (excludePrefixes.any((prefix) => function.name.startsWith(prefix))) {
-      return true;
-    }
-    if (excludeSuffixes.any((suffix) => function.name.endsWith(suffix))) {
-      return true;
-    }
-    if(excludeFunctions.contains(function.name)) return true;
-    return false;
-  });
-  print(functions.length);
-  /*for (final function in functions) {
-    // TODO
-
-    if(function.returns.length > 1) {
-      print('${function.name}');
-    }
-  }*/
-  final eye = functions.firstWhere((function) => function.name == 'eye');
-  print(eye.toCFFISignature());
-  print(eye.toCFFIImplementation());
 }
 
 const List<String> excludePrefixes = [

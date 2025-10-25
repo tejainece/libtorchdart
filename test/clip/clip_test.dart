@@ -143,7 +143,7 @@ class _EncodeTestWithPad {
 void main() async {
   final clip2_1 = await CLIPTokenizer.loadFromFile(
     'data/bpe_simple_vocab_16e6.txt',
-    config: CLIPConfig.v2_1,
+    config: ClipConfig.v2_1,
   );
   group('CLIPTransformer', () {
     test('encodeToken', () {

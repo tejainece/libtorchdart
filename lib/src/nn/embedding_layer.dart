@@ -1,4 +1,5 @@
 import 'package:libtorchdart/libtorchdart.dart';
+import 'package:libtorchdart/src/safetensor/storage.dart';
 
 class EmbeddingConfig {
   final bool sparse;
@@ -32,5 +33,31 @@ class EmbeddingLayer implements Module {
       config.scaleGradByFreq,
       config.sparse,
     );
+  }
+
+  static Future<EmbeddingLayer> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+  }) async {
+    final weights = await loader.loadByName('${prefix}weight');
+    return EmbeddingLayer(weights: weights, config: EmbeddingConfig());
+  }
+
+  int get numEmbeddings => weights.shape[0];
+
+  int get embeddingDim => weights.shape[1];
+}
+
+class NormLayer implements Module {
+  @override
+  Tensor forward(Tensor x) {
+    throw UnimplementedError();
+  }
+}
+
+class LinearLayer implements Module {
+  @override
+  Tensor forward(Tensor x) {
+    throw UnimplementedError();
   }
 }

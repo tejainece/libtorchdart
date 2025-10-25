@@ -1,56 +1,7 @@
 import 'dart:convert';
 
+import 'package:libtorchdart/src/transformers/clip/clip_config.dart';
 import 'package:universal_io/io.dart';
-
-import 'package:libtorchdart/src/nn/activation.dart';
-
-class CLIPConfig {
-  final int vocabSize;
-  final int embedDim;
-  final Activation activation;
-  final int intermediateSize;
-  final int maxPositionEmbeddings;
-  final String? padWith;
-  final int numHiddenLayers;
-  final int numAttentionHeads;
-  final int projectionDim;
-
-  const CLIPConfig({
-    required this.vocabSize,
-    required this.embedDim,
-    required this.activation,
-    required this.intermediateSize,
-    required this.maxPositionEmbeddings,
-    required this.padWith,
-    required this.numHiddenLayers,
-    required this.numAttentionHeads,
-    required this.projectionDim,
-  });
-
-  static const CLIPConfig v1_5 = CLIPConfig(
-    vocabSize: 49408,
-    embedDim: 768,
-    activation: Activation.quickGelu,
-    intermediateSize: 3072,
-    maxPositionEmbeddings: 77,
-    padWith: null,
-    numHiddenLayers: 12,
-    numAttentionHeads: 12,
-    projectionDim: 768,
-  );
-
-  static const CLIPConfig v2_1 = CLIPConfig(
-    vocabSize: 49408,
-    embedDim: 1024,
-    activation: Activation.gelu,
-    intermediateSize: 4096,
-    maxPositionEmbeddings: 77,
-    padWith: "!",
-    numHiddenLayers: 23,
-    numAttentionHeads: 16,
-    projectionDim: 512,
-  );
-}
 
 abstract class Tokenizer {
   List<int> encode(String input);
@@ -63,7 +14,7 @@ class CLIPTokenizer implements Tokenizer {
   final Map<String, int> bpeRanks;
   final int startOfTextToken;
   final int endOfTextToken;
-  final CLIPConfig config;
+  final ClipConfig config;
 
   CLIPTokenizer({
     required this.encoder,
@@ -167,7 +118,7 @@ class CLIPTokenizer implements Tokenizer {
 
   static Future<CLIPTokenizer> loadFromFile(
     String bpePath, {
-    required CLIPConfig config,
+    required ClipConfig config,
   }) async {
     if (config.vocabSize != 49408) {
       throw Exception('vocabSize must be 49408');

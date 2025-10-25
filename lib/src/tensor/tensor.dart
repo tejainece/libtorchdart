@@ -3,75 +3,112 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:libtorchdart/src/tensor_ffi/tensor_ffi.dart';
 
 extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
-  int get dim => TensorFFI.dim(_tensor);
-
-  List<int> get sizes {
-    final dim = this.dim;
-    final sizesPtr = ffi.malloc.allocate<ffi.Int64>(dim);
+  static Tensor zeros(
+    List<int> sizes, {
+    Device device = Device.cpu,
+    DataType dtype = DataType.float,
+    Layout layout = Layout.strided,
+    // TODO memory format
+    // TODO autograd
+    // TODO pinned memory
+  }) {
+    final arena = ffi.Arena();
     try {
-      TensorFFI.sizes(_tensor, dim, sizesPtr);
-      return sizesPtr.asTypedList(dim).toList();
-    } finally {
-      ffi.malloc.free(sizesPtr);
-    }
-  }
-
-  List<int> get shape => sizes;
-
-  Device get device {
-    final device = TensorFFI.tensorGetDevice(_tensor);
-    return Device(
-      deviceType: DeviceType.fromId(device.deviceType),
-      deviceIndex: device.deviceIndex,
-    );
-  }
-
-  bool get isScalar => shape.isEmpty;
-
-  dynamic get scalar {
-    if (!isScalar) {
-      throw Exception('Tensor is not a scalar');
-    }
-    final scalar = TensorFFI.item(_tensor);
-    return scalar.value;
-  }
-
-  Tensor operator [](int index) => get(index);
-
-  Tensor get(int index) {
-    if (isScalar) {
-      throw Exception('Scalar tensor cannot be indexed');
-    }
-    final int max = shape[0];
-    if (index >= max) {
-      throw IndexError.withLength(index, max);
-    }
-    try {
-      final tensor = TensorFFI.get(_tensor, index);
+      final options = FFITensorOptions.make(
+        dataType: dtype,
+        device: device,
+        layout: layout,
+        allocator: arena,
+      );
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = TensorFFI.zeros(sizesPointer, sizes.length, options.ref);
       return Tensor(tensor);
-    } catch (e) {
-      print(e);
-      throw Exception('Index out of bounds');
+    } finally {
+      arena.releaseAll();
     }
   }
 
-  Tensor operator *(dynamic /* Tensor | num */ other) {
-    if (other is Tensor) {
-      throw UnimplementedError('operator*num not implemented for Tensor');
-    } else if (other is num) {
-      throw UnimplementedError('operator*Tensor not implemented for Tensor');
+  static Tensor ones(
+    List<int> sizes, {
+    Device device = Device.cpu,
+    DataType dtype = DataType.float,
+    Layout layout = Layout.strided,
+    // TODO memory format
+    // TODO autograd
+    // TODO pinned memory
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final options = FFITensorOptions.make(
+        dataType: dtype,
+        device: device,
+        layout: layout,
+        allocator: arena,
+      );
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = TensorFFI.ones(sizesPointer, sizes.length, options.ref);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
     }
-    throw UnimplementedError(
-      'operator*(${other.runtimeType}) not implemented for Tensor',
-    );
   }
 
-  Tensor sigmoid() {
-    throw UnimplementedError('sigmoid not implemented for Tensor');
+  static Tensor arange(
+    int end, {
+    Device device = Device.cpu,
+    DataType dtype = DataType.float,
+    Layout layout = Layout.strided,
+    // TODO memory format
+    // TODO autograd
+    // TODO pinned memory
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final options = FFITensorOptions.make(
+        dataType: dtype,
+        device: device,
+        layout: layout,
+        allocator: arena,
+      );
+      final tensor = TensorFFI.arange(end, options.ref);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
   }
 
-  Tensor gelu() {
-    throw UnimplementedError('sigmoid not implemented for Tensor');
+  static Tensor rand(
+    List<int> sizes, {
+    Device device = Device.cpu,
+    DataType dtype = DataType.float,
+    Layout layout = Layout.strided,
+    // TODO memory format
+    // TODO autograd
+    // TODO pinned memory
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final options = FFITensorOptions.make(
+        dataType: dtype,
+        device: device,
+        layout: layout,
+        allocator: arena,
+      );
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = TensorFFI.rand(sizesPointer, sizes.length, options.ref);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
   }
 
   static Tensor eye(
@@ -131,6 +168,168 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
       arena.releaseAll();
     }
   }
+
+  int get dim => TensorFFI.dim(_tensor);
+
+  List<int> get sizes {
+    final dim = this.dim;
+    final sizesPtr = ffi.malloc.allocate<ffi.Int64>(dim);
+    try {
+      TensorFFI.sizes(_tensor, dim, sizesPtr);
+      return sizesPtr.asTypedList(dim).toList();
+    } finally {
+      ffi.malloc.free(sizesPtr);
+    }
+  }
+
+  List<int> get shape => sizes;
+
+  Device get device {
+    final device = TensorFFI.tensorGetDevice(_tensor);
+    return Device(
+      deviceType: DeviceType.fromId(device.deviceType),
+      deviceIndex: device.deviceIndex,
+    );
+  }
+
+  bool get isScalar => shape.isEmpty;
+
+  dynamic get scalar {
+    if (!isScalar) {
+      throw Exception('Tensor is not a scalar');
+    }
+    final scalar = TensorFFI.item(_tensor);
+    return scalar.value;
+  }
+
+  Tensor operator [](int index) => get(index);
+
+  Tensor get(int index) {
+    if (isScalar) {
+      throw Exception('Scalar tensor cannot be indexed');
+    }
+    final int max = shape[0];
+    if (index >= max) {
+      throw IndexError.withLength(index, max);
+    }
+    try {
+      final tensor = TensorFFI.get(_tensor, index);
+      return Tensor(tensor);
+    } catch (e) {
+      print(e);
+      throw Exception('Index out of bounds');
+    }
+  }
+
+  Tensor expand(List<int> sizes) {
+    final arena = ffi.Arena();
+    try {
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = TensorFFI.expand(_tensor, sizesPointer, sizes.length, false);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor operator +(dynamic /* Tensor | num */ other) {
+    final arena = ffi.Arena();
+    try {
+      if (other is Tensor) {
+        final alpha = FFIScalar.allocate(arena);
+        alpha.ref.setInt(1);
+        final tensor = TensorFFI.addition(_tensor, other._tensor, alpha.ref);
+        return Tensor(tensor);
+      } else if (other is num) {
+        throw UnimplementedError('operator+num not implemented for Tensor');
+      } else if (other is (Tensor, dynamic)) {
+        final alpha = FFIScalar.allocate(arena);
+        alpha.ref.setValue(other.$2);
+        final tensor = TensorFFI.addition(_tensor, other.$1._tensor, alpha.ref);
+        return Tensor(tensor);
+      } else if (other is (num, dynamic)) {
+        throw UnimplementedError('operator+num not implemented for Tensor');
+      }
+      throw UnimplementedError(
+        'operator+(${other.runtimeType}) not implemented for Tensor',
+      );
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor operator -(dynamic /* Tensor | num */ other) {
+    final arena = ffi.Arena();
+    try {
+      if (other is Tensor) {
+        final alpha = FFIScalar.allocate(arena);
+        alpha.ref.setInt(1);
+        final tensor = TensorFFI.subtraction(_tensor, other._tensor, alpha.ref);
+        return Tensor(tensor);
+      } else if (other is num) {
+        throw UnimplementedError('operator+num not implemented for Tensor');
+      } else if (other is (Tensor, dynamic)) {
+        final alpha = FFIScalar.allocate(arena);
+        alpha.ref.setValue(other.$2);
+        final tensor = TensorFFI.subtraction(
+          _tensor,
+          other.$1._tensor,
+          alpha.ref,
+        );
+        return Tensor(tensor);
+      } else if (other is (num, dynamic)) {
+        throw UnimplementedError('operator+num not implemented for Tensor');
+      }
+      throw UnimplementedError(
+        'operator+(${other.runtimeType}) not implemented for Tensor',
+      );
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor operator *(dynamic /* Tensor | num */ other) {
+    final arena = ffi.Arena();
+    try {
+      if (other is Tensor) {
+        final tensor = TensorFFI.multiplication(_tensor, other._tensor);
+        return Tensor(tensor);
+      } else if (other is num) {
+        throw UnimplementedError('operator+num not implemented for Tensor');
+      } else if (other is (num, dynamic)) {
+        throw UnimplementedError('operator+num not implemented for Tensor');
+      }
+      throw UnimplementedError(
+        'operator+(${other.runtimeType}) not implemented for Tensor',
+      );
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor sigmoid() {
+    final tensor = TensorFFI.sigmoid(_tensor);
+    return Tensor(tensor);
+  }
+
+  Tensor gelu(GeluApporimate approximate) {
+    final arena = ffi.Arena();
+    try {
+      final activation = approximate.name.toNativeUtf8(allocator: arena);
+      final tensor = TensorFFI.gelu(_tensor, activation);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+}
+
+enum GeluApporimate {
+  none,
+  tanh,
 }
 
 Tensor embedding(
