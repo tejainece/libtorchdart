@@ -19,6 +19,10 @@ abstract class Module {
 
   // TODO register parameter
 
+  // Tensor forward(Tensor x);
+}
+
+abstract class SimpleModule {
   Tensor forward(Tensor x);
 }
 
@@ -99,6 +103,22 @@ class LayerNorm extends Module {
       normalizedShape: normalizedShape,
       eps: eps,
     );
+  }
+}
+
+class GroupNorm extends Module {
+  @override
+  Tensor forward(Tensor x) {
+    // TODO
+    throw UnimplementedError();
+  }
+}
+
+class Dropout extends Module {
+  @override
+  Tensor forward(Tensor x) {
+    // TODO
+    throw UnimplementedError();
   }
 }
 

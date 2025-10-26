@@ -3,7 +3,7 @@ import 'package:libtorchdart/src/nn/embedding_layer.dart';
 import 'package:libtorchdart/src/safetensor/storage.dart';
 
 /// Multi-headed attention from 'Attention Is All You Need' paper
-class ClipAttention {
+class ClipAttention extends Module {
   final LinearLayer kProj;
   final LinearLayer vProj;
   final LinearLayer qProj;

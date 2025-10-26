@@ -1,5 +1,6 @@
 import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/safetensor/storage.dart';
+import 'package:libtorchdart/src/unets/unet2d_conditional.dart';
 
 abstract class DiffusionPipeline {}
 
@@ -7,11 +8,42 @@ abstract class SimpleDiffusionPipeline {}
 
 abstract class TextEncoder {}
 
+abstract class UNet {}
+
+abstract class FeatureExtractor {}
+
+abstract class VAE {}
+
+abstract class Scheduler {}
+
+abstract class SafetyChecker {}
+
+class CLIPImageProcessor implements FeatureExtractor {}
+
+class AutoencoderKL implements VAE {}
+
+class PNDMScheduler implements Scheduler {}
+
+class StableDiffusionSafetyChecker implements SafetyChecker {}
+
 class StableDiffusion implements SimpleDiffusionPipeline {
   final Tokenizer tokenizer;
   final TextEncoder textEncoder;
+  final FeatureExtractor featureExtractor;
+  final UNet unet;
+  final VAE vae;
+  final Scheduler scheduler;
+  final SafetyChecker safetyChecker;
 
-  StableDiffusion({required this.tokenizer, required this.textEncoder});
+  StableDiffusion({
+    required this.tokenizer,
+    required this.textEncoder,
+    required this.featureExtractor,
+    required this.unet,
+    required this.vae,
+    required this.scheduler,
+    required this.safetyChecker,
+  });
 
   // TODO encode prompt
   // TODO encode image
@@ -20,7 +52,7 @@ class StableDiffusion implements SimpleDiffusionPipeline {
   // TODO controlnet
 
   Future<void> forward(
-    DiffusionInput input /* TODO can this be multiple?*/, {
+    DiffusionInput input /* TODO implement batching?*/, {
     int? width,
     int? height,
     int numInterefenceSteps = 50,
@@ -48,15 +80,29 @@ class StableDiffusion implements SimpleDiffusionPipeline {
     SafeTensorLoader loader,
   ) async {
     final tokenizer = await CLIPTokenizer.loadFromFile(
-      'models/tokenizer/'
+      'models/tokenizer/',
+      config: ClipTextConfig.v1_5,
     );
     final textEncoder = await ClipTextTransformer.loadFromSafeTensor(
       loader,
       prefix: 'cond_stage_model.transformer.text_model.',
       config: ClipTextConfig.v1_5 /* TODO */,
     );
-    // TODO
-    return StableDiffusion(textEncoder: textEncoder);
+    final featureExtractor = CLIPImageProcessor();
+    final unet = await UNet2DConditionModel.loadFromSafeTensor(loader);
+    final vae = AutoencoderKL();
+    final scheduler = PNDMScheduler();
+    final safetyChecker = StableDiffusionSafetyChecker();
+
+    return StableDiffusion(
+      tokenizer: tokenizer,
+      textEncoder: textEncoder,
+      featureExtractor: featureExtractor,
+      unet: unet,
+      vae: vae,
+      scheduler: scheduler,
+      safetyChecker: safetyChecker,
+    );
   }
 }
 

@@ -386,6 +386,25 @@ class Tensor {
     }
   }
 
+  Tensor operator /(dynamic /* Tensor | num */ other) {
+    final arena = ffi.Arena();
+    try {
+      if (other is Tensor) {
+        final tensor = TensorFFI.division(nativePtr, other.nativePtr);
+        return Tensor(tensor);
+      } else if (other is num) {
+        throw UnimplementedError('operator/num not implemented for Tensor');
+      } else if (other is (num, dynamic)) {
+        throw UnimplementedError('operator/num not implemented for Tensor');
+      }
+      throw UnimplementedError(
+        'operator/(${other.runtimeType}) not implemented for Tensor',
+      );
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   Tensor matmul(Tensor other) {
     // TODO
     throw UnimplementedError();

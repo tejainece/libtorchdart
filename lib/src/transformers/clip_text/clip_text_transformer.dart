@@ -23,10 +23,13 @@ class ClipTextTransformer extends Module implements TextEncoder {
   }) {
     inputIds = inputIds.view([-1, inputIds.shape.last]);
     final hiddenStates = embeddings.forward(inputIds, positionIds: positionIds);
-    final attentionMaskMade = createCasualMask(
+    final attentionMaskMade = createCausalMask(
       inputEmbeds: hiddenStates,
       attentionMask: attentionMask,
-      positionIds: positionIds,
+      cachePosition: Tensor.arange(
+        hiddenStates.shape[1],
+        device: hiddenStates.device,
+      ),
     );
     Tensor lastHiddenState = encoder.forward(
       hiddenStates,
@@ -73,7 +76,7 @@ class ClipTextTransformer extends Module implements TextEncoder {
 
 dynamic _processMaskArguments() {}
 
-dynamic createCasualMask({
+dynamic createCausalMask({
   required Tensor inputEmbeds,
   Tensor? attentionMask,
   required Tensor cachePosition,
