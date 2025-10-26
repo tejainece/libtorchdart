@@ -43,7 +43,7 @@ class GeluActivation implements Activation {
   @override
   Tensor forward(Tensor x) {
     return x.gelu(
-      // TODO "none"
+      GeluApporimate.none,
     );
   }
 }

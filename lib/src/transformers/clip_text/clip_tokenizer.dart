@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:libtorchdart/src/transformers/clip/clip_config.dart';
+import 'package:libtorchdart/src/transformers/clip_text/clip_config.dart';
 import 'package:universal_io/io.dart';
 
 abstract class Tokenizer {
@@ -14,7 +14,7 @@ class CLIPTokenizer implements Tokenizer {
   final Map<String, int> bpeRanks;
   final int startOfTextToken;
   final int endOfTextToken;
-  final ClipConfig config;
+  final ClipTextConfig config;
 
   CLIPTokenizer({
     required this.encoder,
@@ -118,7 +118,7 @@ class CLIPTokenizer implements Tokenizer {
 
   static Future<CLIPTokenizer> loadFromFile(
     String bpePath, {
-    required ClipConfig config,
+    required ClipTextConfig config,
   }) async {
     if (config.vocabSize != 49408) {
       throw Exception('vocabSize must be 49408');

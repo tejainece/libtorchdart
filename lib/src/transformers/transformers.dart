@@ -1,1 +1,1 @@
-export 'clip/clip.dart';
+export 'clip_text/clip.dart';

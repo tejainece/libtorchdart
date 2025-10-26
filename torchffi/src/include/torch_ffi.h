@@ -32,6 +32,17 @@ typedef struct Scalar_t {
     } value;
 } Scalar;
 
+typedef struct Slice_t {
+    int64_t* start;
+    int64_t* stop;
+    int64_t step;
+} Slice;
+
+typedef struct Index_t {
+    uint8_t type;
+    void *value;
+} Index;
+
 extern "C" {
 typedef torch::Tensor *tensor;
 }
@@ -67,6 +78,10 @@ extern Scalar_t torchffi_tensor_item(tensor t);
 
 extern tensor torchffi_tensor_get(tensor t, int index);
 
+extern tensor torchffi_tensor_index(tensor t, Index_t* indices, size_t ndims);
+
+extern tensor torchffi_tensor_view(tensor t, int64_t *sizes, size_t ndims);
+
 extern tensor torchffi_tensor_expand(tensor t, int64_t *sizes, size_t ndims, bool implicit);
 
 extern tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha);
@@ -80,6 +95,10 @@ extern tensor torchffi_tensor_division(tensor a, tensor b);
 extern tensor torchffi_tensor_sigmoid(tensor t);
 
 extern tensor torchffi_tensor_gelu(tensor t, char* approximate);
+
+extern tensor torchffi_linear(tensor input, tensor weight, tensor bias);
+
+extern tensor torchffi_layer_norm(tensor input, int64_t* normalizedShape, size_t normalizedShapeLength, tensor weight, tensor bias, double eps, bool cudnnEnable);
 
 extern tensor torchffi_embedding(tensor weights, tensor indices, int64_t paddingIdx, uint8_t scaleGradByFreq, uint8_t sparse);
 

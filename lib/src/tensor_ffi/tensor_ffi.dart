@@ -105,6 +105,72 @@ final class FFIScalar extends Struct {
 
 typedef CTensor = Pointer<Void>;
 
+final class FFISlice extends Struct {
+  external Pointer<Int64> start;
+  external Pointer<Int64> end;
+  @Int64()
+  external int step;
+
+  static Pointer<FFISlice> fromSlice(Slice slice, Allocator allocator) {
+    final ffiSlice = allocator.allocate<FFISlice>(sizeOf<FFISlice>());
+    ffiSlice.ref.step = slice.step;
+    if (slice.start != null) {
+      ffiSlice.ref.start = allocator.allocate<Int64>(sizeOf<Int64>());
+      ffiSlice.ref.start.value = slice.start!;
+    } else {
+      ffiSlice.ref.start = nullptr;
+    }
+    if (slice.end != null) {
+      ffiSlice.ref.end = allocator.allocate<Int64>(sizeOf<Int64>());
+      ffiSlice.ref.end.value = slice.end!;
+    } else {
+      ffiSlice.ref.end = nullptr;
+    }
+    return ffiSlice;
+  }
+}
+
+final class FFIIndex extends Struct {
+  @Int8()
+  external int type;
+  external Pointer<Void> value;
+
+  void fromIndex(dynamic index, Allocator allocator) {
+    if (index is int) {
+      type = FFIIndexType.intType.index;
+      value = (allocator.allocate<Int64>(
+        sizeOf<Int64>(),
+      )..value = index).cast();
+    } else if (index is Slice) {
+      type = FFIIndexType.sliceType.index;
+      value = FFISlice.fromSlice(index, allocator).cast();
+    } else if (index is Ellipsis) {
+      type = FFIIndexType.ellipsisType.index;
+      value = nullptr;
+    } else if (index is NewDim) {
+      type = FFIIndexType.newDimType.index;
+      value = nullptr;
+    } else if (index is Tensor) {
+      type = FFIIndexType.tensorType.index;
+      value = index.nativePtr;
+    } else if (index is bool) {
+      type = FFIIndexType.boolType.index;
+      value = (allocator.allocate<Bool>(sizeOf<Bool>())..value = index).cast();
+    } else {
+      throw UnimplementedError('Unsupported index type: ${index.runtimeType}');
+    }
+  }
+}
+
+enum FFIIndexType {
+  newDimType,
+  ellipsisType,
+  intType,
+  boolType,
+  sliceType,
+  tensorType,
+}
+
 abstract class TensorFFI {
   static final constructor = nativeLib
       .lookupFunction<CTensor Function(), CTensor Function()>(
@@ -186,6 +252,18 @@ abstract class TensorFFI {
         CTensor Function(CTensor tensor, int index)
       >('torchffi_tensor_get');
 
+  static final index = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<FFIIndex>, Int64),
+        CTensor Function(CTensor, Pointer<FFIIndex>, int)
+      >('torchffi_tensor_index');
+
+  static final view = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size),
+        CTensor Function(CTensor, Pointer<Int64>, int)
+      >('torchffi_tensor_view');
+
   static final expand = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Pointer<Int64>, Size, Bool),
@@ -227,6 +305,34 @@ abstract class TensorFFI {
         CTensor Function(CTensor, Pointer<Utf8>),
         CTensor Function(CTensor tensor, Pointer<Utf8>)
       >('torchffi_tensor_gelu');
+
+  static final linear = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor, CTensor),
+        CTensor Function(CTensor input, CTensor weight, CTensor bias)
+      >('torchffi_linear');
+
+  static final layerNorm = nativeLib
+      .lookupFunction<
+        CTensor Function(
+          CTensor,
+          Pointer<Int64>,
+          Size,
+          CTensor weight,
+          CTensor bias,
+          Double eps,
+          Bool,
+        ),
+        CTensor Function(
+          CTensor,
+          Pointer<Int64>,
+          int,
+          CTensor,
+          CTensor,
+          double,
+          bool,
+        )
+      >('torchffi_layer_norm');
 
   static final embedding = nativeLib
       .lookupFunction<

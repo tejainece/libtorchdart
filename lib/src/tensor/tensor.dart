@@ -2,7 +2,11 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:libtorchdart/src/tensor_ffi/tensor_ffi.dart';
 
-extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
+class Tensor {
+  ffi.Pointer<ffi.Void> nativePtr;
+
+  Tensor(this.nativePtr);
+
   static Tensor zeros(
     List<int> sizes, {
     Device device = Device.cpu,
@@ -169,13 +173,13 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     }
   }
 
-  int get dim => TensorFFI.dim(_tensor);
+  int get dim => TensorFFI.dim(nativePtr);
 
   List<int> get sizes {
     final dim = this.dim;
     final sizesPtr = ffi.malloc.allocate<ffi.Int64>(dim);
     try {
-      TensorFFI.sizes(_tensor, dim, sizesPtr);
+      TensorFFI.sizes(nativePtr, dim, sizesPtr);
       return sizesPtr.asTypedList(dim).toList();
     } finally {
       ffi.malloc.free(sizesPtr);
@@ -185,7 +189,7 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
   List<int> get shape => sizes;
 
   Device get device {
-    final device = TensorFFI.tensorGetDevice(_tensor);
+    final device = TensorFFI.tensorGetDevice(nativePtr);
     return Device(
       deviceType: DeviceType.fromId(device.deviceType),
       deviceIndex: device.deviceIndex,
@@ -198,7 +202,7 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     if (!isScalar) {
       throw Exception('Tensor is not a scalar');
     }
-    final scalar = TensorFFI.item(_tensor);
+    final scalar = TensorFFI.item(nativePtr);
     return scalar.value;
   }
 
@@ -213,12 +217,47 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
       throw IndexError.withLength(index, max);
     }
     try {
-      final tensor = TensorFFI.get(_tensor, index);
+      final tensor = TensorFFI.get(nativePtr, index);
       return Tensor(tensor);
     } catch (e) {
       print(e);
       throw Exception('Index out of bounds');
     }
+  }
+
+  Tensor index(List<dynamic> indices) {
+    final arena = ffi.Arena();
+    try {
+      final indicesPointer = arena.allocate<FFIIndex>(
+        ffi.sizeOf<FFIIndex>() * indices.length,
+      );
+      for (int i = 0; i < indices.length; i++) {
+        final index = indices[i];
+        (indicesPointer + i).ref.fromIndex(index, arena);
+      }
+      final tensor = TensorFFI.index(nativePtr, indicesPointer, indices.length);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor view(List<int> sizes) {
+    final arena = ffi.Arena();
+    try {
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = TensorFFI.view(nativePtr, sizesPointer, sizes.length);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor reshape(List<int> sizes) {
+    throw UnimplementedError();
   }
 
   Tensor expand(List<int> sizes) {
@@ -228,11 +267,36 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = TensorFFI.expand(_tensor, sizesPointer, sizes.length, false);
+      final tensor = TensorFFI.expand(
+        nativePtr,
+        sizesPointer,
+        sizes.length,
+        false,
+      );
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
     }
+  }
+
+  DataType get dataType {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  Tensor to({DataType? dataType, Device? device, Layout? layout}) {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  Tensor contiguous() {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  Tensor transpose(List<int> dims) {
+    // TODO
+    throw UnimplementedError();
   }
 
   Tensor operator +(dynamic /* Tensor | num */ other) {
@@ -241,14 +305,22 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
       if (other is Tensor) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setInt(1);
-        final tensor = TensorFFI.addition(_tensor, other._tensor, alpha.ref);
+        final tensor = TensorFFI.addition(
+          nativePtr,
+          other.nativePtr,
+          alpha.ref,
+        );
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
       } else if (other is (Tensor, dynamic)) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
-        final tensor = TensorFFI.addition(_tensor, other.$1._tensor, alpha.ref);
+        final tensor = TensorFFI.addition(
+          nativePtr,
+          other.$1.nativePtr,
+          alpha.ref,
+        );
         return Tensor(tensor);
       } else if (other is (num, dynamic)) {
         throw UnimplementedError('operator+num not implemented for Tensor');
@@ -267,7 +339,11 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
       if (other is Tensor) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setInt(1);
-        final tensor = TensorFFI.subtraction(_tensor, other._tensor, alpha.ref);
+        final tensor = TensorFFI.subtraction(
+          nativePtr,
+          other.nativePtr,
+          alpha.ref,
+        );
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
@@ -275,8 +351,8 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
         final tensor = TensorFFI.subtraction(
-          _tensor,
-          other.$1._tensor,
+          nativePtr,
+          other.$1.nativePtr,
           alpha.ref,
         );
         return Tensor(tensor);
@@ -295,7 +371,7 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     final arena = ffi.Arena();
     try {
       if (other is Tensor) {
-        final tensor = TensorFFI.multiplication(_tensor, other._tensor);
+        final tensor = TensorFFI.multiplication(nativePtr, other.nativePtr);
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
@@ -310,8 +386,23 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     }
   }
 
+  Tensor matmul(Tensor other) {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  Tensor softmax(int dim, {DataType? dataType}) {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  Tensor dropout(double p, {bool training = true}) {
+    // TODO
+    throw UnimplementedError();
+  }
+
   Tensor sigmoid() {
-    final tensor = TensorFFI.sigmoid(_tensor);
+    final tensor = TensorFFI.sigmoid(nativePtr);
     return Tensor(tensor);
   }
 
@@ -319,17 +410,112 @@ extension type Tensor(ffi.Pointer<ffi.Void> _tensor) {
     final arena = ffi.Arena();
     try {
       final activation = approximate.name.toNativeUtf8(allocator: arena);
-      final tensor = TensorFFI.gelu(_tensor, activation);
+      final tensor = TensorFFI.gelu(nativePtr, activation);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
     }
   }
+
+  String _print1d(int size, Tensor tensor) {
+    final sb = StringBuffer();
+    sb.write('[');
+    for (int i = 0; i < size; i++) {
+      if (i > 0) sb.write(', ');
+      sb.write(tensor.get(i).scalar);
+      if (i == 50 && size > 100) {
+        sb.write('...');
+        i = size - 50;
+      }
+    }
+    sb.write(']');
+    return sb.toString();
+  }
+
+  String _print2d(int size0, int size1, Tensor tensor) {
+    final sb = StringBuffer();
+    sb.write('[');
+    for (int i = 0; i < size0; i++) {
+      if (i > 0) sb.write(',\n ');
+      sb.write(_print1d(size1, tensor.get(i)));
+      if (i == 50 && size0 > 100) {
+        sb.write('...');
+        i = size0 - 50;
+      }
+    }
+    sb.write(']\n');
+    return sb.toString();
+  }
+
+  @override
+  String toString() {
+    final sizes = this.sizes;
+    if (sizes.isEmpty) {
+      return '[$scalar]';
+    } else if (sizes.length == 1) {
+      return _print1d(sizes[0], this);
+    } else if (sizes.length == 2) {
+      return _print2d(sizes[0], sizes[1], this);
+    } else {
+      throw UnimplementedError();
+    }
+  }
 }
 
-enum GeluApporimate {
-  none,
-  tanh,
+abstract class Index {}
+
+class NewDim implements Index {}
+
+class Ellipsis implements Index {}
+
+class Slice implements Index {
+  final int? start;
+  final int? end;
+  final int step;
+
+  Slice({this.start, this.end, this.step = 1});
+}
+
+enum GeluApporimate { none, tanh }
+
+Tensor linear(Tensor input, Tensor weight, {Tensor? bias}) {
+  final tensorPtr = TensorFFI.linear(
+    input.nativePtr,
+    weight.nativePtr,
+    bias?.nativePtr ?? ffi.nullptr,
+  );
+  return Tensor(tensorPtr);
+}
+
+Tensor layerNorm(
+  Tensor input,
+  List<int> normalizedShape,
+  Tensor? weight,
+  Tensor? bias,
+  double eps,
+) {
+  final arena = ffi.Arena();
+  try {
+    final normalizedShapePointer = arena.allocate<ffi.Int64>(
+      ffi.sizeOf<ffi.Int64>() * normalizedShape.length,
+    );
+    normalizedShapePointer
+        .asTypedList(normalizedShape.length)
+        .setAll(0, normalizedShape);
+
+    final tensorPtr = TensorFFI.layerNorm(
+      input.nativePtr,
+      normalizedShapePointer,
+      normalizedShape.length,
+      weight?.nativePtr ?? ffi.nullptr,
+      bias?.nativePtr ?? ffi.nullptr,
+      eps,
+      true, // TODO: enable_cudnn
+    );
+    return Tensor(tensorPtr);
+  } finally {
+    arena.releaseAll();
+  }
 }
 
 Tensor embedding(
@@ -340,8 +526,8 @@ Tensor embedding(
   bool sparse,
 ) {
   final tensorPtr = TensorFFI.embedding(
-    weights._tensor,
-    indices._tensor,
+    weights.nativePtr,
+    indices.nativePtr,
     paddingIdx,
     scaleGradByFreq,
     sparse,

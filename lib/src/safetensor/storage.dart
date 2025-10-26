@@ -10,6 +10,8 @@ abstract class SafeTensorLoader {
 
   Map<String, SafeTensorInfo> get tensorInfos => header.tensorInfos;
 
+  bool hasTensor(String name) => tensorInfos.containsKey(name);
+
   FutureOr<Tensor> loadByName(String name);
 }
 

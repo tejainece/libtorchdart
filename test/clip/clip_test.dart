@@ -126,7 +126,8 @@ class _EncodeTestWithPad {
         0,
       ],
       padSize: 77,
-      decoding: '<|startoftext|>how is the weather today , brother ? <|endoftext|>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
+      decoding:
+          '<|startoftext|>how is the weather today , brother ? <|endoftext|>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
     ),
   ];
 
@@ -143,7 +144,7 @@ class _EncodeTestWithPad {
 void main() async {
   final clip2_1 = await CLIPTokenizer.loadFromFile(
     'data/bpe_simple_vocab_16e6.txt',
-    config: ClipConfig.v2_1,
+    config: ClipTextConfig.v2_1,
   );
   group('CLIPTransformer', () {
     test('encodeToken', () {
