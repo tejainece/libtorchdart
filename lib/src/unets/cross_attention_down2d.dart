@@ -1,4 +1,5 @@
 import 'package:libtorchdart/src/nn/embedding_layer.dart';
+import 'package:libtorchdart/src/safetensor/storage.dart';
 import 'package:libtorchdart/src/tensor/tensor.dart';
 import 'package:libtorchdart/src/unets/resnet2d.dart';
 import 'package:libtorchdart/src/unets/unet2d_conditional.dart';
@@ -62,7 +63,31 @@ class DownBlock2D implements UNet2DDownBlock {
 }
 
 class Downsample2D {
-  Tensor forward(Tensor x) {
+  final SimpleModule? norm;
+  final SimpleModule conv;
+
+  Downsample2D({this.norm, required this.conv});
+
+  Tensor forward(Tensor hiddenStates) {
+    if (norm != null) {
+      hiddenStates = norm!.forward(hiddenStates.permute([0, 2, 3, 1])).permute([
+        0,
+        3,
+        1,
+        2,
+      ]);
+    }
+
+    // TODO use_conv
+
+    hiddenStates = conv.forward(hiddenStates);
+    return hiddenStates;
+  }
+
+  static Future<Downsample2D> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+  }) async {
     // TODO
     throw UnimplementedError();
   }

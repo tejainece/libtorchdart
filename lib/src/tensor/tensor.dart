@@ -279,6 +279,11 @@ class Tensor {
     }
   }
 
+  Tensor permute(List<int> dims) {
+    // TODO
+    throw UnimplementedError();
+  }
+
   DataType get dataType {
     // TODO
     throw UnimplementedError();
