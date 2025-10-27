@@ -23,6 +23,8 @@ final class FFITensorOptions extends Struct {
   external int deviceIndex;
   @Int8()
   external int layout;
+  @Int8()
+  external int memoryFormat;
 
   static Pointer<FFITensorOptions> allocate(Allocator allocator) =>
       malloc.allocate<FFITensorOptions>(sizeOf<FFITensorOptions>());
@@ -31,6 +33,7 @@ final class FFITensorOptions extends Struct {
     required DataType dataType,
     required Device device,
     required Layout layout,
+    required MemoryFormat memoryFormat,
     required Allocator allocator,
   }) {
     final options = allocate(allocator);
@@ -38,6 +41,7 @@ final class FFITensorOptions extends Struct {
     options.ref.deviceType = device.deviceType.type;
     options.ref.deviceIndex = device.deviceIndex;
     options.ref.layout = layout.type;
+    options.ref.memoryFormat = memoryFormat.id;
     return options;
   }
 }
@@ -264,11 +268,29 @@ abstract class TensorFFI {
         CTensor Function(CTensor, Pointer<Int64>, int)
       >('torchffi_tensor_view');
 
+  static final permute = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size),
+        CTensor Function(CTensor, Pointer<Int64>, int)
+      >('torchffi_tensor_permute');
+
+  static final transpose = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64, Int64),
+        CTensor Function(CTensor, int, int)
+      >('torchffi_tensor_transpose');
+
   static final expand = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Pointer<Int64>, Size, Bool),
         CTensor Function(CTensor, Pointer<Int64>, int, bool)
       >('torchffi_tensor_expand');
+
+  static final contiguous = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int8),
+        CTensor Function(CTensor, int)
+      >('torchffi_tensor_contiguous');
 
   static final addition = nativeLib
       .lookupFunction<
@@ -293,6 +315,12 @@ abstract class TensorFFI {
         CTensor Function(CTensor, CTensor),
         CTensor Function(CTensor tensor1, CTensor tensor2)
       >('torchffi_tensor_division');
+
+  static final matmul = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor),
+        CTensor Function(CTensor tensor1, CTensor tensor2)
+      >('torchffi_tensor_matmul');
 
   static final sigmoid = nativeLib
       .lookupFunction<
@@ -334,6 +362,18 @@ abstract class TensorFFI {
         )
       >('torchffi_layer_norm');
 
+  static final dropout = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Double, Bool),
+        CTensor Function(CTensor, double, bool)
+      >('torchffi_dropout');
+
+  static final softmax = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64, Pointer<Int8>),
+        CTensor Function(CTensor, int, Pointer<Int8>)
+      >('torchffi_softmax');
+
   static final embedding = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, CTensor, Int64, Bool, Bool),
@@ -345,4 +385,26 @@ abstract class TensorFFI {
           bool sparse,
         )
       >('torchffi_embedding');
+
+  static final conv2d = nativeLib
+      .lookupFunction<
+        CTensor Function(
+          CTensor,
+          CTensor,
+          CTensor,
+          Pointer<Int64>,
+          Pointer<Int64>,
+          Pointer<Int64>,
+          Int64,
+        ),
+        CTensor Function(
+          CTensor input,
+          CTensor weight,
+          CTensor bias,
+          Pointer<Int64> stride,
+          Pointer<Int64> padding,
+          Pointer<Int64> dilation,
+          int groups,
+        )
+      >('torchffi_conv2d');
 }

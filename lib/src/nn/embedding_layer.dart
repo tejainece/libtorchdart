@@ -14,6 +14,7 @@ class EmbeddingConfig {
   });
 }
 
+// TODO implement train/infer
 abstract class Module {
   bool isTraining = false;
 

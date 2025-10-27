@@ -12,7 +12,7 @@ class Tensor {
     Device device = Device.cpu,
     DataType dtype = DataType.float,
     Layout layout = Layout.strided,
-    // TODO memory format
+    MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
     // TODO pinned memory
   }) {
@@ -22,6 +22,7 @@ class Tensor {
         dataType: dtype,
         device: device,
         layout: layout,
+        memoryFormat: memoryFormat,
         allocator: arena,
       );
       final sizesPointer = arena.allocate<ffi.Int64>(
@@ -40,7 +41,7 @@ class Tensor {
     Device device = Device.cpu,
     DataType dtype = DataType.float,
     Layout layout = Layout.strided,
-    // TODO memory format
+    MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
     // TODO pinned memory
   }) {
@@ -50,6 +51,7 @@ class Tensor {
         dataType: dtype,
         device: device,
         layout: layout,
+        memoryFormat: memoryFormat,
         allocator: arena,
       );
       final sizesPointer = arena.allocate<ffi.Int64>(
@@ -68,7 +70,7 @@ class Tensor {
     Device device = Device.cpu,
     DataType dtype = DataType.float,
     Layout layout = Layout.strided,
-    // TODO memory format
+    MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
     // TODO pinned memory
   }) {
@@ -78,6 +80,7 @@ class Tensor {
         dataType: dtype,
         device: device,
         layout: layout,
+        memoryFormat: memoryFormat,
         allocator: arena,
       );
       final tensor = TensorFFI.arange(end, options.ref);
@@ -92,7 +95,7 @@ class Tensor {
     Device device = Device.cpu,
     DataType dtype = DataType.float,
     Layout layout = Layout.strided,
-    // TODO memory format
+    MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
     // TODO pinned memory
   }) {
@@ -102,6 +105,7 @@ class Tensor {
         dataType: dtype,
         device: device,
         layout: layout,
+        memoryFormat: memoryFormat,
         allocator: arena,
       );
       final sizesPointer = arena.allocate<ffi.Int64>(
@@ -121,7 +125,7 @@ class Tensor {
     Device device = Device.cpu,
     DataType dtype = DataType.float,
     Layout layout = Layout.strided,
-    // TODO memory format
+    MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
     // TODO pinned memory
   }) {
@@ -132,6 +136,7 @@ class Tensor {
         dataType: dtype,
         device: device,
         layout: layout,
+        memoryFormat: memoryFormat,
         allocator: arena,
       );
       final tensor = TensorFFI.eye(n, m, options.ref);
@@ -147,7 +152,7 @@ class Tensor {
     required DataType dtype,
     Device device = Device.cpu,
     Layout layout = Layout.strided,
-    // TODO memory format
+    MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
     // TODO pinned memory
   }) {
@@ -157,6 +162,7 @@ class Tensor {
         dataType: dtype,
         device: device,
         layout: layout,
+        memoryFormat: memoryFormat,
         allocator: arena,
       );
       final sizesPointer = arena.allocate<ffi.Int64>(sizes.length);
@@ -280,8 +286,17 @@ class Tensor {
   }
 
   Tensor permute(List<int> dims) {
-    // TODO
-    throw UnimplementedError();
+    final arena = ffi.Arena();
+    try {
+      final dimsPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * dims.length,
+      );
+      dimsPointer.asTypedList(dims.length).setAll(0, dims);
+      final tensor = TensorFFI.permute(nativePtr, dimsPointer, dims.length);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
   }
 
   DataType get dataType {
@@ -294,14 +309,15 @@ class Tensor {
     throw UnimplementedError();
   }
 
-  Tensor contiguous() {
-    // TODO
-    throw UnimplementedError();
+  Tensor contiguous({MemoryFormat format = MemoryFormat.contiguous}) {
+    final tensor = TensorFFI.contiguous(nativePtr, format.id);
+    return Tensor(tensor);
   }
 
-  Tensor transpose(List<int> dims) {
-    // TODO
-    throw UnimplementedError();
+  /// Returns the transposed version of the tensor. Swaps [dim0] and [dim1].
+  Tensor transpose(int dim0, int dim1) {
+    final tensor = TensorFFI.transpose(nativePtr, dim0, dim1);
+    return Tensor(tensor);
   }
 
   Tensor operator +(dynamic /* Tensor | num */ other) {
@@ -411,18 +427,28 @@ class Tensor {
   }
 
   Tensor matmul(Tensor other) {
-    // TODO
-    throw UnimplementedError();
+    final tensor = TensorFFI.matmul(nativePtr, other.nativePtr);
+    return Tensor(tensor);
   }
 
   Tensor softmax(int dim, {DataType? dataType}) {
-    // TODO
-    throw UnimplementedError();
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Int8> dataTypePointer = ffi.nullptr;
+      if (dataType != null) {
+        dataTypePointer = arena.allocate<ffi.Int8>(ffi.sizeOf<ffi.Int8>());
+        dataTypePointer.value = dataType.type;
+      }
+      final tensor = TensorFFI.softmax(nativePtr, dim, dataTypePointer);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
   }
 
   Tensor dropout(double p, {bool training = true}) {
-    // TODO
-    throw UnimplementedError();
+    final tensor = TensorFFI.dropout(nativePtr, p, training);
+    return Tensor(tensor);
   }
 
   Tensor sigmoid() {
@@ -558,6 +584,50 @@ Tensor embedding(
   );
 
   return Tensor(tensorPtr);
+}
+
+Tensor conv2d(
+  Tensor input,
+  Tensor weight, {
+  Tensor? bias,
+  (int, int)? stride,
+  (int, int)? padding,
+  (int, int)? dilation,
+  int groups = 1,
+}) {
+  final arena = ffi.Arena();
+  try {
+    ffi.Pointer<ffi.Int64> stridePointer = ffi.nullptr;
+    if (stride != null) {
+      stridePointer = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>() * 2);
+      stridePointer.value = stride.$1;
+      (stridePointer + 1).value = stride.$2;
+    }
+    ffi.Pointer<ffi.Int64> paddingPointer = ffi.nullptr;
+    if (padding != null) {
+      paddingPointer = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>() * 2);
+      paddingPointer.value = padding.$1;
+      (paddingPointer + 1).value = padding.$2;
+    }
+    ffi.Pointer<ffi.Int64> dilationPointer = ffi.nullptr;
+    if (dilation != null) {
+      dilationPointer = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>() * 2);
+      dilationPointer.value = dilation.$1;
+      (dilationPointer + 1).value = dilation.$2;
+    }
+    final tensorPtr = TensorFFI.conv2d(
+      input.nativePtr,
+      weight.nativePtr,
+      bias?.nativePtr ?? ffi.nullptr,
+      stridePointer,
+      paddingPointer,
+      dilationPointer,
+      groups,
+    );
+    return Tensor(tensorPtr);
+  } finally {
+    arena.releaseAll();
+  }
 }
 
 class DeviceType {
@@ -802,4 +872,15 @@ class Layout {
     sparseBsc,
     jagged,
   ];
+}
+
+class MemoryFormat {
+  final String name;
+  final int id;
+  const MemoryFormat(this.name, this.id);
+
+  static const contiguous = MemoryFormat('Contiguous', 0);
+  static const preserve = MemoryFormat('Preserve', 1);
+  static const channelsLast = MemoryFormat('ChannelsLast', 2);
+  static const channelsLast3d = MemoryFormat('ChannelsLast3d', 3);
 }

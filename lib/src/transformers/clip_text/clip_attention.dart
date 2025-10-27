@@ -34,12 +34,9 @@ class ClipAttention extends Module {
     Tensor keys = kProj.forward(x);
     Tensor values = vProj.forward(x);
 
-    queries = queries.view([batchSize, seqLength, -1, headDim]).transpose([
-      1,
-      2,
-    ]);
-    keys = keys.view([batchSize, seqLength, -1, headDim]).transpose([1, 2]);
-    values = values.view([batchSize, seqLength, -1, headDim]).transpose([1, 2]);
+    queries = queries.view([batchSize, seqLength, -1, headDim]).transpose(1, 2);
+    keys = keys.view([batchSize, seqLength, -1, headDim]).transpose(1, 2);
+    values = values.view([batchSize, seqLength, -1, headDim]).transpose(1, 2);
 
     var (attentionOutput, attentionWeights) = attentionFunction.forward(
       queries,
@@ -119,7 +116,7 @@ class EagerAttentionFunction implements AttentionFunction {
     double dropout = 0,
     double? scaling,
   }) {
-    Tensor attentionWeights = q.matmul(k.transpose([-1, -2]));
+    Tensor attentionWeights = q.matmul(k.transpose(-1, -2));
     if (scaling != null) {
       attentionWeights = attentionWeights * scaling;
     }
@@ -136,7 +133,7 @@ class EagerAttentionFunction implements AttentionFunction {
     );
 
     Tensor output = attentionWeights.matmul(v);
-    attentionWeights = attentionWeights.transpose([1, 2]).contiguous();
+    attentionWeights = attentionWeights.transpose(1, 2).contiguous();
 
     return (output, attentionWeights);
   }
