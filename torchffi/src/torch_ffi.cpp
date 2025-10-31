@@ -36,7 +36,11 @@ at::indexing::TensorIndex torchffi_make_tensor_index(Index_t& index) {
     }
 }
 
-tensor torchffi_new_tensor() {
+void torchffi_tensor_delete(tensor t) {
+    delete t;
+}
+
+tensor torchffi_tensor_new() {
     return new torch::Tensor();
 }
 
@@ -92,7 +96,7 @@ Device torchffi_tensor_device(tensor t) {
     return Device{int8_t(device.type()), device.index()};
 }
 
-Scalar torchffi_tensor_item(tensor t) {
+Scalar torchffi_tensor_scalar(tensor t) {
     at::Scalar scalar = t->item();
     at::ScalarType type = scalar.type();
     if (scalar.isBoolean()) {
@@ -120,8 +124,14 @@ Scalar torchffi_tensor_item(tensor t) {
     }
 }
 
+Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index) {
+    auto tensor = torch::Tensor(t->select(0, index));
+    return torchffi_tensor_scalar(&tensor);
+}
+
 tensor torchffi_tensor_get(tensor t, int index) {
-    return new torch::Tensor((*t)[index]);
+    auto tensor = t->select(0, index);
+    return new torch::Tensor(tensor);
 }
 
 tensor torchffi_tensor_index(tensor t, Index_t* indices, size_t ndims) {
@@ -155,6 +165,26 @@ tensor torchffi_tensor_transpose(tensor t, int64_t dim1, int64_t dim2) {
 
 tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat) {
     at::Tensor tensor = t->contiguous(at::MemoryFormat(memoryFormat));
+    return new torch::Tensor(tensor);
+}
+
+const char* padModeName(uint8_t padMode) {
+    switch (padMode) {
+        case padModeConstant:
+            return padModeNameConstant;
+        case padModeReflect:
+            return padModeNameReflect;
+        case padModeReplicate:
+            return padModeNameReplicate;
+        case padModeCircular:
+            return padModeNameCircular;
+        default:
+            return padModeNameConstant;
+    }
+}
+
+tensor torchffi_tensor_pad(tensor t, int64_t* pad, size_t padArrayLength, uint8_t padMode, double* value) {
+    at::Tensor tensor = torch::pad(*t, at::IntArrayRef(pad, padArrayLength), padModeName(padMode), value ? std::optional<double>(*value) : std::nullopt);
     return new torch::Tensor(tensor);
 }
 

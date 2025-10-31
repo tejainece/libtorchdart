@@ -27,7 +27,7 @@ final class FFITensorOptions extends Struct {
   external int memoryFormat;
 
   static Pointer<FFITensorOptions> allocate(Allocator allocator) =>
-      malloc.allocate<FFITensorOptions>(sizeOf<FFITensorOptions>());
+      allocator.allocate<FFITensorOptions>(sizeOf<FFITensorOptions>());
 
   static Pointer<FFITensorOptions> make({
     required DataType dataType,
@@ -175,10 +175,15 @@ enum FFIIndexType {
   tensorType,
 }
 
-abstract class TensorFFI {
+abstract class Torch {
   static final constructor = nativeLib
       .lookupFunction<CTensor Function(), CTensor Function()>(
         'torchffi_tensor_new',
+      );
+
+  static final delete = nativeLib
+      .lookup<NativeFunction<Void Function(Pointer<Void>)>>(
+        'torchffi_tensor_delete',
       );
 
   static final zeros = nativeLib
@@ -244,11 +249,17 @@ abstract class TensorFFI {
         FFIDevice Function(CTensor tensor)
       >('torchffi_tensor_device');
 
-  static final item = nativeLib
+  static final scalar = nativeLib
       .lookupFunction<
         FFIScalar Function(CTensor),
         FFIScalar Function(CTensor tensor)
-      >('torchffi_tensor_item');
+      >('torchffi_tensor_scalar');
+
+  static final scalarAt = nativeLib
+      .lookupFunction<
+        FFIScalar Function(CTensor, Int64),
+        FFIScalar Function(CTensor, int)
+      >('torchffi_tensor_scalar_at');
 
   static final get = nativeLib
       .lookupFunction<
@@ -291,6 +302,12 @@ abstract class TensorFFI {
         CTensor Function(CTensor, Int8),
         CTensor Function(CTensor, int)
       >('torchffi_tensor_contiguous');
+
+  static final pad = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size, Uint8, Pointer<Double>),
+        CTensor Function(CTensor, Pointer<Int64>, int, int, Pointer<Double>)
+      >('torchffi_tensor_pad');
 
   static final addition = nativeLib
       .lookupFunction<

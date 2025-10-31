@@ -1,11 +1,16 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
+import 'package:libtorchdart/src/nn/nn2d.dart';
 import 'package:libtorchdart/src/tensor_ffi/tensor_ffi.dart';
 
-class Tensor {
+class Tensor implements ffi.Finalizable {
   ffi.Pointer<ffi.Void> nativePtr;
 
-  Tensor(this.nativePtr);
+  Tensor(this.nativePtr) {
+    _finalizer.attach(this, nativePtr);
+  }
+
+  static final _finalizer = ffi.NativeFinalizer(Torch.delete);
 
   static Tensor zeros(
     List<int> sizes, {
@@ -29,7 +34,7 @@ class Tensor {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = TensorFFI.zeros(sizesPointer, sizes.length, options.ref);
+      final tensor = Torch.zeros(sizesPointer, sizes.length, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -58,7 +63,7 @@ class Tensor {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = TensorFFI.ones(sizesPointer, sizes.length, options.ref);
+      final tensor = Torch.ones(sizesPointer, sizes.length, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -83,7 +88,7 @@ class Tensor {
         memoryFormat: memoryFormat,
         allocator: arena,
       );
-      final tensor = TensorFFI.arange(end, options.ref);
+      final tensor = Torch.arange(end, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -112,7 +117,7 @@ class Tensor {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = TensorFFI.rand(sizesPointer, sizes.length, options.ref);
+      final tensor = Torch.rand(sizesPointer, sizes.length, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -139,7 +144,7 @@ class Tensor {
         memoryFormat: memoryFormat,
         allocator: arena,
       );
-      final tensor = TensorFFI.eye(n, m, options.ref);
+      final tensor = Torch.eye(n, m, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -167,7 +172,7 @@ class Tensor {
       );
       final sizesPointer = arena.allocate<ffi.Int64>(sizes.length);
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = TensorFFI.fromBlob(
+      final tensor = Torch.fromBlob(
         dataPointer,
         sizesPointer,
         sizes.length,
@@ -179,23 +184,24 @@ class Tensor {
     }
   }
 
-  int get dim => TensorFFI.dim(nativePtr);
+  int get dim => Torch.dim(nativePtr);
 
   List<int> get sizes {
     final dim = this.dim;
-    final sizesPtr = ffi.malloc.allocate<ffi.Int64>(dim);
+    final arena = ffi.Arena();
     try {
-      TensorFFI.sizes(nativePtr, dim, sizesPtr);
+      final sizesPtr = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>() * dim);
+      Torch.sizes(nativePtr, dim, sizesPtr);
       return sizesPtr.asTypedList(dim).toList();
     } finally {
-      ffi.malloc.free(sizesPtr);
+      arena.releaseAll();
     }
   }
 
   List<int> get shape => sizes;
 
   Device get device {
-    final device = TensorFFI.tensorGetDevice(nativePtr);
+    final device = Torch.tensorGetDevice(nativePtr);
     return Device(
       deviceType: DeviceType.fromId(device.deviceType),
       deviceIndex: device.deviceIndex,
@@ -205,25 +211,27 @@ class Tensor {
   bool get isScalar => shape.isEmpty;
 
   dynamic get scalar {
-    if (!isScalar) {
-      throw Exception('Tensor is not a scalar');
-    }
-    final scalar = TensorFFI.item(nativePtr);
+    final scalar = Torch.scalar(nativePtr);
+    return scalar.value;
+  }
+
+  dynamic scalarAt(int index) {
+    final scalar = Torch.scalarAt(nativePtr, index);
     return scalar.value;
   }
 
   Tensor operator [](int index) => get(index);
 
   Tensor get(int index) {
-    if (isScalar) {
+    /*if (isScalar) {
       throw Exception('Scalar tensor cannot be indexed');
     }
     final int max = shape[0];
     if (index >= max) {
       throw IndexError.withLength(index, max);
-    }
+    }*/
     try {
-      final tensor = TensorFFI.get(nativePtr, index);
+      final tensor = Torch.get(nativePtr, index);
       return Tensor(tensor);
     } catch (e) {
       print(e);
@@ -241,7 +249,7 @@ class Tensor {
         final index = indices[i];
         (indicesPointer + i).ref.fromIndex(index, arena);
       }
-      final tensor = TensorFFI.index(nativePtr, indicesPointer, indices.length);
+      final tensor = Torch.index(nativePtr, indicesPointer, indices.length);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -255,7 +263,7 @@ class Tensor {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = TensorFFI.view(nativePtr, sizesPointer, sizes.length);
+      final tensor = Torch.view(nativePtr, sizesPointer, sizes.length);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -273,12 +281,7 @@ class Tensor {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = TensorFFI.expand(
-        nativePtr,
-        sizesPointer,
-        sizes.length,
-        false,
-      );
+      final tensor = Torch.expand(nativePtr, sizesPointer, sizes.length, false);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -292,7 +295,7 @@ class Tensor {
         ffi.sizeOf<ffi.Int64>() * dims.length,
       );
       dimsPointer.asTypedList(dims.length).setAll(0, dims);
-      final tensor = TensorFFI.permute(nativePtr, dimsPointer, dims.length);
+      final tensor = Torch.permute(nativePtr, dimsPointer, dims.length);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -310,14 +313,41 @@ class Tensor {
   }
 
   Tensor contiguous({MemoryFormat format = MemoryFormat.contiguous}) {
-    final tensor = TensorFFI.contiguous(nativePtr, format.id);
+    final tensor = Torch.contiguous(nativePtr, format.id);
     return Tensor(tensor);
   }
 
   /// Returns the transposed version of the tensor. Swaps [dim0] and [dim1].
   Tensor transpose(int dim0, int dim1) {
-    final tensor = TensorFFI.transpose(nativePtr, dim0, dim1);
+    final tensor = Torch.transpose(nativePtr, dim0, dim1);
     return Tensor(tensor);
+  }
+
+  Tensor pad(List<int> pad, {PadMode mode = PadMode.constant, double? value}) {
+    final arena = ffi.Arena();
+    try {
+      final padPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * pad.length,
+      );
+      padPointer.asTypedList(pad.length).setAll(0, pad);
+
+      ffi.Pointer<ffi.Double> valuePointer = ffi.nullptr;
+      if (value != null) {
+        valuePointer = arena.allocate<ffi.Double>(ffi.sizeOf<ffi.Double>());
+        valuePointer.value = value;
+      }
+
+      final tensor = Torch.pad(
+        nativePtr,
+        padPointer,
+        pad.length,
+        mode.index,
+        valuePointer,
+      );
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
   }
 
   Tensor operator +(dynamic /* Tensor | num */ other) {
@@ -326,22 +356,14 @@ class Tensor {
       if (other is Tensor) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setInt(1);
-        final tensor = TensorFFI.addition(
-          nativePtr,
-          other.nativePtr,
-          alpha.ref,
-        );
+        final tensor = Torch.addition(nativePtr, other.nativePtr, alpha.ref);
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
       } else if (other is (Tensor, dynamic)) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
-        final tensor = TensorFFI.addition(
-          nativePtr,
-          other.$1.nativePtr,
-          alpha.ref,
-        );
+        final tensor = Torch.addition(nativePtr, other.$1.nativePtr, alpha.ref);
         return Tensor(tensor);
       } else if (other is (num, dynamic)) {
         throw UnimplementedError('operator+num not implemented for Tensor');
@@ -360,18 +382,14 @@ class Tensor {
       if (other is Tensor) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setInt(1);
-        final tensor = TensorFFI.subtraction(
-          nativePtr,
-          other.nativePtr,
-          alpha.ref,
-        );
+        final tensor = Torch.subtraction(nativePtr, other.nativePtr, alpha.ref);
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
       } else if (other is (Tensor, dynamic)) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
-        final tensor = TensorFFI.subtraction(
+        final tensor = Torch.subtraction(
           nativePtr,
           other.$1.nativePtr,
           alpha.ref,
@@ -392,7 +410,7 @@ class Tensor {
     final arena = ffi.Arena();
     try {
       if (other is Tensor) {
-        final tensor = TensorFFI.multiplication(nativePtr, other.nativePtr);
+        final tensor = Torch.multiplication(nativePtr, other.nativePtr);
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
@@ -411,7 +429,7 @@ class Tensor {
     final arena = ffi.Arena();
     try {
       if (other is Tensor) {
-        final tensor = TensorFFI.division(nativePtr, other.nativePtr);
+        final tensor = Torch.division(nativePtr, other.nativePtr);
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator/num not implemented for Tensor');
@@ -427,7 +445,7 @@ class Tensor {
   }
 
   Tensor matmul(Tensor other) {
-    final tensor = TensorFFI.matmul(nativePtr, other.nativePtr);
+    final tensor = Torch.matmul(nativePtr, other.nativePtr);
     return Tensor(tensor);
   }
 
@@ -439,7 +457,7 @@ class Tensor {
         dataTypePointer = arena.allocate<ffi.Int8>(ffi.sizeOf<ffi.Int8>());
         dataTypePointer.value = dataType.type;
       }
-      final tensor = TensorFFI.softmax(nativePtr, dim, dataTypePointer);
+      final tensor = Torch.softmax(nativePtr, dim, dataTypePointer);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -447,12 +465,12 @@ class Tensor {
   }
 
   Tensor dropout(double p, {bool training = true}) {
-    final tensor = TensorFFI.dropout(nativePtr, p, training);
+    final tensor = Torch.dropout(nativePtr, p, training);
     return Tensor(tensor);
   }
 
   Tensor sigmoid() {
-    final tensor = TensorFFI.sigmoid(nativePtr);
+    final tensor = Torch.sigmoid(nativePtr);
     return Tensor(tensor);
   }
 
@@ -460,55 +478,89 @@ class Tensor {
     final arena = ffi.Arena();
     try {
       final activation = approximate.name.toNativeUtf8(allocator: arena);
-      final tensor = TensorFFI.gelu(nativePtr, activation);
+      final tensor = Torch.gelu(nativePtr, activation);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
     }
   }
 
-  String _print1d(int size, Tensor tensor) {
-    final sb = StringBuffer();
+  static void _print1d(StringBuffer sb, int size, Tensor tensor) {
     sb.write('[');
     for (int i = 0; i < size; i++) {
       if (i > 0) sb.write(', ');
-      sb.write(tensor.get(i).scalar);
+      sb.write(tensor.scalarAt(i));
       if (i == 50 && size > 100) {
         sb.write('...');
         i = size - 50;
       }
     }
     sb.write(']');
-    return sb.toString();
   }
 
-  String _print2d(int size0, int size1, Tensor tensor) {
-    final sb = StringBuffer();
+  static void _print2d(StringBuffer sb, int size0, int size1, Tensor tensor) {
     sb.write('[');
     for (int i = 0; i < size0; i++) {
       if (i > 0) sb.write(',\n ');
-      sb.write(_print1d(size1, tensor.get(i)));
+      _print1d(sb, size1, tensor.get(i));
       if (i == 50 && size0 > 100) {
         sb.write('...');
         i = size0 - 50;
       }
     }
-    sb.write(']\n');
-    return sb.toString();
+    sb.write(']');
+  }
+
+  static void _printDim(
+    StringBuffer sb,
+    List<int> indexPrefix,
+    List<int> sizes,
+    Tensor tensor,
+  ) {
+    final dim = sizes.length;
+    if (dim < 3) {
+      throw Exception('_printDim called with tensor dim less than 3');
+    }
+
+    final count = tensor.shape[0];
+    if (dim == 3) {
+      for (int i = 0; i < count; i++) {
+        sb.writeln('(${(indexPrefix.followedBy([i])).join(',')},*,*) = ');
+        _print2d(sb, sizes[1], sizes[2], tensor.get(i));
+        if (i < count - 1) {
+          sb.writeln();
+        }
+      }
+    } else {
+      for (int i = 0; i < count; i++) {
+        _printDim(
+          sb,
+          indexPrefix.followedBy([i]).toList(),
+          sizes.sublist(1),
+          tensor.get(i),
+        );
+        sb.writeln();
+      }
+    }
   }
 
   @override
   String toString() {
+    print('---------------------');
     final sizes = this.sizes;
+    print('>>>>>>>>>>>>>>>>>>>>>');
+    final sb = StringBuffer();
+    sb.writeln('Tensor{${sizes.join(',')}}');
     if (sizes.isEmpty) {
-      return '[$scalar]';
+      sb.write('[$scalar]');
     } else if (sizes.length == 1) {
-      return _print1d(sizes[0], this);
+      _print1d(sb, sizes[0], this);
     } else if (sizes.length == 2) {
-      return _print2d(sizes[0], sizes[1], this);
+      _print2d(sb, sizes[0], sizes[1], this);
     } else {
-      throw UnimplementedError();
+      _printDim(sb, [], sizes, this);
     }
+    return sb.toString();
   }
 }
 
@@ -529,7 +581,7 @@ class Slice implements Index {
 enum GeluApporimate { none, tanh }
 
 Tensor linear(Tensor input, Tensor weight, {Tensor? bias}) {
-  final tensorPtr = TensorFFI.linear(
+  final tensorPtr = Torch.linear(
     input.nativePtr,
     weight.nativePtr,
     bias?.nativePtr ?? ffi.nullptr,
@@ -553,7 +605,7 @@ Tensor layerNorm(
         .asTypedList(normalizedShape.length)
         .setAll(0, normalizedShape);
 
-    final tensorPtr = TensorFFI.layerNorm(
+    final tensorPtr = Torch.layerNorm(
       input.nativePtr,
       normalizedShapePointer,
       normalizedShape.length,
@@ -575,7 +627,7 @@ Tensor embedding(
   bool scaleGradByFreq,
   bool sparse,
 ) {
-  final tensorPtr = TensorFFI.embedding(
+  final tensorPtr = Torch.embedding(
     weights.nativePtr,
     indices.nativePtr,
     paddingIdx,
@@ -590,32 +642,41 @@ Tensor conv2d(
   Tensor input,
   Tensor weight, {
   Tensor? bias,
-  (int, int)? stride,
-  (int, int)? padding,
-  (int, int)? dilation,
+  SymmetricPadding2D stride = const SymmetricPadding2D(
+    vertical: 1,
+    horizontal: 1,
+  ),
+  SymmetricPadding2D padding = const SymmetricPadding2D(
+    vertical: 0,
+    horizontal: 0,
+  ),
+  SymmetricPadding2D dilation = const SymmetricPadding2D(
+    vertical: 1,
+    horizontal: 1,
+  ),
   int groups = 1,
 }) {
   final arena = ffi.Arena();
   try {
-    ffi.Pointer<ffi.Int64> stridePointer = ffi.nullptr;
-    if (stride != null) {
-      stridePointer = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>() * 2);
-      stridePointer.value = stride.$1;
-      (stridePointer + 1).value = stride.$2;
-    }
-    ffi.Pointer<ffi.Int64> paddingPointer = ffi.nullptr;
-    if (padding != null) {
-      paddingPointer = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>() * 2);
-      paddingPointer.value = padding.$1;
-      (paddingPointer + 1).value = padding.$2;
-    }
-    ffi.Pointer<ffi.Int64> dilationPointer = ffi.nullptr;
-    if (dilation != null) {
-      dilationPointer = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>() * 2);
-      dilationPointer.value = dilation.$1;
-      (dilationPointer + 1).value = dilation.$2;
-    }
-    final tensorPtr = TensorFFI.conv2d(
+    ffi.Pointer<ffi.Int64> stridePointer = arena.allocate<ffi.Int64>(
+      ffi.sizeOf<ffi.Int64>() * 2,
+    );
+    stridePointer.value = stride.vertical;
+    (stridePointer + 1).value = stride.horizontal;
+
+    ffi.Pointer<ffi.Int64> paddingPointer = arena.allocate<ffi.Int64>(
+      ffi.sizeOf<ffi.Int64>() * 2,
+    );
+    paddingPointer.value = padding.vertical;
+    (paddingPointer + 1).value = padding.horizontal;
+
+    ffi.Pointer<ffi.Int64> dilationPointer = arena.allocate<ffi.Int64>(
+      ffi.sizeOf<ffi.Int64>() * 2,
+    );
+    dilationPointer.value = dilation.vertical;
+    (dilationPointer + 1).value = dilation.horizontal;
+
+    final tensorPtr = Torch.conv2d(
       input.nativePtr,
       weight.nativePtr,
       bias?.nativePtr ?? ffi.nullptr,

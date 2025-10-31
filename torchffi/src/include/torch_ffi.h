@@ -43,6 +43,16 @@ typedef struct Index_t {
     void* value;
 } Index;
 
+static const uint8_t padModeConstant = 0;
+static const uint8_t padModeReflect = 1;
+static const uint8_t padModeReplicate = 2;
+static const uint8_t padModeCircular = 3;
+
+static const char* padModeNameConstant = "constant";
+static const char* padModeNameReflect = "reflect";
+static const char* padModeNameReplicate = "replicate";
+static const char* padModeNameCircular = "circular";
+
 extern "C" {
 typedef torch::Tensor* tensor;
 }
@@ -54,7 +64,9 @@ typedef void* tensor;
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern tensor torchffi_new_tensor(void);
+extern tensor torchffi_tensor_new(void);
+
+extern void torchffi_tensor_delete(tensor t);
 
 extern tensor torchffi_tensor_new_zeros(int64_t* sizes, size_t ndims, TensorOptions options);
 
@@ -74,7 +86,9 @@ extern tensor torchffi_tensor_new_eye(int64_t n, int64_t m, TensorOptions option
 
 extern tensor torchffi_tensor_new_from_blob(void* data, int64_t* dims, size_t ndims, TensorOptions options);
 
-extern Scalar_t torchffi_tensor_item(tensor t);
+extern Scalar_t torchffi_tensor_scalar(tensor t);
+
+extern Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index);
 
 extern tensor torchffi_tensor_get(tensor t, int index);
 
@@ -87,6 +101,8 @@ tensor torchffi_tensor_permute(tensor t, int64_t* dims, size_t ndims);
 extern tensor torchffi_tensor_expand(tensor t, int64_t* sizes, size_t ndims, bool implicit);
 
 extern tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat);
+
+extern tensor torchffi_tensor_pad(tensor t, int64_t* pad, size_t padArrayLength, uint8_t padMode, double* value);
 
 extern tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha);
 
