@@ -345,11 +345,23 @@ abstract class Torch {
         CTensor Function(CTensor tensor)
       >('torchffi_tensor_sigmoid');
 
+  static final relu = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor),
+        CTensor Function(CTensor tensor)
+      >('torchffi_tensor_relu');
+
   static final gelu = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Pointer<Utf8>),
         CTensor Function(CTensor tensor, Pointer<Utf8>)
       >('torchffi_tensor_gelu');
+
+  static final silu = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor),
+        CTensor Function(CTensor tensor)
+      >('torchffi_tensor_silu');
 
   static final linear = nativeLib
       .lookupFunction<
@@ -378,6 +390,12 @@ abstract class Torch {
           bool,
         )
       >('torchffi_layer_norm');
+
+  static final groupNorm = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64, CTensor, CTensor, Double),
+        CTensor Function(CTensor, int, CTensor, CTensor, double)
+      >('torchffi_group_norm');
 
   static final dropout = nativeLib
       .lookupFunction<

@@ -1,7 +1,8 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/safetensor/metadata.dart';
-import 'package:libtorchdart/src/safetensor/storage.dart';
 import 'package:universal_io/io.dart';
+
+export 'metadata.dart';
+export 'storage.dart';
 
 abstract class SafeTensors {
   SafeTensorHeader get header;

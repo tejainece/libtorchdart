@@ -9,38 +9,38 @@
 using namespace std;
 
 typedef struct Device_t {
-    int8_t type;
-    int8_t index;
+  int8_t type;
+  int8_t index;
 } Device;
 
 typedef struct TensorOptions_t {
-    int8_t dtype;
-    int8_t deviceType;
-    int8_t deviceIndex;
-    int8_t layout;
-    int8_t memoryFormat;
-    // TODO required autograd
-    // TODO pinned memory
+  int8_t dtype;
+  int8_t deviceType;
+  int8_t deviceIndex;
+  int8_t layout;
+  int8_t memoryFormat;
+  // TODO required autograd
+  // TODO pinned memory
 } TensorOptions;
 
 typedef struct Scalar_t {
-    int8_t dtype;
-    union {
-        bool b;
-        int64_t i;
-        double d;
-    } value;
+  int8_t dtype;
+  union {
+    bool b;
+    int64_t i;
+    double d;
+  } value;
 } Scalar;
 
 typedef struct Slice_t {
-    int64_t* start;
-    int64_t* stop;
-    int64_t step;
+  int64_t* start;
+  int64_t* stop;
+  int64_t step;
 } Slice;
 
 typedef struct Index_t {
-    uint8_t type;
-    void* value;
+  uint8_t type;
+  void* value;
 } Index;
 
 static const uint8_t padModeConstant = 0;
@@ -118,9 +118,15 @@ extern tensor torchffi_tensor_sigmoid(tensor t);
 
 extern tensor torchffi_tensor_gelu(tensor t, char* approximate);
 
+extern tensor torchffi_tensor_silu(tensor t);
+
+extern tensor torchffi_tensor_relu(tensor t);
+
 extern tensor torchffi_linear(tensor input, tensor weight, tensor bias);
 
 extern tensor torchffi_layer_norm(tensor input, int64_t* normalizedShape, size_t normalizedShapeLength, tensor weight, tensor bias, double eps, bool cudnnEnable);
+
+extern tensor torchffi_group_norm(tensor input, int64_t numGroups, tensor weight, tensor bias, float eps);
 
 extern tensor torchffi_tensor_dropout(tensor t, double p, bool train);
 

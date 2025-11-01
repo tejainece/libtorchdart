@@ -46,9 +46,13 @@ class Conv2D {
     );
   }
 
-  (int, int) get kernelSize {
+  int get numInChannels => weight.shape[1] * groups;
+
+  int get numOutChannels => weight.shape[0] * groups;
+
+  SymmetricPadding2D get kernelSize {
     final size = weight.shape;
-    return (size[2], size[3]);
+    return SymmetricPadding2D(vertical: size[2], horizontal: size[3]);
   }
 
   static Future<Conv2D> loadFromSafeTensor(
@@ -66,7 +70,6 @@ class Conv2D {
     int groups = 1,
     PadMode? padMode,
   }) async {
-    // TODO transposed
     final weight = await loader.loadByName('${prefix}weight');
     Tensor? bias;
     if (loader.hasTensor('${prefix}bias')) {

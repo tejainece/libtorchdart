@@ -60,61 +60,6 @@ class EmbeddingLayer extends Module {
 
   int get embeddingDim => weights.shape[1];
 }
-
-class LayerNorm extends Module {
-  final Tensor? weight;
-  final Tensor? bias;
-  final double eps;
-  final List<int> normalizedShape;
-
-  LayerNorm({
-    this.weight,
-    this.bias,
-    required this.normalizedShape,
-    this.eps = 1e-5,
-  });
-
-  bool get elementwiseAffine => weight != null && bias != null;
-
-  bool get hasBias => bias != null;
-
-  @override
-  Tensor forward(Tensor x) {
-    return layerNorm(x, normalizedShape, weight, bias, eps);
-  }
-
-  static Future<LayerNorm> loadFromSafeTensor(
-    SafeTensorLoader loader, {
-    String prefix = '',
-    required List<int> normalizedShape,
-    double eps = 1e-5,
-  }) async {
-    Tensor? weight;
-    Tensor? bias;
-
-    if (loader.hasTensor('${prefix}weight')) {
-      weight = await loader.loadByName('${prefix}weight');
-    }
-    if (loader.hasTensor('${prefix}bias')) {
-      bias = await loader.loadByName('${prefix}bias');
-    }
-    return LayerNorm(
-      weight: weight,
-      bias: bias,
-      normalizedShape: normalizedShape,
-      eps: eps,
-    );
-  }
-}
-
-class GroupNorm extends Module {
-  @override
-  Tensor forward(Tensor x) {
-    // TODO
-    throw UnimplementedError();
-  }
-}
-
 class Dropout extends Module {
   @override
   Tensor forward(Tensor x) {

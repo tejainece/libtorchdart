@@ -7,5 +7,6 @@ void main() {
   print(Tensor.ones([3, 4]));
   print(Tensor.ones([2, 3, 4]));
   print(Tensor.ones([1, 2, 3, 4]));
+  print(Tensor.ones([3, 2, 4, 512, 512]));
   print('Finished!');
-} 
+}

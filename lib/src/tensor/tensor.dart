@@ -464,6 +464,52 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  Tensor layerNorm(
+    List<int> normalizedShape, {
+    Tensor? weight,
+    Tensor? bias,
+    double eps = 1e-5,
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final normalizedShapePointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * normalizedShape.length,
+      );
+      normalizedShapePointer
+          .asTypedList(normalizedShape.length)
+          .setAll(0, normalizedShape);
+
+      final tensorPtr = Torch.layerNorm(
+        nativePtr,
+        normalizedShapePointer,
+        normalizedShape.length,
+        weight?.nativePtr ?? ffi.nullptr,
+        bias?.nativePtr ?? ffi.nullptr,
+        eps,
+        true, // TODO: enable_cudnn
+      );
+      return Tensor(tensorPtr);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor groupNorm(
+    int numGroups, {
+    Tensor? weight,
+    Tensor? bias,
+    double eps = 1e-5,
+  }) {
+    final tensorPtr = Torch.groupNorm(
+      nativePtr,
+      numGroups,
+      weight?.nativePtr ?? ffi.nullptr,
+      bias?.nativePtr ?? ffi.nullptr,
+      eps,
+    );
+    return Tensor(tensorPtr);
+  }
+
   Tensor dropout(double p, {bool training = true}) {
     final tensor = Torch.dropout(nativePtr, p, training);
     return Tensor(tensor);
@@ -471,6 +517,11 @@ class Tensor implements ffi.Finalizable {
 
   Tensor sigmoid() {
     final tensor = Torch.sigmoid(nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor relu() {
+    final tensor = Torch.relu(nativePtr);
     return Tensor(tensor);
   }
 
@@ -485,13 +536,18 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  Tensor silu() {
+    final tensor = Torch.silu(nativePtr);
+    return Tensor(tensor);
+  }
+
   static void _print1d(StringBuffer sb, int size, Tensor tensor) {
     sb.write('[');
     for (int i = 0; i < size; i++) {
       if (i > 0) sb.write(', ');
       sb.write(tensor.scalarAt(i));
       if (i == 50 && size > 100) {
-        sb.write('...');
+        sb.write(', ..............');
         i = size - 50;
       }
     }
@@ -501,11 +557,12 @@ class Tensor implements ffi.Finalizable {
   static void _print2d(StringBuffer sb, int size0, int size1, Tensor tensor) {
     sb.write('[');
     for (int i = 0; i < size0; i++) {
-      if (i > 0) sb.write(',\n ');
       _print1d(sb, size1, tensor.get(i));
       if (i == 50 && size0 > 100) {
-        sb.write('...');
+        sb.writeln(',\n ..............');
         i = size0 - 50;
+      } else {
+        if (i != size0 - 1) sb.write(',\n ');
       }
     }
     sb.write(']');
@@ -546,9 +603,7 @@ class Tensor implements ffi.Finalizable {
 
   @override
   String toString() {
-    print('---------------------');
     final sizes = this.sizes;
-    print('>>>>>>>>>>>>>>>>>>>>>');
     final sb = StringBuffer();
     sb.writeln('Tensor{${sizes.join(',')}}');
     if (sizes.isEmpty) {
@@ -587,37 +642,6 @@ Tensor linear(Tensor input, Tensor weight, {Tensor? bias}) {
     bias?.nativePtr ?? ffi.nullptr,
   );
   return Tensor(tensorPtr);
-}
-
-Tensor layerNorm(
-  Tensor input,
-  List<int> normalizedShape,
-  Tensor? weight,
-  Tensor? bias,
-  double eps,
-) {
-  final arena = ffi.Arena();
-  try {
-    final normalizedShapePointer = arena.allocate<ffi.Int64>(
-      ffi.sizeOf<ffi.Int64>() * normalizedShape.length,
-    );
-    normalizedShapePointer
-        .asTypedList(normalizedShape.length)
-        .setAll(0, normalizedShape);
-
-    final tensorPtr = Torch.layerNorm(
-      input.nativePtr,
-      normalizedShapePointer,
-      normalizedShape.length,
-      weight?.nativePtr ?? ffi.nullptr,
-      bias?.nativePtr ?? ffi.nullptr,
-      eps,
-      true, // TODO: enable_cudnn
-    );
-    return Tensor(tensorPtr);
-  } finally {
-    arena.releaseAll();
-  }
 }
 
 Tensor embedding(

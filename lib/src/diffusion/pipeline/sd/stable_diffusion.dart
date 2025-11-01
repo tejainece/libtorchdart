@@ -1,4 +1,5 @@
 import 'package:libtorchdart/libtorchdart.dart';
+import 'package:libtorchdart/src/diffusion/vae.dart';
 import 'package:libtorchdart/src/safetensor/storage.dart';
 import 'package:libtorchdart/src/unets/unet2d_conditional.dart';
 
@@ -8,19 +9,13 @@ abstract class SimpleDiffusionPipeline {}
 
 abstract class TextEncoder {}
 
-abstract class UNet {}
-
 abstract class FeatureExtractor {}
-
-abstract class VAE {}
 
 abstract class Scheduler {}
 
 abstract class SafetyChecker {}
 
 class CLIPImageProcessor implements FeatureExtractor {}
-
-class AutoencoderKL implements VAE {}
 
 class PNDMScheduler implements Scheduler {}
 
@@ -31,7 +26,7 @@ class StableDiffusion implements SimpleDiffusionPipeline {
   final TextEncoder textEncoder;
   final FeatureExtractor featureExtractor;
   final UNet unet;
-  final VAE vae;
+  final Vae vae;
   final Scheduler scheduler;
   final SafetyChecker safetyChecker;
 
@@ -90,7 +85,7 @@ class StableDiffusion implements SimpleDiffusionPipeline {
     );
     final featureExtractor = CLIPImageProcessor();
     final unet = await UNet2DConditionModel.loadFromSafeTensor(loader);
-    final vae = AutoencoderKL();
+    final vae = await AutoencoderKL.loadFromSafeTensor(loader);
     final scheduler = PNDMScheduler();
     final safetyChecker = StableDiffusionSafetyChecker();
 
