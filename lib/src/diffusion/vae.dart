@@ -27,7 +27,87 @@ class AutoencoderKL implements Vae {
   }
 }
 
-class VaeEncoder {}
+class VaeEncoder extends Module {
+  final Conv2D convIn;
+  final List<VaeEncoderBlock2D> downBlocks;
+  final UNet2DMidBlock midBlock;
+  final GroupNorm convNormOut;
+  final SiLU convActivation;
+  final Conv2D convOut;
+
+  VaeEncoder({
+    required this.convIn,
+    required this.downBlocks,
+    required this.midBlock,
+    required this.convNormOut,
+    required this.convActivation,
+    required this.convOut,
+  });
+
+  int get numInChannels => convIn.numInChannels;
+
+  // TODO int get numOutChannels => convOut.numOutChannels;
+
+  Tensor forward(Tensor sample) {
+    sample = convIn.forward(sample);
+
+    // TODO implement grad and checkpointing
+    for (int i = 0; i < downBlocks.length; i++) {
+      sample = downBlocks[i].forward(sample);
+    }
+    sample = midBlock.forward(sample);
+
+    sample = convNormOut.forward(sample);
+    sample = convActivation.forward(sample);
+    sample = convOut.forward(sample);
+
+    return sample;
+  }
+
+  static Future<VaeEncoder> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+    int normNumGroups = 32,
+    String convInName = 'conv_in',
+    String midBlockName = 'mid',
+    String normOutName = 'norm_out',
+    String convOutName = 'conv_out',
+  }) async {
+    final convIn = await Conv2D.loadFromSafeTensor(
+      loader,
+      prefix: '$prefix$convInName',
+    );
+
+    final downBlocks = <VaeEncoderBlock2D>[];
+    // TODO downBlocks
+
+    final midBlock = await UNet2DMidBlock.loadFromSafeTensor(
+      loader,
+      prefix: '$prefix$midBlockName',
+    );
+
+    final convNormOut = await GroupNorm.loadFromSafeTensor(
+      loader,
+      prefix: '$prefix$normOutName',
+      numGroups: normNumGroups,
+      eps: 1e-6,
+    );
+    final convActivation = SiLU();
+    final convOut = await Conv2D.loadFromSafeTensor(
+      loader,
+      prefix: '$prefix$convOutName',
+    );
+
+    return VaeEncoder(
+      convIn: convIn,
+      downBlocks: downBlocks,
+      midBlock: midBlock,
+      convNormOut: convNormOut,
+      convActivation: convActivation,
+      convOut: convOut,
+    );
+  }
+}
 
 class VaeDecoder extends Module {
   final Conv2D convIn;
@@ -81,14 +161,18 @@ class VaeDecoder extends Module {
     /// Group or spatial out normalization
     bool spatial = false,
     int normNumGroups = 32,
+    String convInName = 'conv_in',
+    String midBlockName = 'mid',
+    String normOutName = 'norm_out',
+    String convOutName = 'conv_out',
   }) async {
     final convIn = await Conv2D.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}conv_in',
+      prefix: '$prefix$convInName',
     );
     final midBlock = await UNet2DMidBlock.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}mid',
+      prefix: '$prefix$midBlockName',
     );
 
     final upBlocks = <VaeDecoderBlock2D>[];
@@ -100,7 +184,7 @@ class VaeDecoder extends Module {
     } else {
       convNormOut = await GroupNorm.loadFromSafeTensor(
         loader,
-        prefix: '${prefix}norm_out',
+        prefix: '$prefix$normOutName',
         numGroups: normNumGroups,
         eps: 1e-6,
       );
@@ -108,7 +192,7 @@ class VaeDecoder extends Module {
     final convActivation = SiLU();
     final convOut = await Conv2D.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}conv_out',
+      prefix: '$prefix$convOutName',
     );
 
     return VaeDecoder(
@@ -131,7 +215,9 @@ class VaeDecoder extends Module {
   }
 }
 
-abstract class VaeEncoderBlock2D {}
+abstract class VaeEncoderBlock2D {
+  Tensor forward(Tensor sample, {Tensor? emdeds});
+}
 
 abstract class VaeDecoderBlock2D {
   Tensor forward(Tensor sample, {Tensor? emdeds});
