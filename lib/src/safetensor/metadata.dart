@@ -1,5 +1,3 @@
-
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -46,7 +44,11 @@ class SafeTensorHeader {
   final Map<String, SafeTensorInfo> tensorInfos;
   final int dataOffset;
 
-  SafeTensorHeader({required this.metadata, required this.tensorInfos, required this.dataOffset});
+  SafeTensorHeader({
+    required this.metadata,
+    required this.tensorInfos,
+    required this.dataOffset,
+  });
 
   static Future<SafeTensorHeader> read(RandomAccessFile file) async {
     await file.setPosition(0);
@@ -75,6 +77,10 @@ class SafeTensorHeader {
     final Map map = json.decode(headerJson);
     final metadata = (map.remove('__metadata__') ?? {}).cast<String, String>();
     final tensorMap = SafeTensorInfo.fromMapOfMap(map);
-    return SafeTensorHeader(metadata: metadata, tensorInfos: tensorMap, dataOffset: 8 + headerLen);
+    return SafeTensorHeader(
+      metadata: metadata,
+      tensorInfos: tensorMap,
+      dataOffset: 8 + headerLen,
+    );
   }
 }

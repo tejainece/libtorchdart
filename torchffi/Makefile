@@ -10,5 +10,8 @@ download_libtorch_linux:
 download_libtorch_windows:
 	# TODO
 
+prepare_ubuntu:
+	sudo apt install nvidia-cuda-toolkit
+
 prepare_macos:
 	brew install libomp
