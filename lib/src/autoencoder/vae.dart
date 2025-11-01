@@ -107,6 +107,15 @@ class VaeEncoder extends Module {
       convOut: convOut,
     );
   }
+
+  static Future<VaeEncoder> make({
+    required int numInChannels,
+    required int numOutChannels,
+  }) async {
+    final convIn = Conv2D.make();
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
 class VaeDecoder extends Module {
@@ -176,7 +185,7 @@ class VaeDecoder extends Module {
     );
 
     final upBlocks = <VaeDecoderBlock2D>[];
-    // TODO upBLocks
+    // TODO upBlocks
 
     Normalization convNormOut;
     if (spatial) {
