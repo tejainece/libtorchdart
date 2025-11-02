@@ -6,7 +6,7 @@ set(CMAKE_CUDA_COMPILER /usr/bin/nvcc)
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")
 
-set(libtorch_VERSION 2.9.0)
+set(libtorch_VERSION 2.8.0)
 find_package(Torch ${libtorch_VERSION} PATHS ../libtorch)
 if(NOT Torch_FOUND)
   # TODO

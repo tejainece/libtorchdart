@@ -333,6 +333,54 @@ abstract class Torch {
         CTensor Function(CTensor tensor1, CTensor tensor2)
       >('torchffi_tensor_division');
 
+  static final pow = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, FFIScalar),
+        CTensor Function(CTensor tensor, FFIScalar exponent)
+      >('torchffi_tensor_pow');
+
+  static final rsqrt = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor),
+        CTensor Function(CTensor tensor)
+      >('torchffi_tensor_rsqrt');
+
+  static final bitwiseNot = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor),
+        CTensor Function(CTensor tensor)
+      >('torchffi_tensor_bitwise_not');
+
+  static final bitwiseAnd = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor),
+        CTensor Function(CTensor tensor1, CTensor tensor2)
+      >('torchffi_tensor_bitwise_and');
+
+  static final bitwiseOr = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor),
+        CTensor Function(CTensor tensor1, CTensor tensor2)
+      >('torchffi_tensor_bitwise_or');
+
+  static final bitwiseXor = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor),
+        CTensor Function(CTensor tensor1, CTensor tensor2)
+      >('torchffi_tensor_bitwise_xor');
+
+  static final sum = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size, Bool, Pointer<Uint8>),
+        CTensor Function(CTensor, Pointer<Int64>, int, bool, Pointer<Uint8>)
+      >('torchffi_tensor_sum');
+
+  static final mean = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size, Bool, Pointer<Uint8>),
+        CTensor Function(CTensor, Pointer<Int64>, int, bool, Pointer<Uint8>)
+      >('torchffi_tensor_mean');
+
   static final matmul = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, CTensor),

@@ -22,7 +22,7 @@ class LayerNorm extends Module implements Normalization {
     this.eps = 1e-5,
   });
 
-  bool get elementwiseAffine => weight != null && bias != null;
+  bool get isElementwiseAffine => weight != null && bias != null;
 
   bool get hasBias => bias != null;
 
@@ -81,7 +81,7 @@ class GroupNorm extends Module implements Normalization {
     }
   }
 
-  late final bool isAffine = weight != null && bias != null;
+  late final bool isElementwiseAffine = weight != null && bias != null;
 
   late final int? numChannels = weight?.shape[0];
 
@@ -112,6 +112,50 @@ class GroupNorm extends Module implements Normalization {
       bias: bias,
       numGroups: numGroups,
     );
+  }
+}
+
+/// Root Mean Square layer normalization as described by https://huggingface.co/papers/1910.07467
+class RMSNorm extends Module implements Normalization {
+  final Tensor? weight;
+  final Tensor? bias;
+  final double eps;
+
+  RMSNorm({this.weight, this.bias, this.eps = 1e-5});
+
+  @override
+  Tensor forward(Tensor x) {
+    Tensor variance = x.pow(2).mean(dim: [-1], keepDim: true);
+    x = x * (variance + eps).rsqrt();
+
+    if (weight != null) {
+      x = x * weight!;
+      if (bias != null) {
+        x = x + bias!;
+      }
+    }
+
+    return x;
+  }
+
+  bool get isElementwiseAffine => weight != null && bias != null;
+
+  static Future<RMSNorm> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+    double eps = 1e-5,
+  }) async {
+    Tensor? weight;
+    Tensor? bias;
+
+    if (loader.hasTensor('${prefix}weight')) {
+      weight = await loader.loadByName('${prefix}weight');
+      if (loader.hasTensor('${prefix}bias')) {
+        bias = await loader.loadByName('${prefix}bias');
+      }
+    }
+
+    return RMSNorm(weight: weight, bias: bias, eps: eps);
   }
 }
 

@@ -447,6 +447,107 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  Tensor pow(dynamic exponent) {
+    final arena = ffi.Arena();
+    try {
+      final exponentScalar = FFIScalar.allocate(arena);
+      exponentScalar.ref.setValue(exponent);
+      final tensor = Torch.pow(nativePtr, exponentScalar.ref);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor rsqrt() {
+    final tensor = Torch.rsqrt(nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor bitwiseNot() {
+    final tensor = Torch.bitwiseNot(nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor bitwiseAnd(Tensor other) {
+    final tensor = Torch.bitwiseAnd(nativePtr, other.nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor bitwiseOr(Tensor other) {
+    final tensor = Torch.bitwiseOr(nativePtr, other.nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor bitwiseXor(Tensor other) {
+    final tensor = Torch.bitwiseXor(nativePtr, other.nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor sum({List<int>? dim, bool keepDim = false, DataType? dataType}) {
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Int64> dimPointer = ffi.nullptr;
+      int dimLen = 0;
+      if (dim != null) {
+        dimLen = dim.length;
+        dimPointer = arena.allocate<ffi.Int64>(
+          ffi.sizeOf<ffi.Int64>() * dim.length,
+        );
+        dimPointer.asTypedList(dim.length).setAll(0, dim);
+      }
+
+      ffi.Pointer<ffi.Uint8> dataTypePointer = ffi.nullptr;
+      if (dataType != null) {
+        dataTypePointer = arena.allocate<ffi.Uint8>(ffi.sizeOf<ffi.Uint8>());
+        dataTypePointer.value = dataType.type;
+      }
+
+      final tensor = Torch.sum(
+        nativePtr,
+        dimPointer,
+        dimLen,
+        keepDim,
+        dataTypePointer,
+      );
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor mean({List<int>? dim, bool keepDim = false, DataType? dataType}) {
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Int64> dimPointer = ffi.nullptr;
+      int dimLen = 0;
+      if (dim != null) {
+        dimLen = dim.length;
+        dimPointer = arena.allocate<ffi.Int64>(
+          ffi.sizeOf<ffi.Int64>() * dim.length,
+        );
+        dimPointer.asTypedList(dim.length).setAll(0, dim);
+      }
+
+      ffi.Pointer<ffi.Uint8> dataTypePointer = ffi.nullptr;
+      if (dataType != null) {
+        dataTypePointer = arena.allocate<ffi.Uint8>(ffi.sizeOf<ffi.Uint8>());
+        dataTypePointer.value = dataType.type;
+      }
+
+      final tensor = Torch.mean(
+        nativePtr,
+        dimPointer,
+        dimLen,
+        keepDim,
+        dataTypePointer,
+      );
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   Tensor matmul(Tensor other) {
     final tensor = Torch.matmul(nativePtr, other.nativePtr);
     return Tensor(tensor);

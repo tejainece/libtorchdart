@@ -58,6 +58,21 @@ class Upsample2D extends Module {
     hiddenStates = conv.forward(hiddenStates);
     return hiddenStates;
   }
+
+  static Future<Upsample2D> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+  }) async {
+    
+    // TODO
+    throw UnimplementedError();
+    return Upsample2D(
+      conv: ,
+      norm: ,
+      useConvTransposed: ,
+      interpolate: ,
+    );
+  }
 }
 
 class Downsample2D {

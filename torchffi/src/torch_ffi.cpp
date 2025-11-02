@@ -33,6 +33,18 @@ at::indexing::TensorIndex torchffi_make_tensor_index(Index_t& index) {
   }
 }
 
+at::Scalar torchffi_to_scalar(Scalar alpha) {
+  at::Scalar opAlpha = at::Scalar(0);
+  if (alpha.dtype == 0) {
+    opAlpha = at::Scalar(alpha.value.b);
+  } else if (alpha.dtype == 1) {
+    opAlpha = at::Scalar(alpha.value.i);
+  } else if (alpha.dtype == 2) {
+    opAlpha = at::Scalar(alpha.value.d);
+  }
+  return opAlpha;
+}
+
 void torchffi_tensor_delete(tensor t) {
   delete t;
 }
@@ -189,15 +201,7 @@ tensor torchffi_tensor_pad(tensor t, int64_t* pad, size_t padArrayLength, uint8_
 }
 
 tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha) {
-  at::Scalar opAlpha = at::Scalar(1);
-  if (alpha.dtype == 0) {
-    opAlpha = at::Scalar(alpha.value.b);
-  } else if (alpha.dtype == 1) {
-    opAlpha = at::Scalar(alpha.value.i);
-  } else if (alpha.dtype == 2) {
-    opAlpha = at::Scalar(alpha.value.d);
-  }
-
+  at::Scalar opAlpha = torchffi_to_scalar(alpha);
   at::Tensor tensor = a->add(*b, opAlpha);
   return new torch::Tensor(tensor);
 }
@@ -222,6 +226,63 @@ tensor torchffi_tensor_multiplication(tensor a, tensor b) {
 
 tensor torchffi_tensor_division(tensor a, tensor b) {
   at::Tensor tensor = a->div(*b);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_pow(tensor input, Scalar exponent) {
+  at::Scalar opExponent = torchffi_to_scalar(exponent);
+  at::Tensor tensor = torch::pow(*input, opExponent);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_rsqrt(tensor input) {
+  at::Tensor tensor = torch::rsqrt(*input);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_bitwise_not(tensor a) {
+  at::Tensor tensor = a->bitwise_not();
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_bitwise_or(tensor a, tensor b) {
+  at::Tensor tensor = a->bitwise_or(*b);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_bitwise_and(tensor a, tensor b) {
+  at::Tensor tensor = a->bitwise_and(*b);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_bitwise_xor(tensor a, tensor b) {
+  at::Tensor tensor = a->bitwise_xor(*b);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_sum(tensor input, int64_t* dim, size_t dimLength, bool keepdim, uint8_t* dtype) {
+  std::optional<at::ScalarType> dopt = std::nullopt;
+  if (dtype != nullptr) {
+    dopt = at::ScalarType(*dtype);
+  }
+  at::OptionalIntArrayRef opDim = std::nullopt;
+  if (dim != nullptr) {
+    opDim = at::IntArrayRef(dim, dimLength);
+  }
+  at::Tensor tensor = torch::sum(*input, opDim, keepdim, dopt);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_mean(tensor input, int64_t* dim, size_t dimLength, bool keepdim, uint8_t* dtype) {
+  std::optional<at::ScalarType> dopt = std::nullopt;
+  if (dtype != nullptr) {
+    dopt = at::ScalarType(*dtype);
+  }
+  at::OptionalIntArrayRef opDim = std::nullopt;
+  if (dim != nullptr) {
+    opDim = at::IntArrayRef(dim, dimLength);
+  }
+  at::Tensor tensor = torch::mean(*input, opDim, keepdim, dopt);
   return new torch::Tensor(tensor);
 }
 

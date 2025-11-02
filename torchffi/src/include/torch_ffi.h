@@ -112,6 +112,22 @@ extern tensor torchffi_tensor_multiplication(tensor a, tensor b);
 
 extern tensor torchffi_tensor_division(tensor a, tensor b);
 
+extern tensor torchffi_tensor_bitwise_not(tensor a);
+
+extern tensor torchffi_tensor_bitwise_or(tensor a, tensor b);
+
+extern tensor torchffi_tensor_bitwise_and(tensor a, tensor b);
+
+extern tensor torchffi_tensor_bitwise_xor(tensor a, tensor b);
+
+extern tensor torchffi_tensor_sum(tensor input, int64_t* dim, size_t dimLength, bool keepdim, uint8_t* dtype);
+
+extern tensor torchffi_tensor_mean(tensor input, int64_t* dim, size_t dimLength, bool keepdim, uint8_t* dtype);
+
+extern tensor torchffi_tensor_pow(tensor input, Scalar exponent);
+
+extern tensor torchffi_tensor_rsqrt(tensor input);
+
 extern tensor torchffi_tensor_matmul(tensor a, tensor b);
 
 extern tensor torchffi_tensor_sigmoid(tensor t);
