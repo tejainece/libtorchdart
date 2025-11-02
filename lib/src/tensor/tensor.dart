@@ -200,6 +200,9 @@ class Tensor implements ffi.Finalizable {
 
   List<int> get shape => sizes;
 
+  // TODO make this native call
+  int get numel => shape.reduce((a, b) => a * b);
+
   Device get device {
     final device = Torch.tensorGetDevice(nativePtr);
     return Device(
@@ -970,41 +973,82 @@ class MemoryFormat {
   static const channelsLast3d = MemoryFormat('ChannelsLast3d', 3);
 }
 
-Tensor upsampleNearest2D(
-  Tensor input, {
-  List<int>? outputSize,
-  List<double>? scaleFactors,
-}) {
+Tensor interpolateNearest(Tensor input, List<int> outputSize) {
   final arena = ffi.Arena();
   try {
-    ffi.Pointer<ffi.Int64> outputSizePointer = ffi.nullptr;
-    int outputSizeLen = 0;
-    if (outputSize != null) {
-      outputSizePointer = arena.allocate<ffi.Int64>(
-        ffi.sizeOf<ffi.Int64>() * outputSize.length,
-      );
-      outputSizePointer.asTypedList(outputSize.length).setAll(0, outputSize);
-      outputSizeLen = outputSize.length;
-    }
+    ffi.Pointer<ffi.Int64> outputSizePointer = arena.allocate<ffi.Int64>(
+      ffi.sizeOf<ffi.Int64>() * outputSize.length,
+    );
+    outputSizePointer.asTypedList(outputSize.length).setAll(0, outputSize);
 
-    ffi.Pointer<ffi.Double> scaleFactorsPointer = ffi.nullptr;
-    int scaleFactorsLen = 0;
-    if (scaleFactors != null) {
-      scaleFactorsPointer = arena.allocate<ffi.Double>(
-        ffi.sizeOf<ffi.Double>() * scaleFactors.length,
-      );
-      scaleFactorsPointer
-          .asTypedList(scaleFactors.length)
-          .setAll(0, scaleFactors);
-      scaleFactorsLen = scaleFactors.length;
-    }
-
-    final tensorPtr = Torch.upsampleNearest2D(
+    final tensorPtr = Torch.upsampleNearest(
       input.nativePtr,
       outputSizePointer,
-      outputSizeLen,
-      scaleFactorsPointer,
-      scaleFactorsLen,
+      outputSize.length,
+    );
+    return Tensor(tensorPtr);
+  } finally {
+    arena.releaseAll();
+  }
+}
+
+Tensor interpolateNearestScale(Tensor input, List<double> outputSizeScale) {
+  final arena = ffi.Arena();
+  try {
+    ffi.Pointer<ffi.Double> outputSizePointer = arena.allocate<ffi.Double>(
+      ffi.sizeOf<ffi.Double>() * outputSizeScale.length,
+    );
+    outputSizePointer
+        .asTypedList(outputSizeScale.length)
+        .setAll(0, outputSizeScale);
+
+    final tensorPtr = Torch.upsampleNearestScale(
+      input.nativePtr,
+      outputSizePointer,
+      outputSizeScale.length,
+    );
+    return Tensor(tensorPtr);
+  } finally {
+    arena.releaseAll();
+  }
+}
+
+Tensor interpolateNearestExact(Tensor input, List<int> outputSize) {
+  final arena = ffi.Arena();
+  try {
+    ffi.Pointer<ffi.Int64> outputSizePointer = arena.allocate<ffi.Int64>(
+      ffi.sizeOf<ffi.Int64>() * outputSize.length,
+    );
+    outputSizePointer.asTypedList(outputSize.length).setAll(0, outputSize);
+
+    final tensorPtr = Torch.upsampleNearestExact(
+      input.nativePtr,
+      outputSizePointer,
+      outputSize.length,
+    );
+    return Tensor(tensorPtr);
+  } finally {
+    arena.releaseAll();
+  }
+}
+
+Tensor interpolateNearestExactScale(
+  Tensor input,
+  List<double> outputSizeScale,
+) {
+  final arena = ffi.Arena();
+  try {
+    ffi.Pointer<ffi.Double> outputSizePointer = arena.allocate<ffi.Double>(
+      ffi.sizeOf<ffi.Double>() * outputSizeScale.length,
+    );
+    outputSizePointer
+        .asTypedList(outputSizeScale.length)
+        .setAll(0, outputSizeScale);
+
+    final tensorPtr = Torch.upsampleNearestExactScale(
+      input.nativePtr,
+      outputSizePointer,
+      outputSizeScale.length,
     );
     return Tensor(tensorPtr);
   } finally {

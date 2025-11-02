@@ -443,15 +443,43 @@ abstract class Torch {
         )
       >('torchffi_conv2d');
 
-  static final upsampleNearest2D = nativeLib
+  static final upsampleNearest = nativeLib
       .lookupFunction<
-        CTensor Function(CTensor, Pointer<Int64>, Size, Pointer<Double>, Size),
+        CTensor Function(CTensor, Pointer<Int64>, Size),
         CTensor Function(
           CTensor input,
           Pointer<Int64> outputSize,
           int outputSizeLen,
-          Pointer<Double> scaleFactors,
-          int scaleFactorsLen,
         )
-      >('torchffi_upsample_nearest2d');
+      >('torchffi_upsample_nearest');
+
+  static final upsampleNearestScale = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Double>, Size),
+        CTensor Function(
+          CTensor input,
+          Pointer<Double> outputSize,
+          int outputSizeLen,
+        )
+      >('torchffi_upsample_nearest_scale');
+
+  static final upsampleNearestExact = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size),
+        CTensor Function(
+          CTensor input,
+          Pointer<Int64> outputSize,
+          int outputSizeLen,
+        )
+      >('torchffi_upsample_nearest_exact');
+
+  static final upsampleNearestExactScale = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Double>, Size),
+        CTensor Function(
+          CTensor input,
+          Pointer<Double> outputSize,
+          int outputSizeLen,
+        )
+      >('torchffi_upsample_nearest_exact_scale');
 }

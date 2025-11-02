@@ -179,6 +179,8 @@ class SymmetricPadding2D implements Padding2D {
   @override
   int get top => horizontal;
 
+  List<int> to2List() => [vertical, horizontal];
+
   @override
   List<int> to4List() => [horizontal, horizontal, vertical, vertical];
 

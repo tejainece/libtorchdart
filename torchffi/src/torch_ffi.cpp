@@ -284,7 +284,70 @@ tensor torchffi_conv2d(tensor input, tensor weights, tensor bias, int64_t* strid
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_upsample_nearest2d(tensor input, int64_t* outputSize, size_t outputSizeLength, double* scaleFactor, size_t scaleFactorLength) {
-  at::Tensor tensor = torch::upsample_nearest2d(*input, outputSize ? std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)) : std::nullopt, scaleFactor ? std::optional<at::ArrayRef<double>>(at::ArrayRef(scaleFactor, scaleFactorLength)) : std::nullopt);
-  return new torch::Tensor(tensor);
+tensor torchffi_upsample_nearest(tensor input, int64_t* outputSize, size_t outputSizeLength) {
+  at::Tensor tensor;
+  switch (outputSizeLength) {
+    case 1:
+      tensor = torch::upsample_nearest1d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
+      return new torch::Tensor(tensor);
+    case 2:
+      tensor = torch::upsample_nearest2d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
+      return new torch::Tensor(tensor);
+    case 3:
+      tensor = torch::upsample_nearest3d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
+      return new torch::Tensor(tensor);
+    default:
+      return nullptr;
+  }
+}
+
+tensor torchffi_upsample_nearest_scale(tensor input, double* scales, size_t scalesLength) {
+  at::Tensor tensor;
+  switch (scalesLength) {
+    case 1:
+      tensor = torch::upsample_nearest1d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
+      return new torch::Tensor(tensor);
+    case 2:
+      tensor = torch::upsample_nearest2d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
+      return new torch::Tensor(tensor);
+    case 3:
+      tensor = torch::upsample_nearest3d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
+      return new torch::Tensor(tensor);
+    default:
+      return nullptr;
+  }
+}
+
+tensor torchffi_upsample_nearest_exact(tensor input, int64_t* outputSize, size_t outputSizeLength) {
+  at::Tensor tensor;
+  switch (outputSizeLength) {
+    case 1:
+      tensor = torch::_upsample_nearest_exact1d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
+      return new torch::Tensor(tensor);
+    case 2:
+      tensor = torch::_upsample_nearest_exact2d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
+      return new torch::Tensor(tensor);
+    case 3:
+      tensor = torch::_upsample_nearest_exact3d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
+      return new torch::Tensor(tensor);
+    default:
+      return nullptr;
+  }
+}
+
+tensor torchffi_upsample_nearest_exact_scale(tensor input, double* scales, size_t scalesLength) {
+  at::Tensor tensor;
+  switch (scalesLength) {
+    case 1:
+      tensor = torch::_upsample_nearest_exact1d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
+      return new torch::Tensor(tensor);
+    case 2:
+      tensor = torch::_upsample_nearest_exact1d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
+      return new torch::Tensor(tensor);
+    case 3:
+      tensor = torch::_upsample_nearest_exact1d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
+      return new torch::Tensor(tensor);
+    default:
+      return nullptr;
+  }
 }

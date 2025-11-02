@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:libtorchdart/libtorchdart.dart';
 
 /// A 2D upsampling layer with an optional convolution.
@@ -6,7 +8,6 @@ class Upsample2D extends Module {
   final Conv2D conv;
   final bool useConvTransposed;
   final bool interpolate;
-  // TODO
 
   Upsample2D({
     required this.norm,
@@ -15,7 +16,7 @@ class Upsample2D extends Module {
     this.interpolate = true,
   });
 
-  Tensor forward(Tensor hiddenStates) {
+  Tensor forward(Tensor hiddenStates, {SymmetricPadding2D? outputSize}) {
     if (norm != null) {
       hiddenStates = norm!.forward(hiddenStates.permute([0, 2, 3, 1])).permute([
         0,
@@ -34,11 +35,25 @@ class Upsample2D extends Module {
     }
 
     if (interpolate) {
-      // TODO
-      throw UnimplementedError();
-    }
+      if (outputSize != null) {
+        final scale = [
+          outputSize.vertical / hiddenStates.shape[2],
+          outputSize.horizontal / hiddenStates.shape[3],
+        ].reduce(max);
 
-    // TODO
+        if (hiddenStates.numel * scale > 2 >> 31) {
+          hiddenStates = hiddenStates.contiguous();
+        }
+
+        hiddenStates = interpolateNearest(hiddenStates, outputSize.to2List());
+      } else {
+        if (hiddenStates.numel * 2 > 2 >> 31) {
+          hiddenStates = hiddenStates.contiguous();
+        }
+
+        hiddenStates = interpolateNearestScale(hiddenStates, [2.0, 2.0]);
+      }
+    }
 
     hiddenStates = conv.forward(hiddenStates);
     return hiddenStates;
