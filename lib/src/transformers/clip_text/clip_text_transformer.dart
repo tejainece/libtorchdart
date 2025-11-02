@@ -1,8 +1,5 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/diffusion/pipeline/sd/stable_diffusion.dart';
-import 'package:libtorchdart/src/nn/activation.dart';
-import 'package:libtorchdart/src/nn/embedding_layer.dart';
-import 'package:libtorchdart/src/safetensor/storage.dart';
+import 'package:libtorchdart/src/diffusion/sd/stable_diffusion.dart';
 
 class ClipTextTransformer extends Module implements TextEncoder {
   final ClipTextEmbeddings embeddings;
@@ -15,7 +12,6 @@ class ClipTextTransformer extends Module implements TextEncoder {
     required this.norm,
   });
 
-  @override
   Tensor forward(
     Tensor inputIds, {
     Tensor? attentionMask,

@@ -442,4 +442,16 @@ abstract class Torch {
           int groups,
         )
       >('torchffi_conv2d');
+
+  static final upsampleNearest2D = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size, Pointer<Double>, Size),
+        CTensor Function(
+          CTensor input,
+          Pointer<Int64> outputSize,
+          int outputSizeLen,
+          Pointer<Double> scaleFactors,
+          int scaleFactorsLen,
+        )
+      >('torchffi_upsample_nearest2d');
 }

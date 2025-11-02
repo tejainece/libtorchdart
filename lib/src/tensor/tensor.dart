@@ -969,3 +969,45 @@ class MemoryFormat {
   static const channelsLast = MemoryFormat('ChannelsLast', 2);
   static const channelsLast3d = MemoryFormat('ChannelsLast3d', 3);
 }
+
+Tensor upsampleNearest2D(
+  Tensor input, {
+  List<int>? outputSize,
+  List<double>? scaleFactors,
+}) {
+  final arena = ffi.Arena();
+  try {
+    ffi.Pointer<ffi.Int64> outputSizePointer = ffi.nullptr;
+    int outputSizeLen = 0;
+    if (outputSize != null) {
+      outputSizePointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * outputSize.length,
+      );
+      outputSizePointer.asTypedList(outputSize.length).setAll(0, outputSize);
+      outputSizeLen = outputSize.length;
+    }
+
+    ffi.Pointer<ffi.Double> scaleFactorsPointer = ffi.nullptr;
+    int scaleFactorsLen = 0;
+    if (scaleFactors != null) {
+      scaleFactorsPointer = arena.allocate<ffi.Double>(
+        ffi.sizeOf<ffi.Double>() * scaleFactors.length,
+      );
+      scaleFactorsPointer
+          .asTypedList(scaleFactors.length)
+          .setAll(0, scaleFactors);
+      scaleFactorsLen = scaleFactors.length;
+    }
+
+    final tensorPtr = Torch.upsampleNearest2D(
+      input.nativePtr,
+      outputSizePointer,
+      outputSizeLen,
+      scaleFactorsPointer,
+      scaleFactorsLen,
+    );
+    return Tensor(tensorPtr);
+  } finally {
+    arena.releaseAll();
+  }
+}

@@ -136,6 +136,8 @@ extern tensor torchffi_embedding(tensor weights, tensor indices, int64_t padding
 
 extern tensor torchffi_conv2d(tensor input, tensor weights, tensor bias, int64_t* strides, int64_t* paddings, int64_t* dilations, int64_t groups);
 
+extern tensor torchffi_upsample_nearest2d(tensor input, int64_t* outputSize, size_t outputSizeLength, double* scaleFactor, size_t scaleFactorLength);
+
 #ifdef __cplusplus
 }
 #endif
