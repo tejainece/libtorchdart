@@ -160,6 +160,8 @@ extern tensor torchffi_upsample_nearest_exact(tensor input, int64_t* outputSize,
 
 extern tensor torchffi_upsample_nearest_exact_scale(tensor input, double* scales, size_t scalesLength);
 
+extern tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH, int64_t kernelSizeW, int64_t strideH, int64_t strideW, int64_t paddingH, int64_t paddingW, bool ceilMode, bool countIncludePad, int64_t* divisorOverride);
+
 #ifdef __cplusplus
 }
 #endif

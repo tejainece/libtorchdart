@@ -1156,3 +1156,46 @@ Tensor interpolateNearestExactScale(
     arena.releaseAll();
   }
 }
+
+Tensor avgPool2D(
+  Tensor input,
+  SymmetricPadding2D kernelSize, {
+
+  /// If null, it is set to [kernelSize]
+  SymmetricPadding2D? stride,
+  SymmetricPadding2D padding = const SymmetricPadding2D(
+    vertical: 0,
+    horizontal: 0,
+  ),
+  bool ceilMode = false,
+  bool countIncludePad = true,
+  int? divisorOverride,
+}) {
+  stride ??= kernelSize;
+  final arena = ffi.Arena();
+  try {
+    ffi.Pointer<ffi.Int64> divisorOverridePointer = ffi.nullptr;
+    if (divisorOverride != null) {
+      divisorOverridePointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>(),
+      );
+      divisorOverridePointer.value = divisorOverride;
+    }
+
+    final tensorPtr = Torch.avgPool2D(
+      input.nativePtr,
+      kernelSize.vertical,
+      kernelSize.horizontal,
+      stride.vertical,
+      stride.horizontal,
+      padding.vertical,
+      padding.horizontal,
+      ceilMode,
+      countIncludePad,
+      divisorOverridePointer,
+    );
+    return Tensor(tensorPtr);
+  } finally {
+    arena.releaseAll();
+  }
+}

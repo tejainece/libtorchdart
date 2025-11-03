@@ -412,3 +412,8 @@ tensor torchffi_upsample_nearest_exact_scale(tensor input, double* scales, size_
       return nullptr;
   }
 }
+
+tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH, int64_t kernelSizeW, int64_t strideH, int64_t strideW, int64_t paddingH, int64_t paddingW, bool ceilMode, bool countIncludePad, int64_t* divisorOverride) {
+  at::Tensor tensor = torch::avg_pool2d(*input, at::IntArrayRef({kernelSizeH, kernelSizeW}), at::IntArrayRef({strideH, strideW}), at::IntArrayRef({paddingH, paddingW}), ceilMode, countIncludePad, divisorOverride ? std::optional<int64_t>(*divisorOverride) : std::nullopt);
+  return new torch::Tensor(tensor);
+}

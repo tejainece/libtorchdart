@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import 'package:libtorchdart/libtorchdart.dart';
+import 'package:libtorchdart/src/nn/pooling.dart';
 
 final DynamicLibrary nativeLib = DynamicLibrary.open(
   'torchffi/src/build/libtorchffi.dylib',
@@ -530,4 +531,32 @@ abstract class Torch {
           int outputSizeLen,
         )
       >('torchffi_upsample_nearest_exact_scale');
+
+  static final avgPool2D = nativeLib
+      .lookupFunction<
+        CTensor Function(
+          CTensor,
+          Int64 kernelSizeH,
+          Int64 kernelSizeW,
+          Int64 strideH,
+          Int64 strideW,
+          Int64 paddingH,
+          Int64 paddingW,
+          Bool ceilMode,
+          Bool countIncludePad,
+          Pointer<Int64> divisorOverride,
+        ),
+        CTensor Function(
+          CTensor input,
+          int kernelSizeH,
+          int kernelSizeW,
+          int strideH,
+          int strideW,
+          int paddingH,
+          int paddingW,
+          bool ceilMode,
+          bool countIncludePad,
+          Pointer<Int64> divisorOverride,
+        )
+      >('torchffi_avg_pool2d');
 }

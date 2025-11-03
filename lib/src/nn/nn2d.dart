@@ -1,7 +1,6 @@
-import 'package:libtorchdart/src/safetensor/storage.dart';
-import 'package:libtorchdart/src/tensor/tensor.dart';
+import 'package:libtorchdart/libtorchdart.dart';
 
-class Conv2D {
+class Conv2D extends Module implements SimpleModule {
   final Tensor weight;
   final Tensor? bias;
   final SymmetricPadding2D stride;
@@ -15,13 +14,25 @@ class Conv2D {
   Conv2D(
     this.weight, {
     this.bias,
-    this.stride = const SymmetricPadding2D(vertical: 1, horizontal: 1),
+    this.stride = const SymmetricPadding2D.same(1),
     this.customPad,
     this.padding,
-    this.dilation = const SymmetricPadding2D(vertical: 1, horizontal: 1),
+    this.dilation = const SymmetricPadding2D.same(1),
     this.groups = 1,
-  }) : assert(padding != null || customPad != null);
+  }) : assert(padding != null || customPad != null),
+       assert(groups > 0) {
+    assert(numInChannels % groups == 0);
+    assert(numOutChannels % groups == 0);
+    if (customPad != null) {
+      if (stride != const SymmetricPadding2D.same(1)) {
+        throw UnimplementedError(
+          'Custom padding with stride other than 1 is not implemented',
+        );
+      }
+    }
+  }
 
+  @override
   Tensor forward(Tensor input) {
     if (customPad == null) {
       return conv2d(
@@ -105,9 +116,23 @@ class Conv2D {
   }
 
   static Conv2D make({
+    required int numInChannels,
+    required int numOutChannels,
+    required SymmetricPadding2D kernelSize,
+    SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
+    SymmetricPadding2D padding = const SymmetricPadding2D.same(0),
+    SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
+    int groups = 1,
+    bool hasBias = true,
+    DataType? dataType,
+    Device? device,
+    PadMode? padMode,
+
     /// If true, uses padding so that the output size remains same as the input size
     bool padToSame = false,
   }) {
+    // TODO initialize weights
+    // TODO initialize bias
     throw UnimplementedError();
   }
 }
@@ -145,6 +170,10 @@ class SymmetricPadding2D implements Padding2D {
   final int horizontal;
 
   const SymmetricPadding2D({required this.vertical, required this.horizontal});
+
+  const SymmetricPadding2D.same(int value)
+    : vertical = value,
+      horizontal = value;
 
   SymmetricPadding2D multiplySymmetric(SymmetricPadding2D other) {
     return SymmetricPadding2D(
@@ -190,6 +219,23 @@ class SymmetricPadding2D implements Padding2D {
 
   @override
   (int, int) to2Tuple() => (vertical, horizontal);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is SymmetricPadding2D) {
+      return vertical == other.vertical && horizontal == other.horizontal;
+    } else if (other is Padding2D) {
+      return vertical == other.top &&
+          vertical == other.bottom &&
+          horizontal == other.left &&
+          horizontal == other.right;
+    } else {
+      return false;
+    }
+  }
+
+  @override
+  int get hashCode => Object.hashAll([vertical, horizontal]);
 }
 
 class Conv2DPad {
