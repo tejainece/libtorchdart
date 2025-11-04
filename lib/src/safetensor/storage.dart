@@ -61,7 +61,7 @@ class MmapSafeTensorLoader extends SafeTensorLoader {
     return Tensor.fromBlob(
       dataPointer.cast<Void>(),
       info.shape,
-      dtype: datatype,
+      datatype: datatype,
       device: Device.cpu, // TODO
     );
   }

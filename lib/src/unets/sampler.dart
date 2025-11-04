@@ -4,7 +4,7 @@ import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/nn/pooling.dart';
 
 /// A 2D upsampling layer with an optional convolution.
-class Upsample2D extends Module {
+class Upsample2D extends Module implements SimpleModule {
   final Normalization? norm;
   final Conv2D? conv;
   final bool useConvTransposed;
@@ -17,6 +17,7 @@ class Upsample2D extends Module {
     this.interpolate = true,
   });
 
+  @override
   Tensor forward(Tensor hiddenStates, {SymmetricPadding2D? outputSize}) {
     if (norm != null) {
       hiddenStates = norm!.forward(hiddenStates.permute([0, 2, 3, 1])).permute([
@@ -62,17 +63,44 @@ class Upsample2D extends Module {
     return hiddenStates;
   }
 
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
+
   static Future<Upsample2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    required int numChannels,
     bool useConvTransposed = false,
     bool interpolate = true,
     SymmetricPadding2D padding = const SymmetricPadding2D(
       vertical: 1,
       horizontal: 1,
     ),
+    SamplerNormalizationConfig? normConfig,
   }) async {
     Normalization? norm;
+    if (normConfig != null) {
+      if (normConfig.normType == 'ln_norm') {
+        norm = await LayerNorm.loadFromSafeTensor(
+          loader,
+          prefix: '${prefix}norm',
+          normalizedShape: [numChannels],
+        );
+      } else if (normConfig.normType == 'rms_norm') {
+        norm = await RMSNorm.loadFromSafeTensor(
+          loader,
+          prefix: '${prefix}norm',
+        );
+      } else {
+        throw UnimplementedError(
+          'Unknown Upsampler2D normalization type: ${normConfig.normType}',
+        );
+      }
+    }
+
     Conv2D? conv;
     if (useConvTransposed) {
       throw UnimplementedError();
@@ -83,6 +111,7 @@ class Upsample2D extends Module {
           prefix: '${prefix}conv',
           padding: padding,
         );
+        assert(numChannels == conv.numInChannels);
       }
     }
 
@@ -105,7 +134,18 @@ class Upsample2D extends Module {
     bool hasBias = true,
     bool interpolate = true,
   }) {
-    Normalization? norm; // TODO
+    Normalization? norm;
+    if (normConfig != null) {
+      if (normConfig.normType == 'ln_norm') {
+        norm = LayerNorm.make();
+      } else if (normConfig.normType == 'rms_norm') {
+        norm = RMSNorm.make();
+      } else {
+        throw UnimplementedError(
+          'Unknown Upsampler2D normalization type: ${normConfig.normType}',
+        );
+      }
+    }
 
     Conv2D conv;
     if (useConvTransposed) {
@@ -133,13 +173,17 @@ class Upsample2D extends Module {
 }
 
 class SamplerNormalizationConfig {
-  // TODO norm type
+  final String normType;
 
   final double? eps;
 
   final bool isElementwiseAffine;
 
-  SamplerNormalizationConfig({this.eps, this.isElementwiseAffine = false});
+  SamplerNormalizationConfig({
+    required this.normType,
+    this.eps,
+    this.isElementwiseAffine = false,
+  });
 }
 
 class Downsample2D {
@@ -176,9 +220,30 @@ class Downsample2D {
       vertical: 1,
       horizontal: 1,
     ),
+    SamplerNormalizationConfig? normConfig,
+    required int numChannels,
   }) async {
     final stride = SymmetricPadding2D.same(2);
     Normalization? norm;
+    if (normConfig != null) {
+      if (normConfig.normType == 'ln_norm') {
+        norm = await LayerNorm.loadFromSafeTensor(
+          loader,
+          prefix: '${prefix}norm',
+          normalizedShape: [numChannels],
+        );
+      } else if (normConfig.normType == 'rms_norm') {
+        norm = await RMSNorm.loadFromSafeTensor(
+          loader,
+          prefix: '${prefix}norm',
+        );
+      } else {
+        throw UnimplementedError(
+          'Unknown Upsampler2D normalization type: ${normConfig.normType}',
+        );
+      }
+    }
+
     SimpleModule? conv;
     if (loader.hasTensor('${prefix}conv')) {
       conv = await Conv2D.loadFromSafeTensor(
@@ -187,6 +252,7 @@ class Downsample2D {
         padding: padding,
         stride: stride,
       );
+      assert(numChannels == (conv as Conv2D).numInChannels);
     } else {
       conv = AvgPool2D(kernelSize: stride, stride: stride);
     }
@@ -200,9 +266,15 @@ class Downsample2D {
     SymmetricPadding2D kernelSize = const SymmetricPadding2D.same(3),
     SymmetricPadding2D padding = const SymmetricPadding2D.same(1),
     bool hasBias = true,
+    SamplerNormalizationConfig? normConfig,
   }) {
     final stride = SymmetricPadding2D.same(2);
     Normalization? norm;
+    if (normConfig != null) {
+      // TODO
+      throw UnimplementedError();
+    }
+
     SimpleModule conv;
     if (useConv) {
       conv = Conv2D.make(

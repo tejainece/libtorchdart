@@ -1,6 +1,4 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/nn/embedding_layer.dart';
-import 'package:libtorchdart/src/safetensor/storage.dart';
 
 /// Multi-headed attention from 'Attention Is All You Need' paper
 class ClipAttention extends Module {
@@ -55,6 +53,12 @@ class ClipAttention extends Module {
     attentionOutput = outProj.forward(attentionOutput);
 
     return (attentionOutput, attentionWeights);
+  }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
   }
 
   int get embedDim => numAttensionHeads * headDim;

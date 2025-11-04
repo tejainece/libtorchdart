@@ -68,8 +68,8 @@ tensor torchffi_tensor_new_arange(int64_t end, TensorOptions options) {
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, TensorOptions options) {
-  at::Tensor tensor = torch::rand(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
+tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options) {
+  at::Tensor tensor = torch::rand(at::IntArrayRef(sizes, ndims), generator ? std::optional<at::Generator>(*generator) : std::nullopt, torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
@@ -198,6 +198,31 @@ const char* padModeName(uint8_t padMode) {
 tensor torchffi_tensor_pad(tensor t, int64_t* pad, size_t padArrayLength, uint8_t padMode, double* value) {
   at::Tensor tensor = torch::pad(*t, at::IntArrayRef(pad, padArrayLength), padModeName(padMode), value ? std::optional<double>(*value) : std::nullopt);
   return new torch::Tensor(tensor);
+}
+
+void torchffi_tensor_ones_(tensor t) {
+  torch::nn::init::ones_(*t);
+}
+
+void torchffi_tensor_zeros_(tensor t) {
+  torch::nn::init::zeros_(*t);
+}
+
+void torchffi_tensor_eye_(tensor t) {
+  torch::nn::init::eye_(*t);
+}
+
+void torchffi_tensor_fill_(tensor t, Scalar value) {
+  at::Scalar opValue = torchffi_to_scalar(value);
+  t->fill_(opValue);
+}
+
+void torchffi_tensor_rand_(tensor t, Generator generator) {
+  std::optional<at::Generator> opGenerator = std::nullopt;
+  if (generator != nullptr) {
+    opGenerator = *generator;
+  }
+  t->random_(opGenerator);
 }
 
 tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha) {

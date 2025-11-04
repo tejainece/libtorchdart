@@ -57,6 +57,12 @@ class Conv2D extends Module implements SimpleModule {
     );
   }
 
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
+
   int get numInChannels => weight.shape[1] * groups;
 
   int get numOutChannels => weight.shape[0] * groups;

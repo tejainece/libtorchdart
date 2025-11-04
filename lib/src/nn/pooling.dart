@@ -17,6 +17,7 @@ class AvgPool2D extends Module implements SimpleModule {
     this.divisorOverride,
   });
 
+  @override
   Tensor forward(Tensor x) {
     return avgPool2D(
       x,
@@ -27,5 +28,11 @@ class AvgPool2D extends Module implements SimpleModule {
       countIncludePad: countIncludePad,
       divisorOverride: divisorOverride,
     );
+  }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
   }
 }

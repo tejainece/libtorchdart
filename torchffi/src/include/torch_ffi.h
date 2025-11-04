@@ -55,10 +55,12 @@ static const char* padModeNameCircular = "circular";
 
 extern "C" {
 typedef torch::Tensor* tensor;
+typedef torch::Generator* Generator;
 }
 
 #else
 typedef void* tensor;
+typedef void* Generator;
 #endif
 
 #ifdef __cplusplus
@@ -74,7 +76,7 @@ extern tensor torchffi_tensor_new_ones(int64_t* sizes, size_t ndims, TensorOptio
 
 extern tensor torchffi_tensor_new_arange(int64_t end, TensorOptions options);
 
-extern tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, TensorOptions options);
+extern tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options);
 
 extern size_t torchffi_tensor_dim(tensor t);
 

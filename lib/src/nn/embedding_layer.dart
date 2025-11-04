@@ -18,12 +18,14 @@ class EmbeddingConfig {
 abstract class Module {
   bool isTraining = false;
 
+  void resetParameters();
+
   // TODO register parameter
 
   // Tensor forward(Tensor x);
 }
 
-abstract class SimpleModule {
+abstract class SimpleModule implements Module {
   Tensor forward(Tensor x);
 }
 
@@ -31,7 +33,7 @@ abstract class InplaceModule implements Module {
   Tensor forward_(Tensor x);
 }
 
-class EmbeddingLayer extends Module {
+class EmbeddingLayer extends Module implements SimpleModule {
   final Tensor weights;
   final EmbeddingConfig config;
 
@@ -48,6 +50,12 @@ class EmbeddingLayer extends Module {
     );
   }
 
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
+
   static Future<EmbeddingLayer> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -60,15 +68,22 @@ class EmbeddingLayer extends Module {
 
   int get embeddingDim => weights.shape[1];
 }
-class Dropout extends Module {
+
+class Dropout extends Module implements SimpleModule {
   @override
   Tensor forward(Tensor x) {
     // TODO
     throw UnimplementedError();
   }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
-class LinearLayer extends Module {
+class LinearLayer extends Module implements SimpleModule {
   final Tensor weight;
   final Tensor? bias;
 
@@ -81,6 +96,12 @@ class LinearLayer extends Module {
   @override
   Tensor forward(Tensor x) {
     return linear(x, weight, bias: bias);
+  }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
   }
 
   static Future<LinearLayer> loadFromSafeTensor(

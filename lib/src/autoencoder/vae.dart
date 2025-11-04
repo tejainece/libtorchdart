@@ -65,6 +65,12 @@ class VaeEncoder extends Module {
     return sample;
   }
 
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
+
   static Future<VaeEncoder> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -162,6 +168,12 @@ class VaeDecoder extends Module {
     sample = convOut.forward(sample);
 
     return sample;
+  }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
   }
 
   static Future<VaeDecoder> loadFromSafeTensor(

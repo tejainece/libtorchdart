@@ -15,7 +15,7 @@ class Tensor implements ffi.Finalizable {
   static Tensor zeros(
     List<int> sizes, {
     Device device = Device.cpu,
-    DataType dtype = DataType.float,
+    DataType datatype = DataType.float,
     Layout layout = Layout.strided,
     MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
@@ -24,7 +24,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       final options = FFITensorOptions.make(
-        dataType: dtype,
+        dataType: datatype,
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
@@ -44,7 +44,7 @@ class Tensor implements ffi.Finalizable {
   static Tensor ones(
     List<int> sizes, {
     Device device = Device.cpu,
-    DataType dtype = DataType.float,
+    DataType datatype = DataType.float,
     Layout layout = Layout.strided,
     MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
@@ -53,7 +53,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       final options = FFITensorOptions.make(
-        dataType: dtype,
+        dataType: datatype,
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
@@ -73,7 +73,7 @@ class Tensor implements ffi.Finalizable {
   static Tensor arange(
     int end, {
     Device device = Device.cpu,
-    DataType dtype = DataType.float,
+    DataType datatype = DataType.float,
     Layout layout = Layout.strided,
     MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
@@ -82,7 +82,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       final options = FFITensorOptions.make(
-        dataType: dtype,
+        dataType: datatype,
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
@@ -97,17 +97,19 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor rand(
     List<int> sizes, {
+    Generator? generator,
     Device device = Device.cpu,
-    DataType dtype = DataType.float,
+    DataType datatype = DataType.float,
     Layout layout = Layout.strided,
     MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
     // TODO pinned memory
   }) {
+    generator ??= ffi.nullptr;
     final arena = ffi.Arena();
     try {
       final options = FFITensorOptions.make(
-        dataType: dtype,
+        dataType: datatype,
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
@@ -117,7 +119,12 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = Torch.rand(sizesPointer, sizes.length, options.ref);
+      final tensor = Torch.rand(
+        sizesPointer,
+        sizes.length,
+        generator,
+        options.ref,
+      );
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -128,7 +135,7 @@ class Tensor implements ffi.Finalizable {
     int n, {
     int? m,
     Device device = Device.cpu,
-    DataType dtype = DataType.float,
+    DataType datatype = DataType.float,
     Layout layout = Layout.strided,
     MemoryFormat memoryFormat = MemoryFormat.contiguous,
     // TODO autograd
@@ -138,7 +145,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       final options = FFITensorOptions.make(
-        dataType: dtype,
+        dataType: datatype,
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
@@ -154,7 +161,7 @@ class Tensor implements ffi.Finalizable {
   static Tensor fromBlob(
     ffi.Pointer<ffi.Void> dataPointer,
     List<int> sizes, {
-    required DataType dtype,
+    required DataType datatype,
     Device device = Device.cpu,
     Layout layout = Layout.strided,
     MemoryFormat memoryFormat = MemoryFormat.contiguous,
@@ -164,7 +171,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       final options = FFITensorOptions.make(
-        dataType: dtype,
+        dataType: datatype,
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
@@ -182,6 +189,34 @@ class Tensor implements ffi.Finalizable {
     } finally {
       arena.releaseAll();
     }
+  }
+
+  void ones_() {
+    Torch.ones_(nativePtr);
+  }
+
+  void zeros_() {
+    Torch.zeros_(nativePtr);
+  }
+
+  void eye_() {
+    Torch.eye_(nativePtr);
+  }
+
+  void fill_(dynamic value) {
+    final arena = ffi.Arena();
+    try {
+      final scalar = FFIScalar.allocate(arena);
+      scalar.ref.setValue(value);
+      Torch.fill_(nativePtr, scalar.ref);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  void rand_({Generator? generator}) {
+    generator ??= ffi.nullptr;
+    Torch.rand_(nativePtr, generator);
   }
 
   int get dim => Torch.dim(nativePtr);

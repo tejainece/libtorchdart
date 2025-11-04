@@ -2,7 +2,6 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/nn/pooling.dart';
 
 final DynamicLibrary nativeLib = DynamicLibrary.open(
   'torchffi/src/build/libtorchffi.dylib',
@@ -109,6 +108,7 @@ final class FFIScalar extends Struct {
 }
 
 typedef CTensor = Pointer<Void>;
+typedef Generator = Pointer<Void>;
 
 final class FFISlice extends Struct {
   external Pointer<Int64> start;
@@ -207,8 +207,8 @@ abstract class Torch {
 
   static final rand = nativeLib
       .lookupFunction<
-        CTensor Function(Pointer<Int64>, Size, FFITensorOptions),
-        CTensor Function(Pointer<Int64>, int dims, FFITensorOptions)
+        CTensor Function(Pointer<Int64>, Size, Generator, FFITensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, Generator, FFITensorOptions)
       >('torchffi_tensor_new_rand');
 
   static final eye = nativeLib
@@ -232,6 +232,33 @@ abstract class Torch {
           FFITensorOptions,
         )
       >('torchffi_tensor_new_from_blob');
+
+  static final ones_ = nativeLib
+      .lookupFunction<Void Function(CTensor), void Function(CTensor)>(
+        'torchffi_tensor_ones_',
+      );
+
+  static final zeros_ = nativeLib
+      .lookupFunction<Void Function(CTensor), void Function(CTensor)>(
+        'torchffi_tensor_zeros_',
+      );
+
+  static final eye_ = nativeLib
+      .lookupFunction<Void Function(CTensor), void Function(CTensor)>(
+        'torchffi_tensor_eye_',
+      );
+
+  static final fill_ = nativeLib
+      .lookupFunction<
+        Void Function(CTensor, FFIScalar),
+        void Function(CTensor, FFIScalar)
+      >('torchffi_tensor_fill_');
+
+  static final rand_ = nativeLib
+      .lookupFunction<
+        Void Function(CTensor, Generator),
+        void Function(CTensor, Generator)
+      >('torchffi_tensor_rand_');
 
   static final dim = nativeLib
       .lookupFunction<Size Function(CTensor), int Function(CTensor tensor)>(

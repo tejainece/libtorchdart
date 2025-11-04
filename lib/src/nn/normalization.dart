@@ -1,6 +1,6 @@
 import 'package:libtorchdart/libtorchdart.dart';
 
-abstract class Normalization {
+abstract class Normalization implements Module {
   Tensor forward(Tensor x);
 }
 
@@ -20,7 +20,22 @@ class LayerNorm extends Module implements Normalization {
     this.bias,
     required this.normalizedShape,
     this.eps = 1e-5,
-  });
+  }) {
+    if (weight != null) {
+      assert(weight!.dim == 1);
+      assert(weight!.shape[0] == normalizedShape[0]);
+      if (bias != null) {
+        assert(bias!.dim == 1);
+        assert(bias!.shape[0] == normalizedShape[0]);
+      }
+    }
+  }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
 
   bool get isElementwiseAffine => weight != null && bias != null;
 
@@ -53,6 +68,42 @@ class LayerNorm extends Module implements Normalization {
       eps: eps,
     );
   }
+
+  static LayerNorm make({
+    required List<int> normalizedShape,
+    double eps = 1e-5,
+    bool isElementwiseAffine = true,
+    bool hasBias = true,
+    DataType? dataType,
+    Device? device,
+  }) {
+    Tensor? weight;
+    Tensor? bias;
+    if (isElementwiseAffine) {
+      weight = Tensor.ones(
+        normalizedShape,
+        datatype: dataType ?? DataType.float,
+        device: device ?? Device.cpu,
+      );
+      if (hasBias) {
+        bias = Tensor.zeros(
+          normalizedShape,
+          datatype: dataType ?? DataType.float,
+          device: device ?? Device.cpu,
+        );
+      }
+
+      // TODO
+    }
+    // TODO initialize weights
+    // TODO initialize bias
+    return LayerNorm(
+      normalizedShape: normalizedShape,
+      eps: eps,
+      weight: weight,
+      bias: bias,
+    );
+  }
 }
 
 /// Module that applies Group Normalization over mini-batch of inputs
@@ -79,6 +130,12 @@ class GroupNorm extends Module implements Normalization {
     if (weight != null && bias != null) {
       assert(weight!.shape[0] == bias!.shape[0]);
     }
+  }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
   }
 
   late final bool isElementwiseAffine = weight != null && bias != null;
@@ -138,6 +195,12 @@ class RMSNorm extends Module implements Normalization {
     return x;
   }
 
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
+
   bool get isElementwiseAffine => weight != null && bias != null;
 
   static Future<RMSNorm> loadFromSafeTensor(
@@ -169,6 +232,12 @@ class SpatialNorm extends Module implements Normalization {
 
   @override
   Tensor forward(Tensor x) {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  @override
+  void resetParameters() {
     // TODO
     throw UnimplementedError();
   }

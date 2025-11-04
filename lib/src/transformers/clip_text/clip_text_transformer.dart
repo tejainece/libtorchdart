@@ -42,6 +42,12 @@ class ClipTextTransformer extends Module implements TextEncoder {
     return lastHiddenState;
   }
 
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
+
   static Future<ClipTextTransformer> loadFromSafeTensor(
     SafeTensorLoader loader, {
     required ClipTextConfig config,
@@ -179,7 +185,7 @@ class ClipEncoderLayer {
   }
 }
 
-class ClipMlp extends Module {
+class ClipMlp extends Module implements SimpleModule {
   final LinearLayer linear1;
   final LinearLayer linear2;
   final Activation activation;
@@ -196,6 +202,12 @@ class ClipMlp extends Module {
     x = activation.forward(x);
     x = linear2.forward(x);
     return x;
+  }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
   }
 
   static Future<ClipMlp> loadFromSafeTensor(
@@ -220,7 +232,7 @@ class ClipMlp extends Module {
   }
 }
 
-class ClipTextEmbeddings extends Module {
+class ClipTextEmbeddings extends Module implements SimpleModule {
   final EmbeddingLayer tokenEmbedding;
   final EmbeddingLayer positionEmbedding;
   final Tensor positionIds;
@@ -242,6 +254,12 @@ class ClipTextEmbeddings extends Module {
     positionIds ??= this.positionIds.expand([-1, seqLength]);
     final positionEmbeddings = positionEmbedding.forward(positionIds);
     return tokenEmbedding.forward(inputIds) + positionEmbeddings;
+  }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
   }
 
   int get embeddingDim => tokenEmbedding.embeddingDim;
