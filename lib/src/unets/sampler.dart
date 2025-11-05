@@ -88,11 +88,13 @@ class Upsample2D extends Module implements SimpleModule {
           loader,
           prefix: '${prefix}norm',
           normalizedShape: [numChannels],
+          eps: normConfig.eps,
         );
       } else if (normConfig.normType == 'rms_norm') {
         norm = await RMSNorm.loadFromSafeTensor(
           loader,
           prefix: '${prefix}norm',
+          eps: normConfig.eps,
         );
       } else {
         throw UnimplementedError(
@@ -137,9 +139,15 @@ class Upsample2D extends Module implements SimpleModule {
     Normalization? norm;
     if (normConfig != null) {
       if (normConfig.normType == 'ln_norm') {
-        norm = LayerNorm.make();
+        norm = LayerNorm.make(
+          normalizedShape: [numChannels],
+          isElementwiseAffine: normConfig.isElementwiseAffine,
+        );
       } else if (normConfig.normType == 'rms_norm') {
-        norm = RMSNorm.make();
+        norm = RMSNorm.make(
+          normalizedShape: [numChannels],
+          isElementwiseAffine: normConfig.isElementwiseAffine,
+        );
       } else {
         throw UnimplementedError(
           'Unknown Upsampler2D normalization type: ${normConfig.normType}',
@@ -175,13 +183,13 @@ class Upsample2D extends Module implements SimpleModule {
 class SamplerNormalizationConfig {
   final String normType;
 
-  final double? eps;
+  final double eps;
 
   final bool isElementwiseAffine;
 
   SamplerNormalizationConfig({
     required this.normType,
-    this.eps,
+    this.eps = 1e-5,
     this.isElementwiseAffine = false,
   });
 }

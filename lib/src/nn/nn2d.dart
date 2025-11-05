@@ -19,8 +19,7 @@ class Conv2D extends Module implements SimpleModule {
     this.padding,
     this.dilation = const SymmetricPadding2D.same(1),
     this.groups = 1,
-  }) : assert(padding != null || customPad != null),
-       assert(groups > 0) {
+  }) : assert(groups > 0) {
     assert(numInChannels % groups == 0);
     assert(numOutChannels % groups == 0);
     if (customPad != null) {
@@ -94,7 +93,7 @@ class Conv2D extends Module implements SimpleModule {
     }
 
     Conv2DPad? customPad;
-    if (padMode == null) {
+    if (padMode != null) {
       final kernelSize = SymmetricPadding2D(
         vertical: weight.shape[2],
         horizontal: weight.shape[3],
@@ -107,7 +106,8 @@ class Conv2D extends Module implements SimpleModule {
         top: initial.vertical,
         bottom: total.vertical - initial.vertical,
       );
-      customPad = Conv2DPad(padMode: padMode!, padding: customPadding);
+      customPad = Conv2DPad(padMode: padMode, padding: customPadding);
+      padding = null;
     }
 
     return Conv2D(

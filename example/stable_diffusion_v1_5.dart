@@ -1,5 +1,4 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/transformers/clip_text/clip_config.dart';
 
 Future<void> main() async {
   final prompt = 'minimalistic symmetrical logo with moose head';

@@ -33,8 +33,8 @@ class LayerNorm extends Module implements Normalization {
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    weight?.ones_();
+    bias?.zeros_();
   }
 
   bool get isElementwiseAffine => weight != null && bias != null;
@@ -57,9 +57,9 @@ class LayerNorm extends Module implements Normalization {
 
     if (loader.hasTensor('${prefix}weight')) {
       weight = await loader.loadByName('${prefix}weight');
-    }
-    if (loader.hasTensor('${prefix}bias')) {
-      bias = await loader.loadByName('${prefix}bias');
+      if (loader.hasTensor('${prefix}bias')) {
+        bias = await loader.loadByName('${prefix}bias');
+      }
     }
     return LayerNorm(
       weight: weight,
@@ -92,11 +92,7 @@ class LayerNorm extends Module implements Normalization {
           device: device ?? Device.cpu,
         );
       }
-
-      // TODO
     }
-    // TODO initialize weights
-    // TODO initialize bias
     return LayerNorm(
       normalizedShape: normalizedShape,
       eps: eps,
@@ -197,8 +193,8 @@ class RMSNorm extends Module implements Normalization {
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    weight?.ones_();
+    bias?.zeros_();
   }
 
   bool get isElementwiseAffine => weight != null && bias != null;
@@ -215,6 +211,34 @@ class RMSNorm extends Module implements Normalization {
       weight = await loader.loadByName('${prefix}weight');
       if (loader.hasTensor('${prefix}bias')) {
         bias = await loader.loadByName('${prefix}bias');
+      }
+    }
+
+    return RMSNorm(weight: weight, bias: bias, eps: eps);
+  }
+
+  static RMSNorm make({
+    required List<int> normalizedShape,
+    double eps = 1e-5,
+    bool isElementwiseAffine = true,
+    bool hasBias = true,
+    DataType? dataType,
+    Device? device,
+  }) {
+    Tensor? weight;
+    Tensor? bias;
+    if (isElementwiseAffine) {
+      weight = Tensor.ones(
+        normalizedShape,
+        datatype: dataType ?? DataType.float,
+        device: device ?? Device.cpu,
+      );
+      if (hasBias) {
+        bias = Tensor.zeros(
+          normalizedShape,
+          datatype: dataType ?? DataType.float,
+          device: device ?? Device.cpu,
+        );
       }
     }
 

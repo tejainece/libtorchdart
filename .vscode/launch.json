@@ -17,6 +17,14 @@
             "type": "dart",
             "program": "example/clip.dart",
             "args": [],
+        },
+        {
+            "name": "vae_decode.dart",
+            "request": "launch",
+            "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "example/vae_decode.dart",
+            "args": [],
         }
     ]
 }

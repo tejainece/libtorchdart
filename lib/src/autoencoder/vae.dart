@@ -119,7 +119,7 @@ class VaeEncoder extends Module {
     required int numInChannels,
     required int numOutChannels,
   }) async {
-    final convIn = Conv2D.make();
+    // TODO final convIn = Conv2D.make();
     // TODO
     throw UnimplementedError();
   }
@@ -190,11 +190,11 @@ class VaeDecoder extends Module {
   }) async {
     final convIn = await Conv2D.loadFromSafeTensor(
       loader,
-      prefix: '$prefix$convInName',
+      prefix: '$prefix$convInName.',
     );
     final midBlock = await UNet2DMidBlock.loadFromSafeTensor(
       loader,
-      prefix: '$prefix$midBlockName',
+      prefix: '$prefix$midBlockName.',
     );
 
     final upBlocks = <VaeDecoderBlock2D>[];
@@ -206,7 +206,7 @@ class VaeDecoder extends Module {
     } else {
       convNormOut = await GroupNorm.loadFromSafeTensor(
         loader,
-        prefix: '$prefix$normOutName',
+        prefix: '$prefix$normOutName.',
         numGroups: normNumGroups,
         eps: 1e-6,
       );
@@ -214,7 +214,7 @@ class VaeDecoder extends Module {
     final convActivation = SiLU();
     final convOut = await Conv2D.loadFromSafeTensor(
       loader,
-      prefix: '$prefix$convOutName',
+      prefix: '$prefix$convOutName.',
     );
 
     return VaeDecoder(
@@ -231,7 +231,7 @@ class VaeDecoder extends Module {
     required int numInChannels,
     required int numOutChannels,
   }) async {
-    final convIn = Conv2D.make();
+    // TODO final convIn = Conv2D.make();
     // TODO
     throw UnimplementedError();
   }
