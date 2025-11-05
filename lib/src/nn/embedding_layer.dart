@@ -70,6 +70,12 @@ class EmbeddingLayer extends Module implements SimpleModule {
 }
 
 class Dropout extends Module implements SimpleModule {
+  final double p;
+  final bool inplace;
+
+  Dropout(this.p, {this.inplace = false})
+    : assert(p >= 0 && p <= 1, 'p must be between 0 and 1');
+
   @override
   Tensor forward(Tensor x) {
     // TODO
@@ -77,10 +83,7 @@ class Dropout extends Module implements SimpleModule {
   }
 
   @override
-  void resetParameters() {
-    // TODO
-    throw UnimplementedError();
-  }
+  void resetParameters() {}
 }
 
 class LinearLayer extends Module implements SimpleModule {

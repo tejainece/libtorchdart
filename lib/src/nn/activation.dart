@@ -1,5 +1,7 @@
 import 'package:libtorchdart/libtorchdart.dart';
 
+// TODO Mish
+
 abstract class Activation {
   String get name;
 
@@ -14,9 +16,14 @@ abstract class Activation {
 
   static const List<Activation> list = [quickGelu, gelu, silu, relu];
 
-  static final Map<String, Activation> _byName = Map.fromEntries(
-    list.map((v) => MapEntry(v.name, v)),
-  );
+  static final Map<String, Activation> _byName = () {
+    final ret = <String, Activation>{"swish": silu};
+    for (final activation in list) {
+      ret[activation.name] = activation;
+      ret[activation.name.toLowerCase()] = activation;
+    }
+    return ret;
+  }();
 
   static Activation? fromName(String name) => _byName[name];
 }

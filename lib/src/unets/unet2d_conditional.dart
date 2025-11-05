@@ -1,5 +1,6 @@
 import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/safetensor/storage.dart';
+import 'package:libtorchdart/src/unets/resnet2d.dart';
 
 abstract class UNet {}
 
@@ -41,6 +42,11 @@ abstract class UNet2DDownBlock implements UNet2DBlock {}
 abstract class UNet2DUpBlock implements UNet2DBlock {}
 
 class UNet2DMidBlock implements UNet2DBlock {
+  final List<ResnetBlock2D> resnets;
+  final List<Module> attentions;
+
+  UNet2DMidBlock({required this.resnets, required this.attentions});
+
   Tensor forward(Tensor hiddenStates, {Tensor? embeds}) {
     // TODO
     throw UnimplementedError();
@@ -49,8 +55,21 @@ class UNet2DMidBlock implements UNet2DBlock {
   static Future<UNet2DMidBlock> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    bool resnetTimeScaleShift = false,
   }) async {
+    final resnets = <ResnetBlock2D>[];
+    final attentions = <Module>[];
+
+    if (resnetTimeScaleShift) {
+      throw UnimplementedError();
+    } else {
+      resnets.add(
+        ResnetBlock2D.loadFromSafeTensor(loader, prefix: '$prefix0.'),
+      );
+    }
+
     // TODO
     throw UnimplementedError();
+    return UNet2DMidBlock(resnets: resnets, attentions: attentions);
   }
 }

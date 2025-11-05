@@ -129,19 +129,19 @@ class GroupNorm extends Module implements Normalization {
   }
 
   @override
+  Tensor forward(Tensor x) {
+    return x.groupNorm(numGroups, weight: weight, bias: bias, eps: eps);
+  }
+
+  @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    weight?.ones_();
+    bias?.zeros_();
   }
 
   late final bool isElementwiseAffine = weight != null && bias != null;
 
   late final int? numChannels = weight?.shape[0];
-
-  @override
-  Tensor forward(Tensor x) {
-    return x.groupNorm(numGroups, weight: weight, bias: bias, eps: eps);
-  }
 
   static Future<GroupNorm> loadFromSafeTensor(
     SafeTensorLoader loader, {
@@ -159,6 +159,43 @@ class GroupNorm extends Module implements Normalization {
       bias = await loader.loadByName('${prefix}bias');
     }
 
+    return GroupNorm(
+      eps: eps,
+      weight: weight,
+      bias: bias,
+      numGroups: numGroups,
+    );
+  }
+
+  static GroupNorm make({
+    required int numGroups,
+    required int numChannels,
+    double eps = 1e-5,
+    bool isElementwiseAffine = true,
+    bool hasBias = true,
+    DataType? dataType,
+    Device? device,
+  }) {
+    assert(
+      numChannels % numGroups == 0,
+      'numChannels must be divisible by numGroups',
+    );
+    Tensor? weight;
+    Tensor? bias;
+    if (isElementwiseAffine) {
+      weight = Tensor.ones(
+        [numChannels],
+        datatype: dataType ?? DataType.float,
+        device: device ?? Device.cpu,
+      );
+      if (hasBias) {
+        bias = Tensor.zeros(
+          [numChannels],
+          datatype: dataType ?? DataType.float,
+          device: device ?? Device.cpu,
+        );
+      }
+    }
     return GroupNorm(
       eps: eps,
       weight: weight,
