@@ -75,10 +75,7 @@ class Upsample2D extends Module implements SimpleModule {
     required int numChannels,
     bool useConvTransposed = false,
     bool interpolate = true,
-    SymmetricPadding2D padding = const SymmetricPadding2D(
-      vertical: 1,
-      horizontal: 1,
-    ),
+    SymmetricPadding2D padding = const SymmetricPadding2D.same(1),
     SamplerNormalizationConfig? normConfig,
   }) async {
     Normalization? norm;
@@ -194,12 +191,13 @@ class SamplerNormalizationConfig {
   });
 }
 
-class Downsample2D {
+class Downsample2D extends Module implements SimpleModule {
   final Normalization? norm;
   final SimpleModule? conv;
 
   Downsample2D({this.norm, this.conv});
 
+  @override
   Tensor forward(Tensor hiddenStates) {
     if (norm != null) {
       hiddenStates = norm!.forward(hiddenStates.permute([0, 2, 3, 1])).permute([
@@ -219,6 +217,12 @@ class Downsample2D {
       hiddenStates = conv!.forward(hiddenStates);
     }
     return hiddenStates;
+  }
+
+  @override
+  void resetParameters() {
+    conv?.resetParameters();
+    norm?.resetParameters();
   }
 
   static Future<Downsample2D> loadFromSafeTensor(

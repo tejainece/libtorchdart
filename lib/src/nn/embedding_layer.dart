@@ -29,6 +29,10 @@ abstract class SimpleModule implements Module {
   Tensor forward(Tensor x);
 }
 
+abstract class EmbeddableModule implements Module {
+  Tensor forward(Tensor x, {Tensor? embeds});
+}
+
 abstract class InplaceModule implements Module {
   Tensor forward_(Tensor x);
 }
