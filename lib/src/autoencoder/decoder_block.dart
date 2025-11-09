@@ -1,13 +1,17 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/unets/resnet2d.dart';
 
-class VaeDecoderBlock2D {
+class VaeDecoderBlock2D extends Module {
   final List<ResnetBlock2D> resnets;
   // TODO final List<
 
   VaeDecoderBlock2D({required this.resnets});
 
   Tensor forward(Tensor sample, {Tensor? emdeds}) {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  void resetParameters() {
     // TODO
     throw UnimplementedError();
   }

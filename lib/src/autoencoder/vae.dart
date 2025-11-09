@@ -1,6 +1,5 @@
 import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/autoencoder/autoencoder.dart';
-import 'package:libtorchdart/src/unets/unet2d_conditional.dart';
 
 abstract class Vae {}
 

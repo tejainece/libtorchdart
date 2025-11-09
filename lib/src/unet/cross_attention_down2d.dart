@@ -1,11 +1,12 @@
+import 'package:libtorchdart/src/nn/embedding_layer.dart';
 import 'package:libtorchdart/src/tensor/tensor.dart';
-import 'package:libtorchdart/src/unets/resnet2d.dart';
-import 'package:libtorchdart/src/unets/sampler.dart';
-import 'package:libtorchdart/src/unets/unet2d_conditional.dart';
+import 'package:libtorchdart/src/unet/resnet2d.dart';
+import 'package:libtorchdart/src/unet/sampler.dart';
+import 'package:libtorchdart/src/unet/unet2d_conditional.dart';
 
-class CrossAttnDownBlock2D implements UNet2DDownBlock {
+class CrossAttnDownBlock2D extends Module implements UNet2DDownBlock {
   final List<ResnetBlock2D> resnets;
-  final List activation;
+  final List<SimpleModule> activation;
   final List<Downsample2D> downSamplers;
 
   CrossAttnDownBlock2D({
@@ -28,7 +29,7 @@ class CrossAttnDownBlock2D implements UNet2DDownBlock {
 
     for (int i = 0; i < resnets.length; i++) {
       // TODO handle gradient checkpointing
-      hiddenStates = resnets[i].forward(hiddenStates, timeEmbedding);
+      hiddenStates = resnets[i].forward(hiddenStates, embeds: timeEmbedding);
       // TODO activation
 
       if (i == resnets.length - 1 && additionalResiduals != null) {
@@ -42,9 +43,15 @@ class CrossAttnDownBlock2D implements UNet2DDownBlock {
 
     return hiddenStates;
   }
+
+  @override
+  void resetParameters() {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
-class DownBlock2D implements UNet2DDownBlock {
+class DownBlock2D extends Module implements UNet2DDownBlock {
   final List<ResnetBlock2D> resnets;
   final List<Downsample2D> downSamplers;
 
@@ -52,11 +59,21 @@ class DownBlock2D implements UNet2DDownBlock {
 
   Tensor forward(Tensor input, Tensor timeEmbedding) {
     for (int i = 0; i < resnets.length; i++) {
-      input = resnets[i].forward(input, timeEmbedding);
+      input = resnets[i].forward(input, embeds: timeEmbedding);
     }
     for (int i = 0; i < downSamplers.length; i++) {
       input = downSamplers[i].forward(input);
     }
     return input;
+  }
+
+  @override
+  void resetParameters() {
+    for (final resnet in resnets) {
+      resnet.resetParameters();
+    }
+    for (final downSampler in downSamplers) {
+      downSampler.resetParameters();
+    }
   }
 }
