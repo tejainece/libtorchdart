@@ -35,8 +35,8 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
     bool resnetTimeScaleShift = false,
     bool useAttention = true,
   }) async {
-    final resnets = <ResnetBlock2D>[];
-    final attentions = <Module>[];
+    ResnetBlock2D resnet;
+    final resnets = <Resnet2DWithAttention>[];
 
     int resnetIndex = 0;
     if (loader.hasTensor('$prefix${resnetPrefix}0.')) {
@@ -50,36 +50,36 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
     if (resnetTimeScaleShift) {
       throw UnimplementedError();
     } else {
-      resnets.add(
-        await ResnetBlock2D.loadFromSafeTensor(
-          loader,
-          prefix: '$prefix$resnetPrefix$resnetIndex.',
-        ),
+      resnet = await ResnetBlock2D.loadFromSafeTensor(
+        loader,
+        prefix: '$prefix$resnetPrefix$resnetIndex.',
       );
     }
     resnetIndex++;
 
     while (true) {
+      ResnetBlock2D resnetPart;
       if (resnetTimeScaleShift) {
         throw UnimplementedError();
       } else {
-        if (!loader.hasTensor('$prefix${resnetPrefix}$resnetIndex.')) break;
-        resnets.add(
-          await ResnetBlock2D.loadFromSafeTensor(
-            loader,
-            prefix: '$prefix$resnetPrefix$resnetIndex.',
-          ),
+        if (!loader.hasTensor('$prefix$resnetPrefix$resnetIndex.')) break;
+        resnetPart = await ResnetBlock2D.loadFromSafeTensor(
+          loader,
+          prefix: '$prefix$resnetPrefix$resnetIndex.',
         );
       }
+      EmbeddableModule? attention;
       if (useAttention) {
         // TODO
         throw UnimplementedError();
       }
+      resnets.add(
+        Resnet2DWithAttention(resnet: resnetPart, attention: attention),
+      );
       resnetIndex++;
     }
 
     // TODO
-    throw UnimplementedError();
-    return UNet2DMidBlock(resnets: resnets, attentions: attentions);
+    return UNet2DMidBlock(resnet, resnets: resnets);
   }
 }
