@@ -11,7 +11,7 @@ class ClipTextConfig {
   final int maxPositionEmbeddings;
 
   /// Embed dim/hidden size
-  ///
+  /// Number of learned
   final int embedDim;
   final Activation activation;
   final double layerNormEps;
