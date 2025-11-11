@@ -14,13 +14,12 @@ typedef struct Device_t {
 } Device;
 
 typedef struct TensorOptions_t {
-  int8_t dtype;
-  int8_t deviceType;
-  int8_t deviceIndex;
-  int8_t layout;
-  int8_t memoryFormat;
-  // TODO required autograd
-  // TODO pinned memory
+  int8_t* dtype;
+  Device* device;
+  int8_t* layout;
+  int8_t* memoryFormat;
+  bool* requiresGrad;
+  bool* pinnedMemory;
 } TensorOptions;
 
 typedef struct Scalar_t {
@@ -94,11 +93,21 @@ extern Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index);
 
 extern tensor torchffi_tensor_get(tensor t, int index);
 
+extern int8_t torchffi_tensor_get_datatype(tensor t);
+
+extern tensor torchffi_tensor_to(tensor t, TensorOptions options, bool nonBlocking, bool copy);
+
 extern tensor torchffi_tensor_index(tensor t, Index_t* indices, size_t ndims);
 
 extern tensor torchffi_tensor_view(tensor t, int64_t* sizes, size_t ndims);
 
-tensor torchffi_tensor_permute(tensor t, int64_t* dims, size_t ndims);
+extern tensor torchffi_tensor_reshape(tensor t, int64_t* sizes, size_t ndims);
+
+extern tensor* torchffi_tensor_split_equally(tensor t, int64_t splits, int64_t dim);
+
+extern tensor* torchffi_tensor_split(tensor t, int64_t* splits, size_t splitsSize, int64_t dim);
+
+extern tensor torchffi_tensor_permute(tensor t, int64_t* dims, size_t ndims);
 
 extern tensor torchffi_tensor_expand(tensor t, int64_t* sizes, size_t ndims, bool implicit);
 

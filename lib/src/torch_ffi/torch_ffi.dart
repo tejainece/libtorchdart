@@ -12,36 +12,70 @@ final class FFIDevice extends Struct {
   external int deviceType;
   @Int8()
   external int deviceIndex;
+
+  static Pointer<FFIDevice> allocate(Allocator allocator) =>
+      allocator.allocate<FFIDevice>(sizeOf<FFIDevice>());
+
+  static Pointer<FFIDevice> make({
+    required DeviceType deviceType,
+    required int deviceIndex,
+    required Allocator allocator,
+  }) {
+    final device = allocate(allocator);
+    device.ref.deviceType = deviceType.type;
+    device.ref.deviceIndex = deviceIndex;
+    return device;
+  }
 }
 
 final class FFITensorOptions extends Struct {
-  @Int8()
-  external int dataType;
-  @Int8()
-  external int deviceType;
-  @Int8()
-  external int deviceIndex;
-  @Int8()
-  external int layout;
-  @Int8()
-  external int memoryFormat;
+  external Pointer<Int8> dataType;
+  external Pointer<FFIDevice> device;
+  external Pointer<Int8> layout;
+  external Pointer<Int8> memoryFormat;
+  external Pointer<Bool> requiresGrad;
+  external Pointer<Bool> pinnedMemory;
 
   static Pointer<FFITensorOptions> allocate(Allocator allocator) =>
       allocator.allocate<FFITensorOptions>(sizeOf<FFITensorOptions>());
 
   static Pointer<FFITensorOptions> make({
-    required DataType dataType,
-    required Device device,
-    required Layout layout,
-    required MemoryFormat memoryFormat,
+    required DataType? dataType,
+    required Device? device,
+    required Layout? layout,
+    required MemoryFormat? memoryFormat,
+    required bool? requiresGrad,
+    required bool? pinnedMemory,
     required Allocator allocator,
   }) {
     final options = allocate(allocator);
-    options.ref.dataType = dataType.type;
-    options.ref.deviceType = device.deviceType.type;
-    options.ref.deviceIndex = device.deviceIndex;
-    options.ref.layout = layout.type;
-    options.ref.memoryFormat = memoryFormat.id;
+    if (dataType != null) {
+      options.ref.dataType = allocator.allocate<Int8>(sizeOf<Int8>())
+        ..value = dataType.type;
+    }
+    if (device != null) {
+      options.ref.device = FFIDevice.make(
+        deviceType: device.deviceType,
+        deviceIndex: device.deviceIndex,
+        allocator: allocator,
+      );
+    }
+    if (layout != null) {
+      options.ref.layout = allocator.allocate<Int8>(sizeOf<Int8>())
+        ..value = layout.type;
+    }
+    if (memoryFormat != null) {
+      options.ref.memoryFormat = allocator.allocate<Int8>(sizeOf<Int8>())
+        ..value = memoryFormat.id;
+    }
+    if (requiresGrad != null) {
+      options.ref.requiresGrad = allocator.allocate<Bool>(sizeOf<Bool>())
+        ..value = requiresGrad;
+    }
+    if (pinnedMemory != null) {
+      options.ref.pinnedMemory = allocator.allocate<Bool>(sizeOf<Bool>())
+        ..value = pinnedMemory;
+    }
     return options;
   }
 }
@@ -295,6 +329,22 @@ abstract class Torch {
         CTensor Function(CTensor tensor, int index)
       >('torchffi_tensor_get');
 
+  static final datatype = nativeLib
+      .lookupFunction<Int8 Function(CTensor), int Function(CTensor tensor)>(
+        'torchffi_tensor_get_datatype',
+      );
+
+  static final to = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, FFITensorOptions, Bool, Bool),
+        CTensor Function(
+          CTensor tensor,
+          FFITensorOptions,
+          bool nonBlocking,
+          bool copy,
+        )
+      >('torchffi_tensor_to');
+
   static final index = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Pointer<FFIIndex>, Int64),
@@ -306,6 +356,24 @@ abstract class Torch {
         CTensor Function(CTensor, Pointer<Int64>, Size),
         CTensor Function(CTensor, Pointer<Int64>, int)
       >('torchffi_tensor_view');
+
+  static final reshape = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size),
+        CTensor Function(CTensor, Pointer<Int64>, int)
+      >('torchffi_tensor_reshape');
+
+  static final splitEqually = nativeLib
+      .lookupFunction<
+        Pointer<CTensor> Function(CTensor, Int64, Int64),
+        Pointer<CTensor> Function(CTensor, int, int)
+      >('torchffi_tensor_split_equally');
+
+  static final split = nativeLib
+      .lookupFunction<
+        Pointer<CTensor> Function(CTensor, Pointer<Int64>, Size, Int64),
+        Pointer<CTensor> Function(CTensor, Pointer<Int64>, int, int)
+      >('torchffi_tensor_split');
 
   static final permute = nativeLib
       .lookupFunction<

@@ -1,7 +1,7 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:libtorchdart/src/nn/nn2d.dart';
-import 'package:libtorchdart/src/tensor_ffi/tensor_ffi.dart';
+import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
 
 class Tensor implements ffi.Finalizable {
   ffi.Pointer<ffi.Void> nativePtr;
@@ -14,12 +14,12 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor zeros(
     List<int> sizes, {
-    Device device = Device.cpu,
-    DataType datatype = DataType.float,
-    Layout layout = Layout.strided,
-    MemoryFormat memoryFormat = MemoryFormat.contiguous,
-    // TODO autograd
-    // TODO pinned memory
+    Device? device,
+    DataType? datatype,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
   }) {
     final arena = ffi.Arena();
     try {
@@ -28,6 +28,8 @@ class Tensor implements ffi.Finalizable {
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
         allocator: arena,
       );
       final sizesPointer = arena.allocate<ffi.Int64>(
@@ -43,12 +45,12 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor ones(
     List<int> sizes, {
-    Device device = Device.cpu,
-    DataType datatype = DataType.float,
-    Layout layout = Layout.strided,
-    MemoryFormat memoryFormat = MemoryFormat.contiguous,
-    // TODO autograd
-    // TODO pinned memory
+    Device? device,
+    DataType? datatype,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
   }) {
     final arena = ffi.Arena();
     try {
@@ -57,6 +59,8 @@ class Tensor implements ffi.Finalizable {
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
         allocator: arena,
       );
       final sizesPointer = arena.allocate<ffi.Int64>(
@@ -72,12 +76,12 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor arange(
     int end, {
-    Device device = Device.cpu,
-    DataType datatype = DataType.float,
-    Layout layout = Layout.strided,
-    MemoryFormat memoryFormat = MemoryFormat.contiguous,
-    // TODO autograd
-    // TODO pinned memory
+    Device? device,
+    DataType? datatype,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
   }) {
     final arena = ffi.Arena();
     try {
@@ -86,6 +90,8 @@ class Tensor implements ffi.Finalizable {
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
         allocator: arena,
       );
       final tensor = Torch.arange(end, options.ref);
@@ -98,12 +104,12 @@ class Tensor implements ffi.Finalizable {
   static Tensor rand(
     List<int> sizes, {
     Generator? generator,
-    Device device = Device.cpu,
-    DataType datatype = DataType.float,
-    Layout layout = Layout.strided,
-    MemoryFormat memoryFormat = MemoryFormat.contiguous,
-    // TODO autograd
-    // TODO pinned memory
+    Device? device,
+    DataType? datatype,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
   }) {
     generator ??= ffi.nullptr;
     final arena = ffi.Arena();
@@ -113,6 +119,8 @@ class Tensor implements ffi.Finalizable {
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
         allocator: arena,
       );
       final sizesPointer = arena.allocate<ffi.Int64>(
@@ -134,12 +142,12 @@ class Tensor implements ffi.Finalizable {
   static Tensor eye(
     int n, {
     int? m,
-    Device device = Device.cpu,
-    DataType datatype = DataType.float,
-    Layout layout = Layout.strided,
-    MemoryFormat memoryFormat = MemoryFormat.contiguous,
-    // TODO autograd
-    // TODO pinned memory
+    Device? device,
+    DataType? datatype,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
   }) {
     m ??= n;
     final arena = ffi.Arena();
@@ -149,6 +157,8 @@ class Tensor implements ffi.Finalizable {
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
         allocator: arena,
       );
       final tensor = Torch.eye(n, m, options.ref);
@@ -162,11 +172,11 @@ class Tensor implements ffi.Finalizable {
     ffi.Pointer<ffi.Void> dataPointer,
     List<int> sizes, {
     required DataType datatype,
-    Device device = Device.cpu,
-    Layout layout = Layout.strided,
-    MemoryFormat memoryFormat = MemoryFormat.contiguous,
-    // TODO autograd
-    // TODO pinned memory
+    Device? device,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
   }) {
     final arena = ffi.Arena();
     try {
@@ -175,6 +185,8 @@ class Tensor implements ffi.Finalizable {
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
         allocator: arena,
       );
       final sizesPointer = arena.allocate<ffi.Int64>(sizes.length);
@@ -308,8 +320,58 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  List<Tensor> splitEqually(int splitSize, {int dim = 0}) {
+    final tensorPtrs = Torch.splitEqually(nativePtr, splitSize, dim);
+    try {
+      final List<Tensor> tensors = [];
+      ffi.Pointer<CTensor> index = tensorPtrs;
+      while (index.value != ffi.nullptr) {
+        tensors.add(Tensor(index.value));
+        index = index + 1;
+      }
+      return tensors;
+    } finally {
+      ffi.malloc.free(tensorPtrs);
+    }
+  }
+
+  List<Tensor> split(List<int> splitSizes, {int dim = 0}) {
+    final arena = ffi.Arena();
+    try {
+      final splitSizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * splitSizes.length,
+      );
+      splitSizesPointer.asTypedList(splitSizes.length).setAll(0, splitSizes);
+      final tensorPtrs = Torch.split(
+        nativePtr,
+        splitSizesPointer,
+        splitSizes.length,
+        dim,
+      );
+      final List<Tensor> tensors = [];
+      ffi.Pointer<CTensor> index = tensorPtrs;
+      for (int i = 0; i < splitSizes.length; i++) {
+        tensors.add(Tensor(index.value));
+        index = index + 1;
+      }
+      return tensors;
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   Tensor reshape(List<int> sizes) {
-    throw UnimplementedError();
+    final arena = ffi.Arena();
+    try {
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = Torch.reshape(nativePtr, sizesPointer, sizes.length);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
   }
 
   Tensor expand(List<int> sizes) {
@@ -340,14 +402,34 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
-  DataType get dataType {
-    // TODO
-    throw UnimplementedError();
-  }
+  DataType get dataType => DataType.fromId(Torch.datatype(nativePtr));
 
-  Tensor to({DataType? dataType, Device? device, Layout? layout}) {
-    // TODO
-    throw UnimplementedError();
+  Tensor to({
+    DataType? dataType,
+    Device? device,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
+    bool copy = false,
+    bool nonblocking = false,
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final options = FFITensorOptions.make(
+        dataType: dataType,
+        device: device,
+        layout: layout,
+        memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
+        allocator: arena,
+      );
+      final tensor = Torch.to(nativePtr, options.ref, nonblocking, copy);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
   }
 
   Tensor contiguous({MemoryFormat format = MemoryFormat.contiguous}) {

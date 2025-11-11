@@ -1,16 +1,30 @@
+#include <stdlib.h>
 #include <torch/all.h>
 #include <torch_ffi.h>
 
 #include <optional>
 
 at::TensorOptions torchffi_make_tensor_options(TensorOptions options) {
-  return at::device(at::Device(at::DeviceType(options.deviceType), options.deviceIndex))
-    .dtype(at::ScalarType(options.dtype))
-    .layout(at::Layout(options.layout))
-    .memory_format(at::MemoryFormat(options.memoryFormat));
-  // TODO memory layout
-  // TODO autograd
-  // TODO pinned memory
+  at::TensorOptions tensorOptions;
+  if (options.dtype != nullptr) {
+    tensorOptions = tensorOptions.dtype(at::ScalarType(*options.dtype));
+  }
+  if (options.device != nullptr) {
+    tensorOptions = tensorOptions.device(at::Device(at::DeviceType(options.device->type), options.device->index));
+  }
+  if (options.layout != nullptr) {
+    tensorOptions = tensorOptions.layout(at::Layout(*options.layout));
+  }
+  if (options.memoryFormat != nullptr) {
+    tensorOptions = tensorOptions.memory_format(at::MemoryFormat(*options.memoryFormat));
+  }
+  if (options.requiresGrad != nullptr) {
+    tensorOptions = tensorOptions.requires_grad(*options.requiresGrad);
+  }
+  if (options.pinnedMemory != nullptr) {
+    tensorOptions = tensorOptions.pinned_memory(*options.pinnedMemory);
+  }
+  return tensorOptions;
 }
 
 at::indexing::TensorIndex torchffi_make_tensor_index(Index_t& index) {
@@ -146,6 +160,15 @@ tensor torchffi_tensor_get(tensor t, int index) {
   return new torch::Tensor(tensor);
 }
 
+int8_t torchffi_tensor_get_datatype(tensor t) {
+  return static_cast<int>(t->scalar_type());
+}
+
+tensor torchffi_tensor_to(tensor t, TensorOptions options, bool nonBlocking, bool copy) {
+  auto tensor = t->to(torchffi_make_tensor_options(options), nonBlocking, copy);
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_index(tensor t, Index_t* indices, size_t ndims) {
   std::vector<at::indexing::TensorIndex> indexer;
   for (int i = 0; i < ndims; i++) {
@@ -158,6 +181,33 @@ tensor torchffi_tensor_index(tensor t, Index_t* indices, size_t ndims) {
 tensor torchffi_tensor_view(tensor t, int64_t* sizes, size_t ndims) {
   at::Tensor tensor = t->view(at::IntArrayRef(sizes, ndims));
   return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_reshape(tensor t, int64_t* sizes, size_t ndims) {
+  at::Tensor tensor = t->reshape(at::IntArrayRef(sizes, ndims));
+  return new torch::Tensor(tensor);
+}
+
+tensor* torchffi_tensor_split_equally(tensor t, int64_t splits, int64_t dim) {
+  auto tensors = t->split(splits, dim);
+  tensor* result = (tensor*)malloc((tensors.size() + 1) * sizeof(tensor));
+  for (int i = 0; i < tensors.size(); i++) {
+    result[i] = new torch::Tensor(tensors[i]);
+  }
+  result[tensors.size()] = nullptr;
+
+  return result;
+}
+
+tensor* torchffi_tensor_split(tensor t, int64_t* splits, size_t splitsSize, int64_t dim) {
+  auto tensors = t->split(at::IntArrayRef(splits, splitsSize), dim);
+  tensor* result = (tensor*)malloc((tensors.size() + 1) * sizeof(tensor));
+  for (int i = 0; i < tensors.size(); i++) {
+    result[i] = new torch::Tensor(tensors[i]);
+  }
+  result[tensors.size()] = nullptr;
+
+  return result;
 }
 
 tensor torchffi_tensor_expand(tensor t, int64_t* sizes, size_t ndims, bool implicit) {
