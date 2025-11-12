@@ -1,5 +1,4 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/unet/sampler.dart';
 
 class ResnetBlock2D extends Module implements EmbeddableModule {
   final double outputScaleFactor;

@@ -27,9 +27,11 @@ class AutoencoderKL implements Vae {
   }
 }
 
+/// Encoder layer of the variation autoencoder that encoder the given image (x)
+/// into latent representation (z).
 class VaeEncoder extends Module {
   final Conv2D convIn;
-  final List<VaeEncoderBlock2D> downBlocks;
+  final List<DownEncoderBlock2D> downBlocks;
   final UNet2DMidBlock midBlock;
   final GroupNorm convNormOut;
   final SiLU convActivation;
@@ -66,8 +68,13 @@ class VaeEncoder extends Module {
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    convIn.resetParameters();
+    for (final block in downBlocks) {
+      block.resetParameters();
+    }
+    midBlock.resetParameters();
+    convNormOut.resetParameters();
+    convOut.resetParameters();
   }
 
   static Future<VaeEncoder> loadFromSafeTensor(
@@ -82,9 +89,11 @@ class VaeEncoder extends Module {
     final convIn = await Conv2D.loadFromSafeTensor(
       loader,
       prefix: '$prefix$convInName',
+      padding: const SymmetricPadding2D.same(1),
+      stride: const SymmetricPadding2D.same(1),
     );
 
-    final downBlocks = <VaeEncoderBlock2D>[];
+    final downBlocks = <DownEncoderBlock2D>[];
     // TODO downBlocks
 
     final midBlock = await UNet2DMidBlock.loadFromSafeTensor(

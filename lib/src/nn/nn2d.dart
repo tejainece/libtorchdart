@@ -74,15 +74,9 @@ class Conv2D extends Module implements SimpleModule {
   static Future<Conv2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
-    SymmetricPadding2D stride = const SymmetricPadding2D(
-      vertical: 1,
-      horizontal: 1,
-    ),
+    SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
     SymmetricPadding2D? padding,
-    SymmetricPadding2D dilation = const SymmetricPadding2D(
-      vertical: 1,
-      horizontal: 1,
-    ),
+    SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
     int groups = 1,
     PadMode? padMode,
   }) async {

@@ -1,5 +1,8 @@
 # Roadmap
 
+## Phase 0
++ Save Module to disk as Safetensor
+
 ## Phase 1: VAE
 + Test Flux VAE
 + Test SD 1.5 VAE
