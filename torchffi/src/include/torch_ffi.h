@@ -173,6 +173,28 @@ extern tensor torchffi_upsample_nearest_exact_scale(tensor input, double* scales
 
 extern tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH, int64_t kernelSizeW, int64_t strideH, int64_t strideW, int64_t paddingH, int64_t paddingW, bool ceilMode, bool countIncludePad, int64_t* divisorOverride);
 
+// Generators
+
+extern Generator torchffi_generator_new();
+
+extern Generator torchffi_generator_clone(Generator generator);
+
+extern void torchffi_generator_delete(Generator generator);
+
+extern void torchffi_generator_set_current_seed(Generator generator, uint64_t seed);
+
+extern uint64_t torchffi_generator_get_current_seed(Generator generator);
+
+extern void torchffi_generator_set_offset(Generator generator, uint64_t offset);
+
+extern uint64_t torchffi_generator_get_offset(Generator generator);
+
+extern void torchffi_generator_set_state(Generator generator, tensor newState);
+
+extern tensor torchffi_generator_get_state(Generator generator);
+
+extern Device torchffi_generator_get_device(Generator generator);
+
 #ifdef __cplusplus
 }
 #endif

@@ -142,7 +142,7 @@ final class FFIScalar extends Struct {
 }
 
 typedef CTensor = Pointer<Void>;
-typedef Generator = Pointer<Void>;
+typedef CGenerator = Pointer<Void>;
 
 final class FFISlice extends Struct {
   external Pointer<Int64> start;
@@ -241,8 +241,8 @@ abstract class Torch {
 
   static final rand = nativeLib
       .lookupFunction<
-        CTensor Function(Pointer<Int64>, Size, Generator, FFITensorOptions),
-        CTensor Function(Pointer<Int64>, int dims, Generator, FFITensorOptions)
+        CTensor Function(Pointer<Int64>, Size, CGenerator, FFITensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, CGenerator, FFITensorOptions)
       >('torchffi_tensor_new_rand');
 
   static final eye = nativeLib
@@ -290,8 +290,8 @@ abstract class Torch {
 
   static final rand_ = nativeLib
       .lookupFunction<
-        Void Function(CTensor, Generator),
-        void Function(CTensor, Generator)
+        Void Function(CTensor, CGenerator),
+        void Function(CTensor, CGenerator)
       >('torchffi_tensor_rand_');
 
   static final dim = nativeLib

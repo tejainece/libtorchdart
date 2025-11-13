@@ -96,9 +96,12 @@
         "stop_token": "cpp",
         "system_error": "cpp",
         "thread": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "codecvt": "cpp",
+        "expected": "cpp",
+        "cfenv": "cpp"
     },
-    "cmake.sourceDirectory": "/Users/tejag/projects/dart/libtorchdart/torchffi/src",
+    "cmake.sourceDirectory": "${workspaceFolder}/torchffi/src",
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 0, ContinuationIndentWidth: 2, AlignWithOpenBracket: BlockIndent, AlignAfterOpenBracket: BlockIndent}",
     "editor.formatOnSave": true,
 }

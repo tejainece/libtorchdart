@@ -3,8 +3,16 @@
 
 #include <optional>
 
-Generator torchffi_generator_new() {
-  return new torch::Generator();
+Generator torchffi_generator_new(Device* device) {
+  auto generator = at::globalContext().getAcceleratorHooksInterface(
+                                        device ? std::optional<c10::DeviceType>(at::DeviceType(device->type)) : std::nullopt
+  )
+                     .getNewGenerator(device ? device->index : -1);
+  return new torch::Generator(generator);
+}
+
+Generator torchffi_generator_new_cpu(uint64_t seed) {
+  return new torch::Generator(at::detail::createCPUGenerator(seed));
 }
 
 Generator torchffi_generator_clone(Generator generator) {
@@ -31,8 +39,8 @@ uint64_t torchffi_generator_get_offset(Generator generator) {
   return generator->get_offset();
 }
 
-void torchffi_generator_set_state(Generator generator, tensor new_state) {
-  generator->set_state(*new_state);
+void torchffi_generator_set_state(Generator generator, tensor newState) {
+  generator->set_state(*newState);
 }
 
 tensor torchffi_generator_get_state(Generator generator) {

@@ -2,6 +2,9 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:libtorchdart/src/nn/nn2d.dart';
 import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
+import 'generator.dart';
+
+export 'generator.dart';
 
 class Tensor implements ffi.Finalizable {
   ffi.Pointer<ffi.Void> nativePtr;
@@ -111,7 +114,7 @@ class Tensor implements ffi.Finalizable {
     bool? requiresGrad,
     bool? pinnedMemory,
   }) {
-    generator ??= ffi.nullptr;
+    CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
     final arena = ffi.Arena();
     try {
       final options = FFITensorOptions.make(
@@ -130,7 +133,7 @@ class Tensor implements ffi.Finalizable {
       final tensor = Torch.rand(
         sizesPointer,
         sizes.length,
-        generator,
+        cGenerator,
         options.ref,
       );
       return Tensor(tensor);
@@ -227,8 +230,8 @@ class Tensor implements ffi.Finalizable {
   }
 
   void rand_({Generator? generator}) {
-    generator ??= ffi.nullptr;
-    Torch.rand_(nativePtr, generator);
+    CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
+    Torch.rand_(nativePtr, cGenerator);
   }
 
   int get dim => Torch.dim(nativePtr);

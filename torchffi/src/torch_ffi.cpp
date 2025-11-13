@@ -68,27 +68,27 @@ tensor torchffi_tensor_new() {
 }
 
 tensor torchffi_tensor_new_zeros(int64_t* sizes, size_t ndims, TensorOptions options) {
-  at::Tensor tensor = torch::zeros(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
+  at::Tensor tensor = at::zeros(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
 tensor torchffi_tensor_new_ones(int64_t* sizes, size_t ndims, TensorOptions options) {
-  at::Tensor tensor = torch::ones(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
+  at::Tensor tensor = at::ones(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
 tensor torchffi_tensor_new_arange(int64_t end, TensorOptions options) {
-  at::Tensor tensor = torch::arange(end, torchffi_make_tensor_options(options));
+  at::Tensor tensor = at::arange(end, torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
 tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options) {
-  at::Tensor tensor = torch::rand(at::IntArrayRef(sizes, ndims), generator ? std::optional<at::Generator>(*generator) : std::nullopt, torchffi_make_tensor_options(options));
+  at::Tensor tensor = at::rand(at::IntArrayRef(sizes, ndims), generator ? std::optional<at::Generator>(*generator) : std::nullopt, torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
 tensor torchffi_tensor_new_eye(int64_t n, int64_t m, TensorOptions options) {
-  at::Tensor tensor = torch::eye(n, m, torchffi_make_tensor_options(options));
+  at::Tensor tensor = at::eye(n, m, torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
