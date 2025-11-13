@@ -175,6 +175,8 @@ extern tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH, int64_t ker
 
 // Generators
 
+extern Generator torchffi_get_default_generator(Device* device);
+
 extern Generator torchffi_generator_new();
 
 extern Generator torchffi_generator_clone(Generator generator);

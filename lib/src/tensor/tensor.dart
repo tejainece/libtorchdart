@@ -13,7 +13,7 @@ class Tensor implements ffi.Finalizable {
     _finalizer.attach(this, nativePtr);
   }
 
-  static final _finalizer = ffi.NativeFinalizer(Torch.delete);
+  static final _finalizer = ffi.NativeFinalizer(FFITensor.delete);
 
   static Tensor zeros(
     List<int> sizes, {
@@ -39,7 +39,7 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = Torch.zeros(sizesPointer, sizes.length, options.ref);
+      final tensor = FFITensor.zeros(sizesPointer, sizes.length, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -70,7 +70,7 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = Torch.ones(sizesPointer, sizes.length, options.ref);
+      final tensor = FFITensor.ones(sizesPointer, sizes.length, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -97,7 +97,7 @@ class Tensor implements ffi.Finalizable {
         pinnedMemory: pinnedMemory,
         allocator: arena,
       );
-      final tensor = Torch.arange(end, options.ref);
+      final tensor = FFITensor.arange(end, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -130,7 +130,7 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = Torch.rand(
+      final tensor = FFITensor.rand(
         sizesPointer,
         sizes.length,
         cGenerator,
@@ -164,7 +164,7 @@ class Tensor implements ffi.Finalizable {
         pinnedMemory: pinnedMemory,
         allocator: arena,
       );
-      final tensor = Torch.eye(n, m, options.ref);
+      final tensor = FFITensor.eye(n, m, options.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -194,7 +194,7 @@ class Tensor implements ffi.Finalizable {
       );
       final sizesPointer = arena.allocate<ffi.Int64>(sizes.length);
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = Torch.fromBlob(
+      final tensor = FFITensor.fromBlob(
         dataPointer,
         sizesPointer,
         sizes.length,
@@ -207,15 +207,15 @@ class Tensor implements ffi.Finalizable {
   }
 
   void ones_() {
-    Torch.ones_(nativePtr);
+    FFITensor.ones_(nativePtr);
   }
 
   void zeros_() {
-    Torch.zeros_(nativePtr);
+    FFITensor.zeros_(nativePtr);
   }
 
   void eye_() {
-    Torch.eye_(nativePtr);
+    FFITensor.eye_(nativePtr);
   }
 
   void fill_(dynamic value) {
@@ -223,7 +223,7 @@ class Tensor implements ffi.Finalizable {
     try {
       final scalar = FFIScalar.allocate(arena);
       scalar.ref.setValue(value);
-      Torch.fill_(nativePtr, scalar.ref);
+      FFITensor.fill_(nativePtr, scalar.ref);
     } finally {
       arena.releaseAll();
     }
@@ -231,17 +231,17 @@ class Tensor implements ffi.Finalizable {
 
   void rand_({Generator? generator}) {
     CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
-    Torch.rand_(nativePtr, cGenerator);
+    FFITensor.rand_(nativePtr, cGenerator);
   }
 
-  int get dim => Torch.dim(nativePtr);
+  int get dim => FFITensor.dim(nativePtr);
 
   List<int> get sizes {
     final dim = this.dim;
     final arena = ffi.Arena();
     try {
       final sizesPtr = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>() * dim);
-      Torch.sizes(nativePtr, dim, sizesPtr);
+      FFITensor.sizes(nativePtr, dim, sizesPtr);
       return sizesPtr.asTypedList(dim).toList();
     } finally {
       arena.releaseAll();
@@ -254,7 +254,7 @@ class Tensor implements ffi.Finalizable {
   int get numel => shape.reduce((a, b) => a * b);
 
   Device get device {
-    final device = Torch.tensorGetDevice(nativePtr);
+    final device = FFITensor.tensorGetDevice(nativePtr);
     return Device(
       deviceType: DeviceType.fromId(device.deviceType),
       deviceIndex: device.deviceIndex,
@@ -264,12 +264,12 @@ class Tensor implements ffi.Finalizable {
   bool get isScalar => shape.isEmpty;
 
   dynamic get scalar {
-    final scalar = Torch.scalar(nativePtr);
+    final scalar = FFITensor.scalar(nativePtr);
     return scalar.value;
   }
 
   dynamic scalarAt(int index) {
-    final scalar = Torch.scalarAt(nativePtr, index);
+    final scalar = FFITensor.scalarAt(nativePtr, index);
     return scalar.value;
   }
 
@@ -284,7 +284,7 @@ class Tensor implements ffi.Finalizable {
       throw IndexError.withLength(index, max);
     }*/
     try {
-      final tensor = Torch.get(nativePtr, index);
+      final tensor = FFITensor.get(nativePtr, index);
       return Tensor(tensor);
     } catch (e) {
       print(e);
@@ -302,7 +302,7 @@ class Tensor implements ffi.Finalizable {
         final index = indices[i];
         (indicesPointer + i).ref.fromIndex(index, arena);
       }
-      final tensor = Torch.index(nativePtr, indicesPointer, indices.length);
+      final tensor = FFITensor.index(nativePtr, indicesPointer, indices.length);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -316,7 +316,7 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = Torch.view(nativePtr, sizesPointer, sizes.length);
+      final tensor = FFITensor.view(nativePtr, sizesPointer, sizes.length);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -324,7 +324,7 @@ class Tensor implements ffi.Finalizable {
   }
 
   List<Tensor> splitEqually(int splitSize, {int dim = 0}) {
-    final tensorPtrs = Torch.splitEqually(nativePtr, splitSize, dim);
+    final tensorPtrs = FFITensor.splitEqually(nativePtr, splitSize, dim);
     try {
       final List<Tensor> tensors = [];
       ffi.Pointer<CTensor> index = tensorPtrs;
@@ -345,7 +345,7 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * splitSizes.length,
       );
       splitSizesPointer.asTypedList(splitSizes.length).setAll(0, splitSizes);
-      final tensorPtrs = Torch.split(
+      final tensorPtrs = FFITensor.split(
         nativePtr,
         splitSizesPointer,
         splitSizes.length,
@@ -370,7 +370,7 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = Torch.reshape(nativePtr, sizesPointer, sizes.length);
+      final tensor = FFITensor.reshape(nativePtr, sizesPointer, sizes.length);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -384,7 +384,12 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * sizes.length,
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
-      final tensor = Torch.expand(nativePtr, sizesPointer, sizes.length, false);
+      final tensor = FFITensor.expand(
+        nativePtr,
+        sizesPointer,
+        sizes.length,
+        false,
+      );
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -398,14 +403,14 @@ class Tensor implements ffi.Finalizable {
         ffi.sizeOf<ffi.Int64>() * dims.length,
       );
       dimsPointer.asTypedList(dims.length).setAll(0, dims);
-      final tensor = Torch.permute(nativePtr, dimsPointer, dims.length);
+      final tensor = FFITensor.permute(nativePtr, dimsPointer, dims.length);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
     }
   }
 
-  DataType get dataType => DataType.fromId(Torch.datatype(nativePtr));
+  DataType get dataType => DataType.fromId(FFITensor.datatype(nativePtr));
 
   Tensor to({
     DataType? dataType,
@@ -428,7 +433,7 @@ class Tensor implements ffi.Finalizable {
         pinnedMemory: pinnedMemory,
         allocator: arena,
       );
-      final tensor = Torch.to(nativePtr, options.ref, nonblocking, copy);
+      final tensor = FFITensor.to(nativePtr, options.ref, nonblocking, copy);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -436,13 +441,13 @@ class Tensor implements ffi.Finalizable {
   }
 
   Tensor contiguous({MemoryFormat format = MemoryFormat.contiguous}) {
-    final tensor = Torch.contiguous(nativePtr, format.id);
+    final tensor = FFITensor.contiguous(nativePtr, format.id);
     return Tensor(tensor);
   }
 
   /// Returns the transposed version of the tensor. Swaps [dim0] and [dim1].
   Tensor transpose(int dim0, int dim1) {
-    final tensor = Torch.transpose(nativePtr, dim0, dim1);
+    final tensor = FFITensor.transpose(nativePtr, dim0, dim1);
     return Tensor(tensor);
   }
 
@@ -460,7 +465,7 @@ class Tensor implements ffi.Finalizable {
         valuePointer.value = value;
       }
 
-      final tensor = Torch.pad(
+      final tensor = FFITensor.pad(
         nativePtr,
         padPointer,
         pad.length,
@@ -479,14 +484,22 @@ class Tensor implements ffi.Finalizable {
       if (other is Tensor) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setInt(1);
-        final tensor = Torch.addition(nativePtr, other.nativePtr, alpha.ref);
+        final tensor = FFITensor.addition(
+          nativePtr,
+          other.nativePtr,
+          alpha.ref,
+        );
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
       } else if (other is (Tensor, dynamic)) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
-        final tensor = Torch.addition(nativePtr, other.$1.nativePtr, alpha.ref);
+        final tensor = FFITensor.addition(
+          nativePtr,
+          other.$1.nativePtr,
+          alpha.ref,
+        );
         return Tensor(tensor);
       } else if (other is (num, dynamic)) {
         throw UnimplementedError('operator+num not implemented for Tensor');
@@ -505,14 +518,18 @@ class Tensor implements ffi.Finalizable {
       if (other is Tensor) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setInt(1);
-        final tensor = Torch.subtraction(nativePtr, other.nativePtr, alpha.ref);
+        final tensor = FFITensor.subtraction(
+          nativePtr,
+          other.nativePtr,
+          alpha.ref,
+        );
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
       } else if (other is (Tensor, dynamic)) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
-        final tensor = Torch.subtraction(
+        final tensor = FFITensor.subtraction(
           nativePtr,
           other.$1.nativePtr,
           alpha.ref,
@@ -533,7 +550,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       if (other is Tensor) {
-        final tensor = Torch.multiplication(nativePtr, other.nativePtr);
+        final tensor = FFITensor.multiplication(nativePtr, other.nativePtr);
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
@@ -552,7 +569,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       if (other is Tensor) {
-        final tensor = Torch.division(nativePtr, other.nativePtr);
+        final tensor = FFITensor.division(nativePtr, other.nativePtr);
         return Tensor(tensor);
       } else if (other is num) {
         throw UnimplementedError('operator/num not implemented for Tensor');
@@ -572,7 +589,7 @@ class Tensor implements ffi.Finalizable {
     try {
       final exponentScalar = FFIScalar.allocate(arena);
       exponentScalar.ref.setValue(exponent);
-      final tensor = Torch.pow(nativePtr, exponentScalar.ref);
+      final tensor = FFITensor.pow(nativePtr, exponentScalar.ref);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -580,27 +597,27 @@ class Tensor implements ffi.Finalizable {
   }
 
   Tensor rsqrt() {
-    final tensor = Torch.rsqrt(nativePtr);
+    final tensor = FFITensor.rsqrt(nativePtr);
     return Tensor(tensor);
   }
 
   Tensor bitwiseNot() {
-    final tensor = Torch.bitwiseNot(nativePtr);
+    final tensor = FFITensor.bitwiseNot(nativePtr);
     return Tensor(tensor);
   }
 
   Tensor bitwiseAnd(Tensor other) {
-    final tensor = Torch.bitwiseAnd(nativePtr, other.nativePtr);
+    final tensor = FFITensor.bitwiseAnd(nativePtr, other.nativePtr);
     return Tensor(tensor);
   }
 
   Tensor bitwiseOr(Tensor other) {
-    final tensor = Torch.bitwiseOr(nativePtr, other.nativePtr);
+    final tensor = FFITensor.bitwiseOr(nativePtr, other.nativePtr);
     return Tensor(tensor);
   }
 
   Tensor bitwiseXor(Tensor other) {
-    final tensor = Torch.bitwiseXor(nativePtr, other.nativePtr);
+    final tensor = FFITensor.bitwiseXor(nativePtr, other.nativePtr);
     return Tensor(tensor);
   }
 
@@ -623,7 +640,7 @@ class Tensor implements ffi.Finalizable {
         dataTypePointer.value = dataType.type;
       }
 
-      final tensor = Torch.sum(
+      final tensor = FFITensor.sum(
         nativePtr,
         dimPointer,
         dimLen,
@@ -655,7 +672,7 @@ class Tensor implements ffi.Finalizable {
         dataTypePointer.value = dataType.type;
       }
 
-      final tensor = Torch.mean(
+      final tensor = FFITensor.mean(
         nativePtr,
         dimPointer,
         dimLen,
@@ -669,7 +686,7 @@ class Tensor implements ffi.Finalizable {
   }
 
   Tensor matmul(Tensor other) {
-    final tensor = Torch.matmul(nativePtr, other.nativePtr);
+    final tensor = FFITensor.matmul(nativePtr, other.nativePtr);
     return Tensor(tensor);
   }
 
@@ -681,7 +698,7 @@ class Tensor implements ffi.Finalizable {
         dataTypePointer = arena.allocate<ffi.Int8>(ffi.sizeOf<ffi.Int8>());
         dataTypePointer.value = dataType.type;
       }
-      final tensor = Torch.softmax(nativePtr, dim, dataTypePointer);
+      final tensor = FFITensor.softmax(nativePtr, dim, dataTypePointer);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -703,7 +720,7 @@ class Tensor implements ffi.Finalizable {
           .asTypedList(normalizedShape.length)
           .setAll(0, normalizedShape);
 
-      final tensorPtr = Torch.layerNorm(
+      final tensorPtr = FFITensor.layerNorm(
         nativePtr,
         normalizedShapePointer,
         normalizedShape.length,
@@ -724,7 +741,7 @@ class Tensor implements ffi.Finalizable {
     Tensor? bias,
     double eps = 1e-5,
   }) {
-    final tensorPtr = Torch.groupNorm(
+    final tensorPtr = FFITensor.groupNorm(
       nativePtr,
       numGroups,
       weight?.nativePtr ?? ffi.nullptr,
@@ -735,17 +752,17 @@ class Tensor implements ffi.Finalizable {
   }
 
   Tensor dropout(double p, {bool training = true}) {
-    final tensor = Torch.dropout(nativePtr, p, training);
+    final tensor = FFITensor.dropout(nativePtr, p, training);
     return Tensor(tensor);
   }
 
   Tensor sigmoid() {
-    final tensor = Torch.sigmoid(nativePtr);
+    final tensor = FFITensor.sigmoid(nativePtr);
     return Tensor(tensor);
   }
 
   Tensor relu() {
-    final tensor = Torch.relu(nativePtr);
+    final tensor = FFITensor.relu(nativePtr);
     return Tensor(tensor);
   }
 
@@ -753,7 +770,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       final activation = approximate.name.toNativeUtf8(allocator: arena);
-      final tensor = Torch.gelu(nativePtr, activation);
+      final tensor = FFITensor.gelu(nativePtr, activation);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();
@@ -761,7 +778,7 @@ class Tensor implements ffi.Finalizable {
   }
 
   Tensor silu() {
-    final tensor = Torch.silu(nativePtr);
+    final tensor = FFITensor.silu(nativePtr);
     return Tensor(tensor);
   }
 
@@ -860,7 +877,7 @@ class Slice implements Index {
 enum GeluApporimate { none, tanh }
 
 Tensor linear(Tensor input, Tensor weight, {Tensor? bias}) {
-  final tensorPtr = Torch.linear(
+  final tensorPtr = FFITensor.linear(
     input.nativePtr,
     weight.nativePtr,
     bias?.nativePtr ?? ffi.nullptr,
@@ -875,7 +892,7 @@ Tensor embedding(
   bool scaleGradByFreq,
   bool sparse,
 ) {
-  final tensorPtr = Torch.embedding(
+  final tensorPtr = FFITensor.embedding(
     weights.nativePtr,
     indices.nativePtr,
     paddingIdx,
@@ -924,7 +941,7 @@ Tensor conv2d(
     dilationPointer.value = dilation.vertical;
     (dilationPointer + 1).value = dilation.horizontal;
 
-    final tensorPtr = Torch.conv2d(
+    final tensorPtr = FFITensor.conv2d(
       input.nativePtr,
       weight.nativePtr,
       bias?.nativePtr ?? ffi.nullptr,
@@ -1202,7 +1219,7 @@ Tensor interpolateNearest(Tensor input, List<int> outputSize) {
     );
     outputSizePointer.asTypedList(outputSize.length).setAll(0, outputSize);
 
-    final tensorPtr = Torch.upsampleNearest(
+    final tensorPtr = FFITensor.upsampleNearest(
       input.nativePtr,
       outputSizePointer,
       outputSize.length,
@@ -1223,7 +1240,7 @@ Tensor interpolateNearestScale(Tensor input, List<double> outputSizeScale) {
         .asTypedList(outputSizeScale.length)
         .setAll(0, outputSizeScale);
 
-    final tensorPtr = Torch.upsampleNearestScale(
+    final tensorPtr = FFITensor.upsampleNearestScale(
       input.nativePtr,
       outputSizePointer,
       outputSizeScale.length,
@@ -1242,7 +1259,7 @@ Tensor interpolateNearestExact(Tensor input, List<int> outputSize) {
     );
     outputSizePointer.asTypedList(outputSize.length).setAll(0, outputSize);
 
-    final tensorPtr = Torch.upsampleNearestExact(
+    final tensorPtr = FFITensor.upsampleNearestExact(
       input.nativePtr,
       outputSizePointer,
       outputSize.length,
@@ -1266,7 +1283,7 @@ Tensor interpolateNearestExactScale(
         .asTypedList(outputSizeScale.length)
         .setAll(0, outputSizeScale);
 
-    final tensorPtr = Torch.upsampleNearestExactScale(
+    final tensorPtr = FFITensor.upsampleNearestExactScale(
       input.nativePtr,
       outputSizePointer,
       outputSizeScale.length,
@@ -1302,7 +1319,7 @@ Tensor avgPool2D(
       divisorOverridePointer.value = divisorOverride;
     }
 
-    final tensorPtr = Torch.avgPool2D(
+    final tensorPtr = FFITensor.avgPool2D(
       input.nativePtr,
       kernelSize.vertical,
       kernelSize.horizontal,

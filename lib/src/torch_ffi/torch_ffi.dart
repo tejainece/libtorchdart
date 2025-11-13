@@ -2,10 +2,23 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import 'package:libtorchdart/libtorchdart.dart';
+import 'package:universal_io/io.dart';
 
-final DynamicLibrary nativeLib = DynamicLibrary.open(
-  'torchffi/src/build/libtorchffi.dylib',
-);
+export 'generator_ffi.dart';
+
+String getLibraryPath() {
+  if (Platform.isMacOS) {
+    return 'torchffi/src/build/libtorchffi.dylib';
+  } else if (Platform.isLinux) {
+    return 'torchffi/src/build/libtorchffi.so';
+  } else if (Platform.isWindows) {
+    return 'torchffi/src/build/libtorchffi.dll';
+  } else {
+    throw UnsupportedError('Unsupported platform: ${Platform.operatingSystem}');
+  }
+}
+
+final DynamicLibrary nativeLib = DynamicLibrary.open(getLibraryPath());
 
 final class FFIDevice extends Struct {
   @Int8()
@@ -210,7 +223,7 @@ enum FFIIndexType {
   tensorType,
 }
 
-abstract class Torch {
+abstract class FFITensor {
   static final constructor = nativeLib
       .lookupFunction<CTensor Function(), CTensor Function()>(
         'torchffi_tensor_new',
