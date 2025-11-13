@@ -87,6 +87,11 @@ tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, Generator generato
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_tensor_new_randn(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options) {
+  at::Tensor tensor = at::randn(at::IntArrayRef(sizes, ndims), generator ? std::optional<at::Generator>(*generator) : std::nullopt, torchffi_make_tensor_options(options));
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_new_eye(int64_t n, int64_t m, TensorOptions options) {
   at::Tensor tensor = at::eye(n, m, torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
@@ -273,6 +278,14 @@ void torchffi_tensor_rand_(tensor t, Generator generator) {
     opGenerator = *generator;
   }
   t->random_(opGenerator);
+}
+
+void torchffi_tensor_normal_(tensor t, Generator generator, double mean, double std) {
+  std::optional<at::Generator> opGenerator = std::nullopt;
+  if (generator != nullptr) {
+    opGenerator = *generator;
+  }
+  t->normal_(mean, std, opGenerator);
 }
 
 tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha) {

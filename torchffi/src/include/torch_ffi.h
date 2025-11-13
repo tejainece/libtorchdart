@@ -77,6 +77,8 @@ extern tensor torchffi_tensor_new_arange(int64_t end, TensorOptions options);
 
 extern tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options);
 
+extern tensor torchffi_tensor_new_randn(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options);
+
 extern size_t torchffi_tensor_dim(tensor t);
 
 extern void torchffi_tensor_sizes(tensor t, size_t dim, int64_t* shape);
@@ -114,6 +116,18 @@ extern tensor torchffi_tensor_expand(tensor t, int64_t* sizes, size_t ndims, boo
 extern tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat);
 
 extern tensor torchffi_tensor_pad(tensor t, int64_t* pad, size_t padArrayLength, uint8_t padMode, double* value);
+
+extern void torchffi_tensor_ones_(tensor t);
+
+extern void torchffi_tensor_zeros_(tensor t);
+
+extern void torchffi_tensor_eye_(tensor t);
+
+extern void torchffi_tensor_fill_(tensor t, Scalar value);
+
+extern void torchffi_tensor_rand_(tensor t, Generator generator);
+
+extern void torchffi_tensor_normal_(tensor t, Generator generator, double mean, double std);
 
 extern tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha);
 

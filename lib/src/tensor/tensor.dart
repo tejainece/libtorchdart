@@ -1,6 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
-import 'package:libtorchdart/src/nn/nn2d.dart';
+import 'package:libtorchdart/src/nn/conv2d.dart';
 import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
 import 'generator.dart';
 
@@ -142,6 +142,44 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  static Tensor randn(
+    List<int> sizes, {
+    Generator? generator,
+    Device? device,
+    DataType? datatype,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
+  }) {
+    CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
+    final arena = ffi.Arena();
+    try {
+      final options = FFITensorOptions.make(
+        dataType: datatype,
+        device: device,
+        layout: layout,
+        memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
+        allocator: arena,
+      );
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = FFITensor.randn(
+        sizesPointer,
+        sizes.length,
+        cGenerator,
+        options.ref,
+      );
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   static Tensor eye(
     int n, {
     int? m,
@@ -232,6 +270,11 @@ class Tensor implements ffi.Finalizable {
   void rand_({Generator? generator}) {
     CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
     FFITensor.rand_(nativePtr, cGenerator);
+  }
+
+  void normal_({double mean = 0.0, double std = 1.0, Generator? generator}) {
+    CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
+    FFITensor.normal_(nativePtr, cGenerator, mean, std);
   }
 
   int get dim => FFITensor.dim(nativePtr);

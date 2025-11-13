@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
 
 abstract class FFIGenerator {
-  static final getDefaultGeenrator = nativeLib
+  static final getDefaultGenerator = nativeLib
       .lookupFunction<
         CGenerator Function(Pointer<FFIDevice>),
         CGenerator Function(Pointer<FFIDevice>)

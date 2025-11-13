@@ -258,6 +258,12 @@ abstract class FFITensor {
         CTensor Function(Pointer<Int64>, int dims, CGenerator, FFITensorOptions)
       >('torchffi_tensor_new_rand');
 
+  static final randn = nativeLib
+      .lookupFunction<
+        CTensor Function(Pointer<Int64>, Size, CGenerator, FFITensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, CGenerator, FFITensorOptions)
+      >('torchffi_tensor_new_randn');
+
   static final eye = nativeLib
       .lookupFunction<
         CTensor Function(Int64, Int64, FFITensorOptions),
@@ -306,6 +312,12 @@ abstract class FFITensor {
         Void Function(CTensor, CGenerator),
         void Function(CTensor, CGenerator)
       >('torchffi_tensor_rand_');
+
+  static final normal_ = nativeLib
+      .lookupFunction<
+        Void Function(CTensor, CGenerator, Double, Double),
+        void Function(CTensor, CGenerator, double, double)
+      >('torchffi_tensor_normal_');
 
   static final dim = nativeLib
       .lookupFunction<Size Function(CTensor), int Function(CTensor tensor)>(

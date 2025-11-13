@@ -5,4 +5,6 @@ void main() {
   print(generator.currentSeed);
   generator.currentSeed = 0;
   print(generator.currentSeed);
+  print(Tensor.rand([1], generator: generator));
+  print(generator.state);
 }

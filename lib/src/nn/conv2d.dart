@@ -14,11 +14,11 @@ class Conv2D extends Module implements SimpleModule {
   Conv2D(
     this.weight, {
     this.bias,
+    this.groups = 1,
     this.stride = const SymmetricPadding2D.same(1),
     this.customPad,
     this.padding,
     this.dilation = const SymmetricPadding2D.same(1),
-    this.groups = 1,
   }) : assert(groups > 0) {
     assert(numInChannels % groups == 0);
     assert(numOutChannels % groups == 0);
@@ -29,6 +29,44 @@ class Conv2D extends Module implements SimpleModule {
         );
       }
     }
+  }
+
+  factory Conv2D._(
+    Tensor weight, {
+    required Tensor? bias,
+    required PadMode? padMode,
+    required SymmetricPadding2D stride,
+    required SymmetricPadding2D? padding,
+    required SymmetricPadding2D dilation,
+    required int groups,
+  }) {
+    Conv2DPad? customPad;
+    if (padMode != null) {
+      final kernelSize = SymmetricPadding2D(
+        vertical: weight.shape[2],
+        horizontal: weight.shape[3],
+      );
+      final total = dilation.multiplySymmetric(kernelSize.subtractInt(1));
+      final initial = total.divideInt(2);
+      Padding2D customPadding = Padding2D(
+        left: initial.horizontal,
+        right: total.horizontal - initial.horizontal,
+        top: initial.vertical,
+        bottom: total.vertical - initial.vertical,
+      );
+      customPad = Conv2DPad(padMode: padMode, padding: customPadding);
+      padding = null;
+    }
+
+    return Conv2D(
+      weight,
+      bias: bias,
+      groups: groups,
+      stride: stride,
+      customPad: customPad,
+      padding: padding,
+      dilation: dilation,
+    );
   }
 
   @override
@@ -74,10 +112,10 @@ class Conv2D extends Module implements SimpleModule {
   static Future<Conv2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    int groups = 1,
     SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
     SymmetricPadding2D? padding,
     SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
-    int groups = 1,
     PadMode? padMode,
   }) async {
     final weight = await loader.loadByName('${prefix}weight');
@@ -86,32 +124,14 @@ class Conv2D extends Module implements SimpleModule {
       bias = await loader.loadByName('${prefix}bias');
     }
 
-    Conv2DPad? customPad;
-    if (padMode != null) {
-      final kernelSize = SymmetricPadding2D(
-        vertical: weight.shape[2],
-        horizontal: weight.shape[3],
-      );
-      final total = dilation.multiplySymmetric(kernelSize.subtractInt(1));
-      final initial = total.divideInt(2);
-      Padding2D customPadding = Padding2D(
-        left: initial.horizontal,
-        right: total.horizontal - initial.horizontal,
-        top: initial.vertical,
-        bottom: total.vertical - initial.vertical,
-      );
-      customPad = Conv2DPad(padMode: padMode, padding: customPadding);
-      padding = null;
-    }
-
-    return Conv2D(
+    return Conv2D._(
       weight,
       bias: bias,
-      stride: stride,
-      padding: padding,
-      dilation: dilation,
       groups: groups,
-      customPad: customPad,
+      padMode: padMode,
+      padding: padding,
+      stride: stride,
+      dilation: dilation,
     );
   }
 
@@ -119,10 +139,10 @@ class Conv2D extends Module implements SimpleModule {
     required int numInChannels,
     required int numOutChannels,
     required SymmetricPadding2D kernelSize,
+    int groups = 1,
     SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
     SymmetricPadding2D padding = const SymmetricPadding2D.same(0),
     SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
-    int groups = 1,
     bool hasBias = true,
     DataType? dataType,
     Device? device,
@@ -131,9 +151,25 @@ class Conv2D extends Module implements SimpleModule {
     /// If true, uses padding so that the output size remains same as the input size
     bool padToSame = false,
   }) {
-    // TODO initialize weights
-    // TODO initialize bias
-    throw UnimplementedError();
+    Tensor weights = Tensor.ones([
+      numOutChannels,
+      numInChannels,
+      kernelSize.vertical,
+      kernelSize.horizontal,
+    ]);
+    Tensor? bias;
+    if (hasBias) {
+      bias = Tensor.zeros([numOutChannels]);
+    }
+    return Conv2D._(
+      weights,
+      bias: bias,
+      groups: groups,
+      stride: stride,
+      padding: padding,
+      dilation: dilation,
+      padMode: padMode,
+    );
   }
 }
 

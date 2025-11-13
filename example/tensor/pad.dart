@@ -1,5 +1,4 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/nn/nn2d.dart';
 
 void main() {
   final tensor = Tensor.ones([1, 2, 5, 7]);

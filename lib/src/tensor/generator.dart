@@ -39,7 +39,7 @@ class Generator {
           allocator: arena,
         );
       }
-      final generator = FFIGenerator.getDefaultGeenrator(devicePtr);
+      final generator = FFIGenerator.getDefaultGenerator(devicePtr);
       return Generator(generator);
     } finally {
       arena.releaseAll();
