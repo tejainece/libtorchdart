@@ -15,13 +15,14 @@ abstract class Init {
   static void kaimingUniform_(
     Tensor tensor, {
     double a = 0,
-    bool fanIn = true,
-    KaimingNonLinearity nonLinearity = KaimingNonLinearity.relu,
+    bool isFanIn = true,
+    KaimingNonLinearity nonLinearity = KaimingNonLinearity.leakyRelu,
     Generator? generator,
   }) {
     final (:fanIn, :fanOut) = calculateKaimingFan(tensor);
+    int fan = isFanIn ? fanIn : fanOut;
     final double gain = calculateGain(nonLinearity, a);
-    double std = gain / sqrt(fanIn);
+    double std = gain / sqrt(fan);
     double bound = sqrt(3.0) * std;
     // TODO no_grad
     tensor.uniform_(from: -bound, to: bound, generator: generator);

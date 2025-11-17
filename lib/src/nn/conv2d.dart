@@ -97,13 +97,13 @@ class Conv2D extends Module implements SimpleModule {
   }
 
   @override
-  void resetParameters() {
-    Init.kaimingUniform_(weight, a: sqrt(5));
+  void resetParameters({Generator? generator}) {
+    Init.kaimingUniform_(weight, a: sqrt(5), generator: generator);
     if (bias != null) {
       final fan = Init.calculateKaimingFan(weight);
       if (fan.fanIn != 0) {
         double bound = 1.0 / sqrt(fan.fanIn);
-        bias!.uniform_(from: -bound, to: bound);
+        bias!.uniform_(from: -bound, to: bound, generator: generator);
       }
     }
   }
@@ -167,12 +167,13 @@ class Conv2D extends Module implements SimpleModule {
     SymmetricPadding2D padding = const SymmetricPadding2D.same(0),
     SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
     bool hasBias = true,
-    DataType? dataType,
-    Device? device,
     PadMode? padMode,
 
     /// If true, uses padding so that the output size remains same as the input size
     bool padToSame = false,
+    Generator? generator,
+    DataType? dataType,
+    Device? device,
   }) {
     Tensor weights = Tensor.empty([
       numOutChannels,
@@ -192,7 +193,7 @@ class Conv2D extends Module implements SimpleModule {
       padding: padding,
       dilation: dilation,
       padMode: padMode,
-    )..resetParameters();
+    )..resetParameters(generator: generator);
   }
 }
 
