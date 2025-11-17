@@ -69,6 +69,8 @@ extern tensor torchffi_tensor_new(void);
 
 extern void torchffi_tensor_delete(tensor t);
 
+extern tensor torchffi_tensor_new_empty(int64_t* sizes, size_t ndims, TensorOptions options);
+
 extern tensor torchffi_tensor_new_zeros(int64_t* sizes, size_t ndims, TensorOptions options);
 
 extern tensor torchffi_tensor_new_ones(int64_t* sizes, size_t ndims, TensorOptions options);
@@ -105,6 +107,8 @@ extern tensor torchffi_tensor_view(tensor t, int64_t* sizes, size_t ndims);
 
 extern tensor torchffi_tensor_reshape(tensor t, int64_t* sizes, size_t ndims);
 
+extern tensor torchffi_tensor_flatten(tensor t, int64_t startDim, int64_t endDim);
+
 extern tensor* torchffi_tensor_split_equally(tensor t, int64_t splits, int64_t dim);
 
 extern tensor* torchffi_tensor_split(tensor t, int64_t* splits, size_t splitsSize, int64_t dim);
@@ -128,6 +132,10 @@ extern void torchffi_tensor_fill_(tensor t, Scalar value);
 extern void torchffi_tensor_rand_(tensor t, Generator generator);
 
 extern void torchffi_tensor_normal_(tensor t, Generator generator, double mean, double std);
+
+extern void torchffi_tensor_uniform_(tensor t, Generator generator, double from, double to);
+
+extern bool torchffi_tensor_allclose(tensor a, tensor b, double rtol, double atol, bool equalNan);
 
 extern tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha);
 
@@ -169,9 +177,15 @@ extern tensor torchffi_layer_norm(tensor input, int64_t* normalizedShape, size_t
 
 extern tensor torchffi_group_norm(tensor input, int64_t numGroups, tensor weight, tensor bias, float eps);
 
+extern tensor torchffi_rms_norm(tensor input, int64_t* normalizedShape, size_t normalizedShapeLength, tensor weight, double* eps);
+
 extern tensor torchffi_tensor_dropout(tensor t, double p, bool train);
 
+extern void torchffi_tensor_dropout_(tensor t, double p, bool train);
+
 extern tensor torchffi_tensor_softmax(tensor t, int64_t dim, uint8_t* dataType);
+
+extern tensor torchffi_embedding_renorm_(tensor weights, tensor indices, double maxNorm, double normType);
 
 extern tensor torchffi_embedding(tensor weights, tensor indices, int64_t paddingIdx, uint8_t scaleGradByFreq, uint8_t sparse);
 

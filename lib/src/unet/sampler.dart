@@ -65,9 +65,17 @@ class Upsample2D extends Module implements SimpleModule {
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    conv?.resetParameters();
+    norm?.resetParameters();
   }
+
+  @override
+  Map<String, dynamic> get meta => {
+    "useConvTransposed": useConvTransposed,
+    "interpolate": interpolate,
+    "norm": norm?.meta,
+    "conv": conv?.meta,
+  };
 
   static Future<Upsample2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
@@ -88,7 +96,7 @@ class Upsample2D extends Module implements SimpleModule {
           eps: normConfig.eps,
         );
       } else if (normConfig.normType == 'rms_norm') {
-        norm = await RMSNorm.loadFromSafeTensor(
+        norm = await RMSNormWithBias.loadFromSafeTensor(
           loader,
           prefix: '${prefix}norm',
           eps: normConfig.eps,
@@ -141,7 +149,7 @@ class Upsample2D extends Module implements SimpleModule {
           isElementwiseAffine: normConfig.isElementwiseAffine,
         );
       } else if (normConfig.normType == 'rms_norm') {
-        norm = RMSNorm.make(
+        norm = RMSNormWithBias.make(
           normalizedShape: [numChannels],
           isElementwiseAffine: normConfig.isElementwiseAffine,
         );
@@ -225,6 +233,9 @@ class Downsample2D extends Module implements SimpleModule {
     norm?.resetParameters();
   }
 
+  @override
+  Map<String, dynamic> get meta => {"norm": norm?.meta, "conv": conv?.meta};
+
   static Future<Downsample2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -245,7 +256,7 @@ class Downsample2D extends Module implements SimpleModule {
           normalizedShape: [numChannels],
         );
       } else if (normConfig.normType == 'rms_norm') {
-        norm = await RMSNorm.loadFromSafeTensor(
+        norm = await RMSNormWithBias.loadFromSafeTensor(
           loader,
           prefix: '${prefix}norm',
         );

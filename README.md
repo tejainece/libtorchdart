@@ -2,8 +2,8 @@
 
 ## Phase 0
 + Save Module to disk as Safetensor
-+ Tensor.flatten
-+ Tensor.allclose
++ Conv2D
++ Dropout
 
 ## Phase 1: Resnet
 

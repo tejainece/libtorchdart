@@ -49,6 +49,11 @@ class CrossAttnDownBlock2D extends Module implements UNet2DDownBlock {
     // TODO
     throw UnimplementedError();
   }
+
+  @override
+  late final Map<String, dynamic> meta = {
+    /// TODO
+  };
 }
 
 class DownBlock2D extends Module implements UNet2DDownBlock {
@@ -76,4 +81,9 @@ class DownBlock2D extends Module implements UNet2DDownBlock {
       downSampler.resetParameters();
     }
   }
+
+  @override
+  late final Map<String, dynamic> meta = {
+    /// TODO
+  };
 }

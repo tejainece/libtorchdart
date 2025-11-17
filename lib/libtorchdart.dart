@@ -3,3 +3,4 @@ export 'src/tensor/tensor.dart';
 export 'src/transformers/transformers.dart';
 export 'src/nn/nn.dart';
 export 'src/unet/unet.dart';
+export 'src/init/init.dart';

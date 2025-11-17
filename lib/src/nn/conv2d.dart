@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:libtorchdart/libtorchdart.dart';
 
 class Conv2D extends Module implements SimpleModule {
@@ -72,7 +74,7 @@ class Conv2D extends Module implements SimpleModule {
   @override
   Tensor forward(Tensor input) {
     if (customPad == null) {
-      return conv2d(
+      return NN2DUtil.conv2d(
         input,
         weight,
         bias: bias,
@@ -84,7 +86,7 @@ class Conv2D extends Module implements SimpleModule {
     }
 
     input = input.pad(customPad!.padding.to4List(), mode: customPad!.padMode);
-    return conv2d(
+    return NN2DUtil.conv2d(
       input,
       weight,
       bias: bias,
@@ -96,8 +98,14 @@ class Conv2D extends Module implements SimpleModule {
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    Init.kaimingUniform_(weight, a: sqrt(5));
+    if (bias != null) {
+      final fan = Init.calculateKaimingFan(weight);
+      if (fan.fanIn != 0) {
+        double bound = 1.0 / sqrt(fan.fanIn);
+        bias!.uniform_(from: -bound, to: bound);
+      }
+    }
   }
 
   int get numInChannels => weight.shape[1] * groups;
@@ -108,6 +116,21 @@ class Conv2D extends Module implements SimpleModule {
     final size = weight.shape;
     return SymmetricPadding2D(vertical: size[2], horizontal: size[3]);
   }
+
+  @override
+  late final Map<String, dynamic> meta = {
+    "inChannel": numInChannels,
+    "outChannel": numOutChannels,
+    "kernelSize": kernelSize.to2List(),
+    "stride": stride.to2List(),
+    "padding": padding?.to2List(),
+    "dilation": dilation.to2List(),
+    "groups": groups,
+  };
+
+  @override
+  String toString() =>
+      'Conv2D(${meta.entries.map((e) => '${e.key}: ${e.value}').join(', ')})';
 
   static Future<Conv2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
@@ -138,7 +161,7 @@ class Conv2D extends Module implements SimpleModule {
   static Conv2D make({
     required int numInChannels,
     required int numOutChannels,
-    required SymmetricPadding2D kernelSize,
+    SymmetricPadding2D kernelSize = const SymmetricPadding2D.same(3),
     int groups = 1,
     SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
     SymmetricPadding2D padding = const SymmetricPadding2D.same(0),
@@ -151,7 +174,7 @@ class Conv2D extends Module implements SimpleModule {
     /// If true, uses padding so that the output size remains same as the input size
     bool padToSame = false,
   }) {
-    Tensor weights = Tensor.ones([
+    Tensor weights = Tensor.empty([
       numOutChannels,
       numInChannels,
       kernelSize.vertical,
@@ -159,7 +182,7 @@ class Conv2D extends Module implements SimpleModule {
     ]);
     Tensor? bias;
     if (hasBias) {
-      bias = Tensor.zeros([numOutChannels]);
+      bias = Tensor.empty([numOutChannels]);
     }
     return Conv2D._(
       weights,
@@ -169,7 +192,7 @@ class Conv2D extends Module implements SimpleModule {
       padding: padding,
       dilation: dilation,
       padMode: padMode,
-    );
+    )..resetParameters();
   }
 }
 

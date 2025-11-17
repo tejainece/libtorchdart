@@ -24,6 +24,11 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
     throw UnimplementedError();
   }
 
+  @override
+  late final Map<String, dynamic> meta = {
+    // TODO
+  };
+
   static Future<DownEncoderBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String path = '',

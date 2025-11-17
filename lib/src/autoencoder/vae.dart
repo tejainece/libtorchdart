@@ -77,6 +77,11 @@ class VaeEncoder extends Module {
     convOut.resetParameters();
   }
 
+  @override
+  late final Map<String, dynamic> meta = {
+    // TODO
+  };
+
   static Future<VaeEncoder> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -183,6 +188,11 @@ class VaeDecoder extends Module {
     // TODO
     throw UnimplementedError();
   }
+
+  @override
+  late final Map<String, dynamic> meta = {
+    // TODO
+  };
 
   static Future<VaeDecoder> loadFromSafeTensor(
     SafeTensorLoader loader, {

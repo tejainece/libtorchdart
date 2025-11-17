@@ -19,7 +19,7 @@ class AvgPool2D extends Module implements SimpleModule {
 
   @override
   Tensor forward(Tensor x) {
-    return avgPool2D(
+    return NN2DUtil.avgPool2D(
       x,
       kernelSize,
       stride: stride,
@@ -35,4 +35,14 @@ class AvgPool2D extends Module implements SimpleModule {
     // TODO
     throw UnimplementedError();
   }
+
+  @override
+  late final Map<String, dynamic> meta = {
+    'kernelSize': kernelSize.to2List(),
+    'stride': stride?.to2List(),
+    'padding': padding.to2List(),
+    'ceilMode': ceilMode,
+    'countIncludePad': countIncludePad,
+    'divisorOverride': divisorOverride,
+  };
 }

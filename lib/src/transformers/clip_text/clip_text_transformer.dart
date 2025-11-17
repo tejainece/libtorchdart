@@ -48,6 +48,12 @@ class ClipTextTransformer extends Module implements TextEncoder {
     throw UnimplementedError();
   }
 
+  @override
+  late final Map<String, dynamic> meta = {
+    'embeddings': embeddings.meta,
+    'norm': norm.meta,
+  };
+
   static Future<ClipTextTransformer> loadFromSafeTensor(
     SafeTensorLoader loader, {
     required ClipTextConfig config,
@@ -210,6 +216,13 @@ class ClipMlp extends Module implements SimpleModule {
     throw UnimplementedError();
   }
 
+  @override
+  late final Map<String, dynamic> meta = {
+    'linear1': linear1.meta,
+    'linear2': linear2.meta,
+    'activation': activation.runtimeType.toString(),
+  };
+
   static Future<ClipMlp> loadFromSafeTensor(
     SafeTensorLoader loader, {
     required ClipTextConfig config,
@@ -256,17 +269,23 @@ class ClipTextEmbeddings extends Module implements SimpleModule {
     return tokenEmbedding.forward(inputIds) + positionEmbeddings;
   }
 
+  int get embeddingDim => tokenEmbedding.embeddingDim;
+
+  int get vocabSize => tokenEmbedding.numEmbeddings;
+
+  int get maxPositionEmbeddings => positionEmbedding.numEmbeddings;
+
   @override
   void resetParameters() {
     // TODO
     throw UnimplementedError();
   }
 
-  int get embeddingDim => tokenEmbedding.embeddingDim;
-
-  int get vocabSize => tokenEmbedding.numEmbeddings;
-
-  int get maxPositionEmbeddings => positionEmbedding.numEmbeddings;
+  @override
+  late final Map<String, dynamic> meta = {
+    'tokenEmbedding': tokenEmbedding.meta,
+    'positionEmbedding': positionEmbedding.meta,
+  };
 
   static Future<ClipTextEmbeddings> loadFromSafeTensor(
     SafeTensorLoader loader, {

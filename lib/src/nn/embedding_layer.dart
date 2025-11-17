@@ -1,6 +1,8 @@
-import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/safetensor/storage.dart';
+import 'dart:math';
 
+import 'package:libtorchdart/libtorchdart.dart';
+
+/*
 class EmbeddingConfig {
   final bool sparse;
   final bool scaleGradByFreq;
@@ -13,6 +15,7 @@ class EmbeddingConfig {
     this.paddingIdx = -1,
   });
 }
+*/
 
 // TODO implement train/infer
 abstract class Module {
@@ -23,6 +26,13 @@ abstract class Module {
   // TODO register parameter
 
   // Tensor forward(Tensor x);
+
+  Map<String, dynamic> get meta;
+
+  @override
+  String toString() {
+    return '$runtimeType(${meta.entries.map((e) => '${e.key}: ${e.value}').join(', ')})';
+  }
 }
 
 abstract class SimpleModule implements Module {
@@ -37,40 +47,104 @@ abstract class InplaceModule implements Module {
   Tensor forward_(Tensor x);
 }
 
+/// A simple lookup table that stores embeddings of a fixed dictionary and size.
+///
+/// This module is often used to retrieve word embeddings using indices.
+/// The input to the module is a list of indices, and the embedding matrix,
+/// and the output is the corresponding word embeddings.
 class EmbeddingLayer extends Module implements SimpleModule {
   final Tensor weights;
-  final EmbeddingConfig config;
+  final bool sparse;
+  final bool scaleGradByFreq;
+  // TODO init
+  final int? paddingIdx;
+  final ({double maxNorm, double normType})? norm;
 
-  EmbeddingLayer({required this.weights, required this.config});
+  EmbeddingLayer({
+    required this.weights,
+    required this.sparse,
+    required this.scaleGradByFreq,
+    required this.paddingIdx,
+    required this.norm,
+  }) {
+    if (paddingIdx != null) {
+      if (paddingIdx! > 0) {
+        assert(paddingIdx! < numEmbeddings);
+      } else if (paddingIdx! < 0) {
+        assert(paddingIdx! >= -numEmbeddings);
+      }
+    }
+  }
 
   @override
   Tensor forward(Tensor x) {
-    return embedding(
+    return NNUtil.embedding(
       weights,
       x,
-      config.paddingIdx,
-      config.scaleGradByFreq,
-      config.sparse,
+      paddingIdx: paddingIdx,
+      scaleGradByFreq: scaleGradByFreq,
+      sparse: sparse,
+      norm: norm,
     );
   }
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
-  }
-
-  static Future<EmbeddingLayer> loadFromSafeTensor(
-    SafeTensorLoader loader, {
-    String prefix = '',
-  }) async {
-    final weights = await loader.loadByName('${prefix}weight');
-    return EmbeddingLayer(weights: weights, config: EmbeddingConfig());
+    weights.normal_();
+    if (paddingIdx != null) {
+      weights[paddingIdx!].fill_(0);
+    }
   }
 
   int get numEmbeddings => weights.shape[0];
 
   int get embeddingDim => weights.shape[1];
+
+  @override
+  Map<String, dynamic> get meta => {
+    "numEmbeddings": numEmbeddings,
+    "embeddingDim": embeddingDim,
+    "sparse": sparse,
+    "scaleGradByFreq": scaleGradByFreq,
+    "paddingIdx": paddingIdx,
+    'maxNorm': norm?.maxNorm,
+    'normType': norm?.normType,
+  };
+
+  static Future<EmbeddingLayer> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+    bool sparse = false,
+    bool scaleGradByFreq = false,
+    int? paddingIdx,
+    ({double maxNorm, double normType})? norm,
+  }) async {
+    final weights = await loader.loadByName('${prefix}weight');
+    return EmbeddingLayer(
+      weights: weights,
+      paddingIdx: paddingIdx,
+      scaleGradByFreq: scaleGradByFreq,
+      sparse: sparse,
+      norm: norm,
+    );
+  }
+
+  static EmbeddingLayer make(
+    int numEmbeddings,
+    int embeddingDim, {
+    bool sparse = false,
+    bool scaleGradByFreq = false,
+    int? paddingIdx,
+    ({double maxNorm, double normType})? norm,
+  }) {
+    return EmbeddingLayer(
+      weights: Tensor.empty([numEmbeddings, embeddingDim]),
+      paddingIdx: paddingIdx,
+      scaleGradByFreq: scaleGradByFreq,
+      sparse: sparse,
+      norm: norm,
+    );
+  }
 }
 
 class Dropout extends Module implements SimpleModule {
@@ -82,12 +156,18 @@ class Dropout extends Module implements SimpleModule {
 
   @override
   Tensor forward(Tensor x) {
-    // TODO
-    throw UnimplementedError();
+    if (inplace) {
+      NNUtil.dropout_(x, p);
+      return x;
+    }
+    return NNUtil.dropout(x, p);
   }
 
   @override
   void resetParameters() {}
+
+  @override
+  Map<String, dynamic> get meta => {"p": p, "inplace": inplace};
 }
 
 class LinearLayer extends Module implements SimpleModule {
@@ -102,14 +182,25 @@ class LinearLayer extends Module implements SimpleModule {
 
   @override
   Tensor forward(Tensor x) {
-    return linear(x, weight, bias: bias);
+    return NNUtil.linear(x, weight, bias: bias);
   }
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    Init.kaimingUniform_(weight, a: sqrt(5));
+    if (bias != null) {
+      final fan = Init.calculateKaimingFan(weight);
+      double bound = fan.fanIn > 0 ? 1 / sqrt(fan.fanIn) : 0;
+      bias!.uniform_(from: -bound, to: bound);
+    }
   }
+
+  @override
+  Map<String, dynamic> get meta => {
+    "inFeatures": inFeatures,
+    "outFeatures": outFeatures,
+    "hasBias": bias != null,
+  };
 
   static Future<LinearLayer> loadFromSafeTensor(
     SafeTensorLoader loader, {

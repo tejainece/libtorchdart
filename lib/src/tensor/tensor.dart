@@ -5,6 +5,7 @@ import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
 import 'generator.dart';
 
 export 'generator.dart';
+export 'nn.dart';
 
 class Tensor implements ffi.Finalizable {
   ffi.Pointer<ffi.Void> nativePtr;
@@ -14,6 +15,37 @@ class Tensor implements ffi.Finalizable {
   }
 
   static final _finalizer = ffi.NativeFinalizer(FFITensor.delete);
+
+  static Tensor empty(
+    List<int> sizes, {
+    Device? device,
+    DataType? datatype,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final options = FFITensorOptions.make(
+        dataType: datatype,
+        device: device,
+        layout: layout,
+        memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
+        allocator: arena,
+      );
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = FFITensor.empty(sizesPointer, sizes.length, options.ref);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
 
   static Tensor zeros(
     List<int> sizes, {
@@ -277,6 +309,11 @@ class Tensor implements ffi.Finalizable {
     FFITensor.normal_(nativePtr, cGenerator, mean, std);
   }
 
+  void uniform_({double from = 0.0, double to = 1.0, Generator? generator}) {
+    CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
+    FFITensor.uniform_(nativePtr, cGenerator, from, to);
+  }
+
   int get dim => FFITensor.dim(nativePtr);
 
   List<int> get sizes {
@@ -420,6 +457,11 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  Tensor flatten({int startDim = 0, int endDim = -1}) {
+    final tensor = FFITensor.flatten(nativePtr, startDim, endDim);
+    return Tensor(tensor);
+  }
+
   Tensor expand(List<int> sizes) {
     final arena = ffi.Arena();
     try {
@@ -519,6 +561,16 @@ class Tensor implements ffi.Finalizable {
     } finally {
       arena.releaseAll();
     }
+  }
+
+  /// [atol] is absolute tolerance. [rtol] is relative tolerance.
+  bool allClose(
+    Tensor other, {
+    double rtol = 1e-05,
+    double atol = 1e-08,
+    bool equalNan = false,
+  }) {
+    return FFITensor.allClose(nativePtr, other.nativePtr, rtol, atol, equalNan);
   }
 
   Tensor operator +(dynamic /* Tensor | num */ other) {
@@ -748,57 +800,6 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
-  Tensor layerNorm(
-    List<int> normalizedShape, {
-    Tensor? weight,
-    Tensor? bias,
-    double eps = 1e-5,
-  }) {
-    final arena = ffi.Arena();
-    try {
-      final normalizedShapePointer = arena.allocate<ffi.Int64>(
-        ffi.sizeOf<ffi.Int64>() * normalizedShape.length,
-      );
-      normalizedShapePointer
-          .asTypedList(normalizedShape.length)
-          .setAll(0, normalizedShape);
-
-      final tensorPtr = FFITensor.layerNorm(
-        nativePtr,
-        normalizedShapePointer,
-        normalizedShape.length,
-        weight?.nativePtr ?? ffi.nullptr,
-        bias?.nativePtr ?? ffi.nullptr,
-        eps,
-        true, // TODO: enable_cudnn
-      );
-      return Tensor(tensorPtr);
-    } finally {
-      arena.releaseAll();
-    }
-  }
-
-  Tensor groupNorm(
-    int numGroups, {
-    Tensor? weight,
-    Tensor? bias,
-    double eps = 1e-5,
-  }) {
-    final tensorPtr = FFITensor.groupNorm(
-      nativePtr,
-      numGroups,
-      weight?.nativePtr ?? ffi.nullptr,
-      bias?.nativePtr ?? ffi.nullptr,
-      eps,
-    );
-    return Tensor(tensorPtr);
-  }
-
-  Tensor dropout(double p, {bool training = true}) {
-    final tensor = FFITensor.dropout(nativePtr, p, training);
-    return Tensor(tensor);
-  }
-
   Tensor sigmoid() {
     final tensor = FFITensor.sigmoid(nativePtr);
     return Tensor(tensor);
@@ -918,86 +919,6 @@ class Slice implements Index {
 }
 
 enum GeluApporimate { none, tanh }
-
-Tensor linear(Tensor input, Tensor weight, {Tensor? bias}) {
-  final tensorPtr = FFITensor.linear(
-    input.nativePtr,
-    weight.nativePtr,
-    bias?.nativePtr ?? ffi.nullptr,
-  );
-  return Tensor(tensorPtr);
-}
-
-Tensor embedding(
-  Tensor weights,
-  Tensor indices,
-  int paddingIdx,
-  bool scaleGradByFreq,
-  bool sparse,
-) {
-  final tensorPtr = FFITensor.embedding(
-    weights.nativePtr,
-    indices.nativePtr,
-    paddingIdx,
-    scaleGradByFreq,
-    sparse,
-  );
-
-  return Tensor(tensorPtr);
-}
-
-Tensor conv2d(
-  Tensor input,
-  Tensor weight, {
-  Tensor? bias,
-  SymmetricPadding2D stride = const SymmetricPadding2D(
-    vertical: 1,
-    horizontal: 1,
-  ),
-  SymmetricPadding2D padding = const SymmetricPadding2D(
-    vertical: 0,
-    horizontal: 0,
-  ),
-  SymmetricPadding2D dilation = const SymmetricPadding2D(
-    vertical: 1,
-    horizontal: 1,
-  ),
-  int groups = 1,
-}) {
-  final arena = ffi.Arena();
-  try {
-    ffi.Pointer<ffi.Int64> stridePointer = arena.allocate<ffi.Int64>(
-      ffi.sizeOf<ffi.Int64>() * 2,
-    );
-    stridePointer.value = stride.vertical;
-    (stridePointer + 1).value = stride.horizontal;
-
-    ffi.Pointer<ffi.Int64> paddingPointer = arena.allocate<ffi.Int64>(
-      ffi.sizeOf<ffi.Int64>() * 2,
-    );
-    paddingPointer.value = padding.vertical;
-    (paddingPointer + 1).value = padding.horizontal;
-
-    ffi.Pointer<ffi.Int64> dilationPointer = arena.allocate<ffi.Int64>(
-      ffi.sizeOf<ffi.Int64>() * 2,
-    );
-    dilationPointer.value = dilation.vertical;
-    (dilationPointer + 1).value = dilation.horizontal;
-
-    final tensorPtr = FFITensor.conv2d(
-      input.nativePtr,
-      weight.nativePtr,
-      bias?.nativePtr ?? ffi.nullptr,
-      stridePointer,
-      paddingPointer,
-      dilationPointer,
-      groups,
-    );
-    return Tensor(tensorPtr);
-  } finally {
-    arena.releaseAll();
-  }
-}
 
 class DeviceType {
   final String name;
@@ -1330,49 +1251,6 @@ Tensor interpolateNearestExactScale(
       input.nativePtr,
       outputSizePointer,
       outputSizeScale.length,
-    );
-    return Tensor(tensorPtr);
-  } finally {
-    arena.releaseAll();
-  }
-}
-
-Tensor avgPool2D(
-  Tensor input,
-  SymmetricPadding2D kernelSize, {
-
-  /// If null, it is set to [kernelSize]
-  SymmetricPadding2D? stride,
-  SymmetricPadding2D padding = const SymmetricPadding2D(
-    vertical: 0,
-    horizontal: 0,
-  ),
-  bool ceilMode = false,
-  bool countIncludePad = true,
-  int? divisorOverride,
-}) {
-  stride ??= kernelSize;
-  final arena = ffi.Arena();
-  try {
-    ffi.Pointer<ffi.Int64> divisorOverridePointer = ffi.nullptr;
-    if (divisorOverride != null) {
-      divisorOverridePointer = arena.allocate<ffi.Int64>(
-        ffi.sizeOf<ffi.Int64>(),
-      );
-      divisorOverridePointer.value = divisorOverride;
-    }
-
-    final tensorPtr = FFITensor.avgPool2D(
-      input.nativePtr,
-      kernelSize.vertical,
-      kernelSize.horizontal,
-      stride.vertical,
-      stride.horizontal,
-      padding.vertical,
-      padding.horizontal,
-      ceilMode,
-      countIncludePad,
-      divisorOverridePointer,
     );
     return Tensor(tensorPtr);
   } finally {

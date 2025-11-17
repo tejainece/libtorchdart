@@ -15,4 +15,9 @@ class VaeDecoderBlock2D extends Module {
     // TODO
     throw UnimplementedError();
   }
+
+  @override
+  late final Map<String, dynamic> meta = {
+    // TODO
+  };
 }

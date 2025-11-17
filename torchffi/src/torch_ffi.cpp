@@ -67,6 +67,11 @@ tensor torchffi_tensor_new() {
   return new torch::Tensor();
 }
 
+tensor torchffi_tensor_new_empty(int64_t* sizes, size_t ndims, TensorOptions options) {
+  at::Tensor tensor = at::empty(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_new_zeros(int64_t* sizes, size_t ndims, TensorOptions options) {
   at::Tensor tensor = at::zeros(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
@@ -193,6 +198,11 @@ tensor torchffi_tensor_reshape(tensor t, int64_t* sizes, size_t ndims) {
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_tensor_flatten(tensor t, int64_t startDim, int64_t endDim) {
+  at::Tensor tensor = t->flatten(startDim, endDim);
+  return new torch::Tensor(tensor);
+}
+
 tensor* torchffi_tensor_split_equally(tensor t, int64_t splits, int64_t dim) {
   auto tensors = t->split(splits, dim);
   tensor* result = (tensor*)malloc((tensors.size() + 1) * sizeof(tensor));
@@ -286,6 +296,18 @@ void torchffi_tensor_normal_(tensor t, Generator generator, double mean, double 
     opGenerator = *generator;
   }
   t->normal_(mean, std, opGenerator);
+}
+
+void torchffi_tensor_uniform_(tensor t, Generator generator, double from, double to) {
+  std::optional<at::Generator> opGenerator = std::nullopt;
+  if (generator != nullptr) {
+    opGenerator = *generator;
+  }
+  t->uniform_(from, to, opGenerator);
+}
+
+bool torchffi_tensor_allclose(tensor a, tensor b, double rtol, double atol, bool equalNan) {
+  return a->allclose(*b, rtol, atol, equalNan);
 }
 
 tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha) {
@@ -409,9 +431,18 @@ tensor torchffi_group_norm(tensor input, int64_t numGroups, tensor weight, tenso
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_rms_norm(tensor input, int64_t* normalizedShape, size_t normalizedShapeLength, tensor weight, double* eps) {
+  auto tensor = torch::rms_norm(*input, at::IntArrayRef(normalizedShape, normalizedShapeLength), (weight ? ::std::optional<at::Tensor>(*weight) : ::std::nullopt), (eps ? ::std::optional<double>(*eps) : ::std::nullopt));
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_dropout(tensor t, double p, bool train) {
   at::Tensor tensor = torch::dropout(*t, p, train);
   return new torch::Tensor(tensor);
+}
+
+void torchffi_tensor_dropout_(tensor t, double p, bool train) {
+  torch::dropout_(*t, p, train);
 }
 
 tensor torchffi_tensor_softmax(tensor t, int64_t dim, uint8_t* dataType) {
@@ -420,6 +451,11 @@ tensor torchffi_tensor_softmax(tensor t, int64_t dim, uint8_t* dataType) {
     dtype = at::ScalarType(*dataType);
   }
   at::Tensor tensor = torch::softmax(*t, dim, dtype);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_embedding_renorm_(tensor weights, tensor indices, double maxNorm, double normType) {
+  at::Tensor tensor = torch::embedding_renorm_(*weights, *indices, maxNorm, normType);
   return new torch::Tensor(tensor);
 }
 

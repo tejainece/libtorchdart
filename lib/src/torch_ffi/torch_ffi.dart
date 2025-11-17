@@ -234,6 +234,12 @@ abstract class FFITensor {
         'torchffi_tensor_delete',
       );
 
+  static final empty = nativeLib
+      .lookupFunction<
+        CTensor Function(Pointer<Int64>, Size, FFITensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, FFITensorOptions)
+      >('torchffi_tensor_new_empty');
+
   static final zeros = nativeLib
       .lookupFunction<
         CTensor Function(Pointer<Int64>, Size, FFITensorOptions),
@@ -319,6 +325,12 @@ abstract class FFITensor {
         void Function(CTensor, CGenerator, double, double)
       >('torchffi_tensor_normal_');
 
+  static final uniform_ = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CGenerator, Double, Double),
+        CTensor Function(CTensor, CGenerator, double, double)
+      >('torchffi_tensor_uniform_');
+
   static final dim = nativeLib
       .lookupFunction<Size Function(CTensor), int Function(CTensor tensor)>(
         'torchffi_tensor_dim',
@@ -388,6 +400,12 @@ abstract class FFITensor {
         CTensor Function(CTensor, Pointer<Int64>, int)
       >('torchffi_tensor_reshape');
 
+  static final flatten = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64 start, Int64 end),
+        CTensor Function(CTensor, int start, int end)
+      >('torchffi_tensor_flatten');
+
   static final splitEqually = nativeLib
       .lookupFunction<
         Pointer<CTensor> Function(CTensor, Int64, Int64),
@@ -429,6 +447,24 @@ abstract class FFITensor {
         CTensor Function(CTensor, Pointer<Int64>, Size, Uint8, Pointer<Double>),
         CTensor Function(CTensor, Pointer<Int64>, int, int, Pointer<Double>)
       >('torchffi_tensor_pad');
+
+  static final allClose = nativeLib
+      .lookupFunction<
+        Bool Function(
+          CTensor,
+          CTensor,
+          Double rtol,
+          Double atol,
+          Bool equalNan,
+        ),
+        bool Function(
+          CTensor tensor1,
+          CTensor tensor2,
+          double rtol,
+          double atol,
+          bool equalNan,
+        )
+      >('torchffi_tensor_allclose');
 
   static final addition = nativeLib
       .lookupFunction<
@@ -532,85 +568,11 @@ abstract class FFITensor {
         CTensor Function(CTensor tensor)
       >('torchffi_tensor_silu');
 
-  static final linear = nativeLib
-      .lookupFunction<
-        CTensor Function(CTensor, CTensor, CTensor),
-        CTensor Function(CTensor input, CTensor weight, CTensor bias)
-      >('torchffi_linear');
-
-  static final layerNorm = nativeLib
-      .lookupFunction<
-        CTensor Function(
-          CTensor,
-          Pointer<Int64>,
-          Size,
-          CTensor weight,
-          CTensor bias,
-          Double eps,
-          Bool,
-        ),
-        CTensor Function(
-          CTensor,
-          Pointer<Int64>,
-          int,
-          CTensor,
-          CTensor,
-          double,
-          bool,
-        )
-      >('torchffi_layer_norm');
-
-  static final groupNorm = nativeLib
-      .lookupFunction<
-        CTensor Function(CTensor, Int64, CTensor, CTensor, Double),
-        CTensor Function(CTensor, int, CTensor, CTensor, double)
-      >('torchffi_group_norm');
-
-  static final dropout = nativeLib
-      .lookupFunction<
-        CTensor Function(CTensor, Double, Bool),
-        CTensor Function(CTensor, double, bool)
-      >('torchffi_dropout');
-
   static final softmax = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Int64, Pointer<Int8>),
         CTensor Function(CTensor, int, Pointer<Int8>)
       >('torchffi_softmax');
-
-  static final embedding = nativeLib
-      .lookupFunction<
-        CTensor Function(CTensor, CTensor, Int64, Bool, Bool),
-        CTensor Function(
-          CTensor tensor,
-          CTensor weights,
-          int paddingIdx,
-          bool scaleGradByFreq,
-          bool sparse,
-        )
-      >('torchffi_embedding');
-
-  static final conv2d = nativeLib
-      .lookupFunction<
-        CTensor Function(
-          CTensor,
-          CTensor,
-          CTensor,
-          Pointer<Int64>,
-          Pointer<Int64>,
-          Pointer<Int64>,
-          Int64,
-        ),
-        CTensor Function(
-          CTensor input,
-          CTensor weight,
-          CTensor bias,
-          Pointer<Int64> stride,
-          Pointer<Int64> padding,
-          Pointer<Int64> dilation,
-          int groups,
-        )
-      >('torchffi_conv2d');
 
   static final upsampleNearest = nativeLib
       .lookupFunction<
@@ -651,6 +613,119 @@ abstract class FFITensor {
           int outputSizeLen,
         )
       >('torchffi_upsample_nearest_exact_scale');
+}
+
+abstract class FFINN {
+  static final linear = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor, CTensor),
+        CTensor Function(CTensor input, CTensor weight, CTensor bias)
+      >('torchffi_linear');
+
+  static final layerNorm = nativeLib
+      .lookupFunction<
+        CTensor Function(
+          CTensor,
+          Pointer<Int64>,
+          Size,
+          CTensor weight,
+          CTensor bias,
+          Double eps,
+          Bool,
+        ),
+        CTensor Function(
+          CTensor,
+          Pointer<Int64>,
+          int,
+          CTensor,
+          CTensor,
+          double,
+          bool,
+        )
+      >('torchffi_layer_norm');
+
+  static final groupNorm = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64, CTensor, CTensor, Double),
+        CTensor Function(CTensor, int, CTensor, CTensor, double)
+      >('torchffi_group_norm');
+
+  static final rmsNorm = nativeLib
+      .lookupFunction<
+        CTensor Function(
+          CTensor,
+          Pointer<Int64>,
+          Size,
+          CTensor,
+          Pointer<Double>,
+        ),
+        CTensor Function(
+          CTensor,
+          Pointer<Int64>,
+          int,
+          CTensor,
+          Pointer<Double> eps,
+        )
+      >('torchffi_rms_norm');
+
+  static final dropout = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Double, Bool),
+        CTensor Function(CTensor, double, bool)
+      >('torchffi_dropout');
+
+  static final dropout_ = nativeLib
+      .lookupFunction<
+        Void Function(CTensor, Double, Bool),
+        void Function(CTensor, double, bool)
+      >('torchffi_dropout_');
+
+  static final embeddingRenorm_ = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor, Double, Double),
+        CTensor Function(
+          CTensor weights,
+          CTensor indices,
+          double maxNorm,
+          double normType,
+        )
+      >('torchffi_embedding_renorm_');
+
+  static final embedding = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor, Int64, Bool, Bool),
+        CTensor Function(
+          CTensor tensor,
+          CTensor weights,
+          int paddingIdx,
+          bool scaleGradByFreq,
+          bool sparse,
+        )
+      >('torchffi_embedding');
+}
+
+abstract class FFINN2D {
+  static final conv2d = nativeLib
+      .lookupFunction<
+        CTensor Function(
+          CTensor,
+          CTensor,
+          CTensor,
+          Pointer<Int64>,
+          Pointer<Int64>,
+          Pointer<Int64>,
+          Int64,
+        ),
+        CTensor Function(
+          CTensor input,
+          CTensor weight,
+          CTensor bias,
+          Pointer<Int64> stride,
+          Pointer<Int64> padding,
+          Pointer<Int64> dilation,
+          int groups,
+        )
+      >('torchffi_conv2d');
 
   static final avgPool2D = nativeLib
       .lookupFunction<

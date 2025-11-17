@@ -70,6 +70,11 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     downSample?.resetParameters();
   }
 
+  @override
+  late final Map<String, dynamic> meta = {
+    // TODO
+  };
+
   static Future<ResnetBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',

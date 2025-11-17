@@ -55,13 +55,26 @@ class ClipAttention extends Module {
     return (attentionOutput, attentionWeights);
   }
 
+  int get embedDim => numAttensionHeads * headDim;
+
   @override
   void resetParameters() {
     // TODO
     throw UnimplementedError();
   }
 
-  int get embedDim => numAttensionHeads * headDim;
+  @override
+  late final Map<String, dynamic> meta = {
+    'kProj': kProj.meta,
+    'vProj': vProj.meta,
+    'qProj': qProj.meta,
+    'outProj': outProj.meta,
+    'numAttensionHeads': numAttensionHeads,
+    'headDim': headDim,
+    'scale': scale,
+    'dropout': dropout,
+    'attentionFunction': attentionFunction.runtimeType.toString(),
+  };
 
   static Future<ClipAttention> loadFromSafeTensor(
     SafeTensorLoader loader, {
@@ -131,9 +144,10 @@ class EagerAttentionFunction implements AttentionFunction {
     attentionWeights = attentionWeights
         .softmax(-1, dataType: DataType.float)
         .to(dataType: q.dataType);
-    attentionWeights = attentionWeights.dropout(
+    attentionWeights = NNUtil.dropout(
+      attentionWeights,
       dropout,
-      // TODO training: ,
+      training: false, // TODO training: ,
     );
 
     Tensor output = attentionWeights.matmul(v);

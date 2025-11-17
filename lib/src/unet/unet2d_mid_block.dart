@@ -28,6 +28,11 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
     }
   }
 
+  @override
+  late final Map<String, dynamic> meta = {
+    // TODO
+  };
+
   static Future<UNet2DMidBlock> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
