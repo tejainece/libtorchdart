@@ -13,8 +13,11 @@ void main() {
     stride: SymmetricPadding2D.same(1),
     generator: generator,
   );
-  /*print(conv);
-  print(conv.weight.device);
-  print(conv.weight.dataType);
-  print(conv.weight);*/
+  print(conv);
+  // print(conv.weight);
+  // print(conv.bias);
+
+  final input = Tensor.ones([1, 32, 28, 28]);
+  final output = conv.forward(input);
+  print(output);
 }
