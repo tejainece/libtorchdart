@@ -1,5 +1,4 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/safetensor/storage.dart';
 
 void main() async {
   // print(DataType.fromSafeTensorName('BF16'));

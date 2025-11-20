@@ -104,4 +104,5 @@
     "cmake.sourceDirectory": "${workspaceFolder}/torchffi/src",
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 0, ContinuationIndentWidth: 2, AlignWithOpenBracket: BlockIndent, AlignAfterOpenBracket: BlockIndent}",
     "editor.formatOnSave": true,
+    "debug.toolBarLocation": "docked"
 }

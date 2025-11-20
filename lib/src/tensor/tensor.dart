@@ -9,9 +9,12 @@ export 'nn.dart';
 
 class Tensor implements ffi.Finalizable {
   ffi.Pointer<ffi.Void> nativePtr;
+  final bool shouldDelete;
 
-  Tensor(this.nativePtr) {
-    _finalizer.attach(this, nativePtr);
+  Tensor(this.nativePtr, {this.shouldDelete = true}) {
+    if (shouldDelete) {
+      _finalizer.attach(this, nativePtr);
+    }
   }
 
   static final _finalizer = ffi.NativeFinalizer(FFITensor.delete);
@@ -262,7 +265,10 @@ class Tensor implements ffi.Finalizable {
         pinnedMemory: pinnedMemory,
         allocator: arena,
       );
-      final sizesPointer = arena.allocate<ffi.Int64>(sizes.length);
+
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        sizes.length * ffi.sizeOf<ffi.Int64>(),
+      );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
       final tensor = FFITensor.fromBlob(
         dataPointer,
