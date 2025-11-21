@@ -7,17 +7,18 @@ void main() {
   generator.currentSeed = 0;
 
   final sample = Tensor.randn([1, 32, 64, 64], device: device);
-  print(sample);
-
   final temb = Tensor.randn([1, 128], device: device);
-  print(temb);
 
   // Basic block
-  final resnet = ResnetBlock2D.make(numInChannels: 32, numOutChannels: 128);
+  final resnet = ResnetBlock2D.make(
+    numInChannels: 32,
+    numOutChannels: 32,
+    tembChannels: 128,
+  );
   final out = resnet.forward(sample, embeds: temb);
   print('Basic block output shape: ${out.shape}');
 
-/*
+  /*
   // Block with time embedding projection
   final resnetTemb = ResnetBlock2D.make(
     numInChannels: 32,
