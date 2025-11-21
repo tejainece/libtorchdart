@@ -449,6 +449,21 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  List<Tensor> chunk(int chunks, {int dim = 0}) {
+    final tensorPtrs = FFITensor.chunk(nativePtr, chunks, dim);
+    try {
+      final List<Tensor> tensors = [];
+      ffi.Pointer<CTensor> index = tensorPtrs;
+      while (index.value != ffi.nullptr) {
+        tensors.add(Tensor(index.value));
+        index = index + 1;
+      }
+      return tensors;
+    } finally {
+      ffi.malloc.free(tensorPtrs);
+    }
+  }
+
   Tensor reshape(List<int> sizes) {
     final arena = ffi.Arena();
     try {
@@ -707,6 +722,26 @@ class Tensor implements ffi.Finalizable {
     return Tensor(tensor);
   }
 
+  Tensor squeeze({int? dim}) {
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Int64> dimPtr = ffi.nullptr;
+      if (dim != null) {
+        dimPtr = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>());
+        dimPtr.value = dim;
+      }
+      final tensor = FFITensor.squeeze(nativePtr, dimPtr);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor unsqueeze(int dim) {
+    final tensor = FFITensor.unsqueeze(nativePtr, dim);
+    return Tensor(tensor);
+  }
+
   Tensor bitwiseAnd(Tensor other) {
     final tensor = FFITensor.bitwiseAnd(nativePtr, other.nativePtr);
     return Tensor(tensor);
@@ -922,6 +957,8 @@ class Slice implements Index {
   final int step;
 
   Slice({this.start, this.end, this.step = 1});
+
+  Slice.all() : start = 0, end = null, step = 1;
 }
 
 enum GeluApporimate { none, tanh }

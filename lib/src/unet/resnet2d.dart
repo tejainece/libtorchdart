@@ -8,12 +8,14 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
 
   final GroupNorm norm1;
   final Conv2D conv1;
-  // TODO time embedding proj
+  final LinearLayer? timeEmbProj;
   final GroupNorm norm2;
   final Dropout dropout;
   final Conv2D conv2;
 
-  // TODO conv shortcut
+  final Conv2D? convShortcut;
+  final bool skipTimeAct;
+  final Resnet2dTimeEmbedNormType timeEmbedNorm;
 
   ResnetBlock2D({
     required this.outputScaleFactor,
@@ -25,29 +27,67 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     required this.nonlinearity,
     required this.upSample,
     required this.downSample,
+    required this.timeEmbProj,
+    required this.convShortcut,
+    required this.skipTimeAct,
+    required this.timeEmbedNorm,
   });
 
   @override
   Tensor forward(Tensor x, {Tensor? embeds}) {
+    Tensor inputTensor = x;
     Tensor hiddenStates = norm1.forward(x);
     hiddenStates = nonlinearity.forward(hiddenStates);
 
-    // TODO upsampling
-    // TODO downsampling
+    if (upSample != null) {
+      if (hiddenStates.shape[0] >= 64) {
+        inputTensor = inputTensor.contiguous();
+        hiddenStates = hiddenStates.contiguous();
+      }
+      inputTensor = upSample!.forward(inputTensor);
+      hiddenStates = upSample!.forward(hiddenStates);
+    } else if (downSample != null) {
+      inputTensor = downSample!.forward(inputTensor);
+      hiddenStates = downSample!.forward(hiddenStates);
+    }
 
     hiddenStates = conv1.forward(hiddenStates);
 
-    // TODO time emb projection
-
-    // TODO time embedding norm
+    if (embeds != null) {
+      if (timeEmbProj != null) {
+        if (!skipTimeAct) {
+          embeds = nonlinearity.forward(embeds);
+        }
+        embeds = timeEmbProj!.forward(embeds).index([
+          Slice.all(),
+          Slice.all(),
+          NewDim(),
+          NewDim(),
+        ]);
+      }
+      if (timeEmbedNorm == .def) {
+        hiddenStates = hiddenStates + embeds;
+        hiddenStates = norm2.forward(hiddenStates);
+      } else if (timeEmbedNorm == .scaleShift) {
+        final [scale, shift] = embeds.chunk(2, dim: 1);
+        hiddenStates = norm2.forward(hiddenStates);
+        hiddenStates = hiddenStates * (scale + 1) + shift;
+      } else {
+        hiddenStates = norm2.forward(hiddenStates);
+      }
+    } else {
+      hiddenStates = norm2.forward(hiddenStates);
+    }
 
     hiddenStates = nonlinearity.forward(hiddenStates);
     hiddenStates = dropout.forward(hiddenStates);
     hiddenStates = conv2.forward(hiddenStates);
 
-    // TODO conv shortcut
+    if (convShortcut != null) {
+      inputTensor = convShortcut!.forward(inputTensor);
+    }
 
-    Tensor output = (hiddenStates + x) / outputScaleFactor;
+    Tensor output = (hiddenStates + inputTensor) / outputScaleFactor;
     return output;
   }
 
@@ -68,11 +108,23 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     conv2.resetParameters();
     upSample?.resetParameters();
     downSample?.resetParameters();
+    timeEmbProj?.resetParameters();
+    convShortcut?.resetParameters();
   }
 
   @override
   late final Map<String, dynamic> meta = {
-    // TODO
+    "outputScaleFactor": outputScaleFactor,
+    "norm1": norm1.meta,
+    "conv1": conv1.meta,
+    "norm2": norm2.meta,
+    "dropout": dropout.meta,
+    "conv2": conv2.meta,
+    "nonlinearity": nonlinearity.toString(),
+    "upSample": upSample?.meta,
+    "downSample": downSample?.meta,
+    "timeEmbProj": timeEmbProj?.meta,
+    "convShortcut": convShortcut?.meta,
   };
 
   static Future<ResnetBlock2D> loadFromSafeTensor(
@@ -87,6 +139,8 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     Resnet2DKernel kernel = Resnet2DKernel.none,
     bool up = false,
     bool down = false,
+    bool skipTimeAct = false,
+    Resnet2dTimeEmbedNormType timeEmbedNorm = Resnet2dTimeEmbedNormType.def,
   }) async {
     final norm1 = await GroupNorm.loadFromSafeTensor(
       loader,
@@ -140,7 +194,26 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       }
     }
 
-    // TODO
+    LinearLayer? timeEmbProj;
+    /* TODO
+    if (tembChannels != null) {
+      if (loader.hasTensor('${prefix}time_emb_proj.weight')) {
+        timeEmbProj = await LinearLayer.loadFromSafeTensor(
+          loader,
+          prefix: '${prefix}time_emb_proj',
+        );
+      }
+    }
+    */
+
+    Conv2D? convShortcut;
+    if (loader.hasTensor('${prefix}conv_shortcut.weight')) {
+      convShortcut = await Conv2D.loadFromSafeTensor(
+        loader,
+        prefix: '${prefix}conv_shortcut',
+      );
+    }
+
     return ResnetBlock2D(
       outputScaleFactor: outputScaleFactor,
       norm1: norm1,
@@ -151,6 +224,10 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       nonlinearity: activation,
       upSample: upSample,
       downSample: downSample,
+      timeEmbProj: timeEmbProj,
+      convShortcut: convShortcut,
+      skipTimeAct: skipTimeAct,
+      timeEmbedNorm: timeEmbedNorm,
     );
   }
 
@@ -167,6 +244,9 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     bool up = false,
     bool down = false,
     double outputScaleFactor = 1.0,
+    int? tembChannels,
+    bool skipTimeAct = false,
+    Resnet2dTimeEmbedNormType timeEmbedNorm = Resnet2dTimeEmbedNormType.def,
   }) {
     Conv2D conv1 = Conv2D.make(
       numInChannels: numInChannels,
@@ -218,7 +298,25 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       }
     }
 
-    // TODO
+    LinearLayer? timeEmbProj;
+    if (tembChannels != null) {
+      timeEmbProj = LinearLayer(
+        weight: Tensor.empty([numOutChannels, tembChannels]),
+        bias: Tensor.empty([numOutChannels]),
+      );
+    }
+
+    Conv2D? convShortcut;
+    if (numInChannels != numOutChannels) {
+      convShortcut = Conv2D.make(
+        numInChannels: numInChannels,
+        numOutChannels: numOutChannels,
+        kernelSize: SymmetricPadding2D.same(1),
+        stride: const SymmetricPadding2D.same(1),
+        padding: const SymmetricPadding2D.same(0),
+      );
+    }
+
     return ResnetBlock2D(
       conv1: conv1,
       conv2: conv2,
@@ -229,9 +327,15 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       upSample: upSample,
       downSample: downSample,
       outputScaleFactor: outputScaleFactor,
+      timeEmbProj: timeEmbProj,
+      convShortcut: convShortcut,
+      skipTimeAct: skipTimeAct,
+      timeEmbedNorm: timeEmbedNorm,
     );
   }
 }
+
+enum Resnet2dTimeEmbedNormType { none, def, scaleShift }
 
 class Resnet2DKernel {
   final String name;

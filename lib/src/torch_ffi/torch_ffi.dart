@@ -418,6 +418,12 @@ abstract class FFITensor {
         Pointer<CTensor> Function(CTensor, Pointer<Int64>, int, int)
       >('torchffi_tensor_split');
 
+  static final chunk = nativeLib
+      .lookupFunction<
+        Pointer<CTensor> Function(CTensor, Int64, Int64),
+        Pointer<CTensor> Function(CTensor, int chunks, int dim)
+      >('torchffi_tensor_chunk');
+
   static final permute = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Pointer<Int64>, Size),
@@ -441,6 +447,18 @@ abstract class FFITensor {
         CTensor Function(CTensor, Int8),
         CTensor Function(CTensor, int)
       >('torchffi_tensor_contiguous');
+
+  static final squeeze = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>),
+        CTensor Function(CTensor, Pointer<Int64>)
+      >('torchffi_tensor_squeeze');
+
+  static final unsqueeze = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64),
+        CTensor Function(CTensor, int)
+      >('torchffi_tensor_unsqueeze');
 
   static final pad = nativeLib
       .lookupFunction<

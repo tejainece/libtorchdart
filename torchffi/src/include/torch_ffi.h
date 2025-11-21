@@ -113,11 +113,17 @@ extern tensor* torchffi_tensor_split_equally(tensor t, int64_t splits, int64_t d
 
 extern tensor* torchffi_tensor_split(tensor t, int64_t* splits, size_t splitsSize, int64_t dim);
 
+extern tensor* torchffi_tensor_chunk(tensor t, int64_t chunks, int64_t dim);
+
 extern tensor torchffi_tensor_permute(tensor t, int64_t* dims, size_t ndims);
 
 extern tensor torchffi_tensor_expand(tensor t, int64_t* sizes, size_t ndims, bool implicit);
 
 extern tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat);
+
+extern tensor torchffi_tensor_squeeze(tensor t, int64_t* dim);
+
+extern tensor torchffi_tensor_unsqueeze(tensor t, int64_t dim);
 
 extern tensor torchffi_tensor_pad(tensor t, int64_t* pad, size_t padArrayLength, uint8_t padMode, double* value);
 
@@ -179,9 +185,9 @@ extern tensor torchffi_group_norm(tensor input, int64_t numGroups, tensor weight
 
 extern tensor torchffi_rms_norm(tensor input, int64_t* normalizedShape, size_t normalizedShapeLength, tensor weight, double* eps);
 
-extern tensor torchffi_tensor_dropout(tensor t, double p, bool train);
+extern tensor torchffi_dropout(tensor t, double p, bool train);
 
-extern void torchffi_tensor_dropout_(tensor t, double p, bool train);
+extern void torchffi_dropout_(tensor t, double p, bool train);
 
 extern tensor torchffi_tensor_softmax(tensor t, int64_t dim, uint8_t* dataType);
 

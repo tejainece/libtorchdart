@@ -225,6 +225,16 @@ tensor* torchffi_tensor_split(tensor t, int64_t* splits, size_t splitsSize, int6
   return result;
 }
 
+tensor* torchffi_tensor_chunk(tensor t, int64_t chunks, int64_t dim) {
+  auto tensors = t->chunk(chunks, dim);
+  tensor* result = (tensor*)malloc((tensors.size() + 1) * sizeof(tensor));
+  for (int i = 0; i < tensors.size(); i++) {
+    result[i] = new torch::Tensor(tensors[i]);
+  }
+  result[tensors.size()] = nullptr;
+  return result;
+}
+
 tensor torchffi_tensor_expand(tensor t, int64_t* sizes, size_t ndims, bool implicit) {
   at::Tensor tensor = t->expand(at::IntArrayRef(sizes, ndims), implicit);
   return new torch::Tensor(tensor);
@@ -242,6 +252,21 @@ tensor torchffi_tensor_transpose(tensor t, int64_t dim1, int64_t dim2) {
 
 tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat) {
   at::Tensor tensor = t->contiguous(at::MemoryFormat(memoryFormat));
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_squeeze(tensor t, int64_t* dim) {
+  at::Tensor tensor;
+  if (dim == nullptr) {
+    tensor = t->squeeze();
+  } else {
+    tensor = t->squeeze(*dim);
+  }
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_unsqueeze(tensor t, int64_t dim) {
+  at::Tensor tensor = t->unsqueeze(dim);
   return new torch::Tensor(tensor);
 }
 
@@ -436,12 +461,12 @@ tensor torchffi_rms_norm(tensor input, int64_t* normalizedShape, size_t normaliz
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_dropout(tensor t, double p, bool train) {
+tensor torchffi_dropout(tensor t, double p, bool train) {
   at::Tensor tensor = torch::dropout(*t, p, train);
   return new torch::Tensor(tensor);
 }
 
-void torchffi_tensor_dropout_(tensor t, double p, bool train) {
+void torchffi_dropout_(tensor t, double p, bool train) {
   torch::dropout_(*t, p, train);
 }
 

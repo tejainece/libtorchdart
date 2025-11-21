@@ -12,7 +12,27 @@ void main() {
   final temb = Tensor.randn([1, 128], device: device);
   print(temb);
 
+  // Basic block
   final resnet = ResnetBlock2D.make(numInChannels: 32, numOutChannels: 128);
   final out = resnet.forward(sample, embeds: temb);
-  print(out.shape);
+  print('Basic block output shape: ${out.shape}');
+
+/*
+  // Block with time embedding projection
+  final resnetTemb = ResnetBlock2D.make(
+    numInChannels: 32,
+    numOutChannels: 128,
+    tembChannels: 128,
+  );
+  final outTemb = resnetTemb.forward(sample, embeds: temb);
+  print('Block with temb output shape: ${outTemb.shape}');
+
+  // Block with channel mismatch (shortcut)
+  final resnetShortcut = ResnetBlock2D.make(
+    numInChannels: 32,
+    numOutChannels: 64,
+  );
+  final outShortcut = resnetShortcut.forward(sample, embeds: temb);
+  print('Block with shortcut output shape: ${outShortcut.shape}');
+  */
 }

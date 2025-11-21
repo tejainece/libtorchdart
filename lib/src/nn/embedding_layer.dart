@@ -44,7 +44,7 @@ abstract class EmbeddableModule implements Module {
 }
 
 abstract class InplaceModule implements Module {
-  Tensor forward_(Tensor x);
+  void forward_(Tensor x);
 }
 
 /// A simple lookup table that stores embeddings of a fixed dictionary and size.
@@ -147,27 +147,26 @@ class EmbeddingLayer extends Module implements SimpleModule {
   }
 }
 
-class Dropout extends Module implements SimpleModule {
+class Dropout extends Module implements SimpleModule, InplaceModule {
   final double p;
-  final bool inplace;
 
-  Dropout(this.p, {this.inplace = false})
-    : assert(p >= 0 && p <= 1, 'p must be between 0 and 1');
+  Dropout(this.p) : assert(p >= 0 && p <= 1, 'p must be between 0 and 1');
 
   @override
   Tensor forward(Tensor x) {
-    if (inplace) {
-      NNUtil.dropout_(x, p);
-      return x;
-    }
-    return NNUtil.dropout(x, p);
+    return NNUtil.dropout(x, p, training: isTraining);
+  }
+
+  @override
+  void forward_(Tensor x) {
+    NNUtil.dropout_(x, p, training: isTraining);
   }
 
   @override
   void resetParameters() {}
 
   @override
-  Map<String, dynamic> get meta => {"p": p, "inplace": inplace};
+  Map<String, dynamic> get meta => {"p": p};
 }
 
 class LinearLayer extends Module implements SimpleModule {
