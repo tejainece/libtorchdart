@@ -69,6 +69,8 @@ extern tensor torchffi_tensor_new(void);
 
 extern void torchffi_tensor_delete(tensor t);
 
+extern tensor torchffi_tensor_clone(tensor t, int8_t* memoryFormat);
+
 extern tensor torchffi_tensor_new_empty(int64_t* sizes, size_t ndims, TensorOptions options);
 
 extern tensor torchffi_tensor_new_zeros(int64_t* sizes, size_t ndims, TensorOptions options);
@@ -80,6 +82,8 @@ extern tensor torchffi_tensor_new_arange(int64_t end, TensorOptions options);
 extern tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options);
 
 extern tensor torchffi_tensor_new_randn(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options);
+
+extern void* torchffi_tensor_data_pointer(tensor t);
 
 extern size_t torchffi_tensor_dim(tensor t);
 
@@ -150,6 +154,8 @@ extern tensor torchffi_tensor_subtraction(tensor a, tensor b, Scalar alpha);
 extern tensor torchffi_tensor_multiplication(tensor a, tensor b);
 
 extern tensor torchffi_tensor_division(tensor a, tensor b);
+
+extern tensor torchffi_tensor_division_scalar(tensor a, Scalar b);
 
 extern tensor torchffi_tensor_bitwise_not(tensor a);
 

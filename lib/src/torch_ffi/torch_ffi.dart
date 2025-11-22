@@ -292,6 +292,12 @@ abstract class FFITensor {
         )
       >('torchffi_tensor_new_from_blob');
 
+  static final dataPointer = nativeLib
+      .lookupFunction<
+        Pointer<Void> Function(CTensor),
+        Pointer<Void> Function(CTensor tensor)
+      >('torchffi_tensor_data_pointer');
+
   static final ones_ = nativeLib
       .lookupFunction<Void Function(CTensor), void Function(CTensor)>(
         'torchffi_tensor_ones_',
@@ -507,6 +513,18 @@ abstract class FFITensor {
         CTensor Function(CTensor, CTensor),
         CTensor Function(CTensor tensor1, CTensor tensor2)
       >('torchffi_tensor_division');
+
+  static final divisionScalar = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, FFIScalar),
+        CTensor Function(CTensor tensor, FFIScalar scalar)
+      >('torchffi_tensor_division_scalar');
+
+  static final clone = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int8>),
+        CTensor Function(CTensor tensor, Pointer<Int8> memoryFormat)
+      >('torchffi_tensor_clone');
 
   static final pow = nativeLib
       .lookupFunction<

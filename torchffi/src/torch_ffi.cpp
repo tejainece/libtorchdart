@@ -67,6 +67,15 @@ tensor torchffi_tensor_new() {
   return new torch::Tensor();
 }
 
+tensor torchffi_tensor_clone(tensor t, int8_t* memoryFormat) {
+  std::optional<at::MemoryFormat> format = std::nullopt;
+  if (memoryFormat != nullptr) {
+    format = at::MemoryFormat(*memoryFormat);
+  }
+  at::Tensor tensor = t->clone(format);
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_new_empty(int64_t* sizes, size_t ndims, TensorOptions options) {
   at::Tensor tensor = at::empty(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
@@ -103,8 +112,14 @@ tensor torchffi_tensor_new_eye(int64_t n, int64_t m, TensorOptions options) {
 }
 
 tensor torchffi_tensor_new_from_blob(void* data, int64_t* dims, size_t ndims, TensorOptions options) {
-  at::TensorOptions tensorOptions = torchffi_make_tensor_options(options);
-  return new torch::Tensor(torch::for_blob(data, torch::IntArrayRef(dims, ndims)).options(tensorOptions).make_tensor());
+  at::Tensor tensor = at::from_blob(data, torch::IntArrayRef(dims, ndims), torchffi_make_tensor_options(options));
+  return new torch::Tensor(tensor);
+  /*at::TensorOptions tensorOptions = torchffi_make_tensor_options(options);
+  return new torch::Tensor(torch::for_blob(data, torch::IntArrayRef(dims, ndims)).options(tensorOptions).make_tensor());*/
+}
+
+void* torchffi_tensor_data_pointer(tensor t) {
+  return t->data_ptr();
 }
 
 size_t torchffi_tensor_dim(tensor t) {
@@ -361,6 +376,12 @@ tensor torchffi_tensor_multiplication(tensor a, tensor b) {
 
 tensor torchffi_tensor_division(tensor a, tensor b) {
   at::Tensor tensor = a->div(*b);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_division_scalar(tensor a, Scalar b) {
+  at::Scalar opB = torchffi_to_scalar(b);
+  at::Tensor tensor = a->div(opB);
   return new torch::Tensor(tensor);
 }
 

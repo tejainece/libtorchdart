@@ -244,6 +244,51 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  static Tensor from(
+    // TODO this should also accept int data and TypedList
+    List<double> data,
+    List<int> sizes, {
+    required DataType datatype,
+    Device? device,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final dataPointer = arena.allocate<ffi.Double>(
+        data.length * ffi.sizeOf<ffi.Double>(),
+      );
+      dataPointer.asTypedList(data.length).setAll(0, data);
+
+      final options = FFITensorOptions.make(
+        dataType: datatype,
+        device: device,
+        layout: layout,
+        memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
+        allocator: arena,
+      );
+
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        sizes.length * ffi.sizeOf<ffi.Int64>(),
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      // TODO check if there is way to avoid clone
+      final tensor = FFITensor.fromBlob(
+        dataPointer.cast<ffi.Void>(),
+        sizesPointer,
+        sizes.length,
+        options.ref,
+      );
+      return Tensor(tensor).clone();
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   static Tensor fromBlob(
     ffi.Pointer<ffi.Void> dataPointer,
     List<int> sizes, {
@@ -319,6 +364,8 @@ class Tensor implements ffi.Finalizable {
     CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
     FFITensor.uniform_(nativePtr, cGenerator, from, to);
   }
+
+  ffi.Pointer<void> get dataPointer => FFITensor.dataPointer(nativePtr);
 
   int get dim => FFITensor.dim(nativePtr);
 
@@ -557,6 +604,21 @@ class Tensor implements ffi.Finalizable {
     return Tensor(tensor);
   }
 
+  Tensor clone({MemoryFormat? memoryFormat}) {
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Int8> memoryFormatPtr = ffi.nullptr;
+      if (memoryFormat != null) {
+        memoryFormatPtr = arena.allocate<ffi.Int8>(ffi.sizeOf<ffi.Int8>());
+        memoryFormatPtr.value = memoryFormat.id;
+      }
+      final tensor = FFITensor.clone(nativePtr, memoryFormatPtr);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   Tensor pad(List<int> pad, {PadMode mode = PadMode.constant, double? value}) {
     final arena = ffi.Arena();
     try {
@@ -688,7 +750,10 @@ class Tensor implements ffi.Finalizable {
         final tensor = FFITensor.division(nativePtr, other.nativePtr);
         return Tensor(tensor);
       } else if (other is num) {
-        throw UnimplementedError('operator/num not implemented for Tensor');
+        final scalar = FFIScalar.allocate(arena);
+        scalar.ref.setValue(other);
+        final tensor = FFITensor.divisionScalar(nativePtr, scalar.ref);
+        return Tensor(tensor);
       } else if (other is (num, dynamic)) {
         throw UnimplementedError('operator/num not implemented for Tensor');
       }
