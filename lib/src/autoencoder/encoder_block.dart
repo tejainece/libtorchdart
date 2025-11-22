@@ -21,23 +21,60 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
 
   @override
   void resetParameters() {
-    throw UnimplementedError();
+    for (final resnet in resnets) {
+      resnet.resetParameters();
+    }
+    for (final downSampler in downSamplers) {
+      downSampler.resetParameters();
+    }
   }
 
   @override
   late final Map<String, dynamic> meta = {
-    // TODO
+    "resnets": resnets.map((e) => e.meta).toList(),
+    "downSamplers": downSamplers.map((e) => e.meta).toList(),
   };
 
   static Future<DownEncoderBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
-    String path = '',
+    String prefix = '',
+    required int numInChannels,
+    required int numOutChannels,
+    required int numLayers,
+    bool addDownsample = true,
+    double resnetEps = 1e-6,
+    Activation resnetActFn = Activation.silu,
+    int resnetGroups = 32,
+    bool downsamplePadding = true,
+    double dropout = 0.0,
   }) async {
     final resnets = <ResnetBlock2D>[];
-    // TODO resnets
+    for (var i = 0; i < numLayers; i++) {
+      resnets.add(
+        await ResnetBlock2D.loadFromSafeTensor(
+          loader,
+          prefix: '${prefix}resnets.$i.',
+          eps: resnetEps,
+          activation: resnetActFn,
+          numGroups: resnetGroups,
+          dropout: dropout,
+        ),
+      );
+    }
 
     final downSamplers = <SimpleModule>[];
-    // TODO down samplers
+    if (addDownsample) {
+      downSamplers.add(
+        await Downsample2D.loadFromSafeTensor(
+          loader,
+          prefix: '${prefix}downsamplers.0.',
+          numChannels: numOutChannels,
+          padding: downsamplePadding
+              ? const SymmetricPadding2D.same(1)
+              : const SymmetricPadding2D.same(0),
+        ),
+      );
+    }
 
     return DownEncoderBlock2D(resnets: resnets, downSamplers: downSamplers);
   }

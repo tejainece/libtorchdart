@@ -165,7 +165,7 @@ class VaeDecoder extends Module {
     // TODO implement grad and checkpointing
     sample = midBlock.forward(sample, embeds: latentEmbeds);
     for (int i = 0; i < upBlocks.length; i++) {
-      sample = upBlocks[i].forward(sample, emdeds: latentEmbeds);
+      sample = upBlocks[i].forward(sample, embeds: latentEmbeds);
     }
 
     if (convNormOut is EmbeddableNormalizer) {

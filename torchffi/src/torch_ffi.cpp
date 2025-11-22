@@ -114,8 +114,6 @@ tensor torchffi_tensor_new_eye(int64_t n, int64_t m, TensorOptions options) {
 tensor torchffi_tensor_new_from_blob(void* data, int64_t* dims, size_t ndims, TensorOptions options) {
   at::Tensor tensor = at::from_blob(data, torch::IntArrayRef(dims, ndims), torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
-  /*at::TensorOptions tensorOptions = torchffi_make_tensor_options(options);
-  return new torch::Tensor(torch::for_blob(data, torch::IntArrayRef(dims, ndims)).options(tensorOptions).make_tensor());*/
 }
 
 void* torchffi_tensor_data_pointer(tensor t) {
