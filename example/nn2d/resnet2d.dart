@@ -16,8 +16,8 @@ void main() {
     tembChannels: 128,
   );
   final out = resnet.forward(sample, embeds: temb);
-  print('Basic block output shape: ${out.shape}');
-  print(out);
+  //print('Basic block output shape: ${out.shape}');
+  //print(out);
 
   /*
   // Block with time embedding projection

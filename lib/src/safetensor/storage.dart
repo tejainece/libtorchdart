@@ -3,7 +3,6 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/safetensor/metadata.dart';
 
 abstract class SafeTensorLoader {
   SafeTensorHeader get header;

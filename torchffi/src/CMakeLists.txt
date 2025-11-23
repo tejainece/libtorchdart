@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.31.2)
 project(torchffi_library)
-set(CMAKE_CUDA_COMPILER /usr/bin/nvcc)
-#set(CMAKE_CUDA_ARCHITECTURES native)
+set(CMAKE_CUDA_COMPILER /usr/local/cuda-13/bin/nvcc)
+set(CMAKE_CUDA_ARCHITECTURES all)
+set(CMAKE_CUDA_STANDARD 17)
 
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")

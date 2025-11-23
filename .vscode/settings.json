@@ -104,5 +104,10 @@
     "cmake.sourceDirectory": "${workspaceFolder}/torchffi/src",
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 0, ContinuationIndentWidth: 2, AlignWithOpenBracket: BlockIndent, AlignAfterOpenBracket: BlockIndent}",
     "editor.formatOnSave": true,
-    "debug.toolBarLocation": "docked"
+    "debug.toolBarLocation": "docked",
+    "clangd.fallbackFlags": [
+        "-I${workspaceFolder}/torchffi/src/include",
+        "-I${workspaceFolder}/torchffi/libtorch/include/torch/csrc/api/include",
+        "-I${workspaceFolder}/torchffi/libtorch/include"
+    ]
 }

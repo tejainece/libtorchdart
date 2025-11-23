@@ -1,4 +1,5 @@
 import 'package:libtorchdart/libtorchdart.dart';
+import 'package:libtorchdart/src/unet/transformer_2d.dart';
 
 class UNet2DMidBlock extends Module implements UNet2DBlock {
   final ResnetBlock2D resnet;
@@ -84,7 +85,6 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
       resnetIndex++;
     }
 
-    // TODO
     return UNet2DMidBlock(resnet, resnets: resnets);
   }
 }

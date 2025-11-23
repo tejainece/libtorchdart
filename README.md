@@ -3,7 +3,6 @@
 ## Phase 0
 + Save Module to disk as Safetensor
 + Conv2D
-+ Dropout
 
 ## Phase 1: Resnet
 

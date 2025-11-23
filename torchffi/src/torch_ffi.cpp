@@ -10,13 +10,15 @@ at::TensorOptions torchffi_make_tensor_options(TensorOptions options) {
     tensorOptions = tensorOptions.dtype(at::ScalarType(*options.dtype));
   }
   if (options.device != nullptr) {
-    tensorOptions = tensorOptions.device(at::Device(at::DeviceType(options.device->type), options.device->index));
+    tensorOptions = tensorOptions.device(at::Device(
+        at::DeviceType(options.device->type), options.device->index));
   }
   if (options.layout != nullptr) {
     tensorOptions = tensorOptions.layout(at::Layout(*options.layout));
   }
   if (options.memoryFormat != nullptr) {
-    tensorOptions = tensorOptions.memory_format(at::MemoryFormat(*options.memoryFormat));
+    tensorOptions =
+        tensorOptions.memory_format(at::MemoryFormat(*options.memoryFormat));
   }
   if (options.requiresGrad != nullptr) {
     tensorOptions = tensorOptions.requires_grad(*options.requiresGrad);
@@ -27,21 +29,27 @@ at::TensorOptions torchffi_make_tensor_options(TensorOptions options) {
   return tensorOptions;
 }
 
-at::indexing::TensorIndex torchffi_make_tensor_index(Index_t& index) {
-  at::indexing::TensorIndexType type = (at::indexing::TensorIndexType)index.type;
+at::indexing::TensorIndex torchffi_make_tensor_index(Index_t &index) {
+  at::indexing::TensorIndexType type =
+      (at::indexing::TensorIndexType)index.type;
   if (type == at::indexing::TensorIndexType::None) {
     return at::indexing::None;
   } else if (type == at::indexing::TensorIndexType::Ellipsis) {
     return at::indexing::Ellipsis;
   } else if (type == at::indexing::TensorIndexType::SymInt) {
-    return at::indexing::TensorIndex(*(int64_t*)index.value);
+    return at::indexing::TensorIndex(*(int64_t *)index.value);
   } else if (type == at::indexing::TensorIndexType::Boolean) {
-    return at::indexing::TensorIndex(*(bool*)index.value);
+    return at::indexing::TensorIndex(*(bool *)index.value);
   } else if (type == at::indexing::TensorIndexType::Slice) {
-    Slice slice = *(Slice*)index.value;
-    return at::indexing::TensorIndex(at::indexing::Slice(slice.start ? std::make_optional(c10::SymInt(*slice.start)) : std::nullopt, slice.stop ? std::make_optional(c10::SymInt(*slice.stop)) : std::nullopt, c10::SymInt(slice.step)));
+    Slice slice = *(Slice *)index.value;
+    return at::indexing::TensorIndex(at::indexing::Slice(
+        slice.start ? std::make_optional(c10::SymInt(*slice.start))
+                    : std::nullopt,
+        slice.stop ? std::make_optional(c10::SymInt(*slice.stop))
+                   : std::nullopt,
+        c10::SymInt(slice.step)));
   } else if (type == at::indexing::TensorIndexType::Tensor) {
-    return at::indexing::TensorIndex(*(torch::Tensor*)index.value);
+    return at::indexing::TensorIndex(*(torch::Tensor *)index.value);
   } else {
     return at::indexing::Ellipsis;
   }
@@ -59,15 +67,11 @@ at::Scalar torchffi_to_scalar(Scalar alpha) {
   return opAlpha;
 }
 
-void torchffi_tensor_delete(tensor t) {
-  delete t;
-}
+void torchffi_tensor_delete(tensor t) { delete t; }
 
-tensor torchffi_tensor_new() {
-  return new torch::Tensor();
-}
+tensor torchffi_tensor_new() { return new torch::Tensor(); }
 
-tensor torchffi_tensor_clone(tensor t, int8_t* memoryFormat) {
+tensor torchffi_tensor_clone(tensor t, int8_t *memoryFormat) {
   std::optional<at::MemoryFormat> format = std::nullopt;
   if (memoryFormat != nullptr) {
     format = at::MemoryFormat(*memoryFormat);
@@ -76,18 +80,24 @@ tensor torchffi_tensor_clone(tensor t, int8_t* memoryFormat) {
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_new_empty(int64_t* sizes, size_t ndims, TensorOptions options) {
-  at::Tensor tensor = at::empty(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
+tensor torchffi_tensor_new_empty(int64_t *sizes, size_t ndims,
+                                 TensorOptions options) {
+  at::Tensor tensor = at::empty(at::IntArrayRef(sizes, ndims),
+                                torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_new_zeros(int64_t* sizes, size_t ndims, TensorOptions options) {
-  at::Tensor tensor = at::zeros(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
+tensor torchffi_tensor_new_zeros(int64_t *sizes, size_t ndims,
+                                 TensorOptions options) {
+  at::Tensor tensor = at::zeros(at::IntArrayRef(sizes, ndims),
+                                torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_new_ones(int64_t* sizes, size_t ndims, TensorOptions options) {
-  at::Tensor tensor = at::ones(at::IntArrayRef(sizes, ndims), torchffi_make_tensor_options(options));
+tensor torchffi_tensor_new_ones(int64_t *sizes, size_t ndims,
+                                TensorOptions options) {
+  at::Tensor tensor = at::ones(at::IntArrayRef(sizes, ndims),
+                               torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
@@ -96,13 +106,21 @@ tensor torchffi_tensor_new_arange(int64_t end, TensorOptions options) {
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_new_rand(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options) {
-  at::Tensor tensor = at::rand(at::IntArrayRef(sizes, ndims), generator ? std::optional<at::Generator>(*generator) : std::nullopt, torchffi_make_tensor_options(options));
+tensor torchffi_tensor_new_rand(int64_t *sizes, size_t ndims,
+                                Generator generator, TensorOptions options) {
+  at::Tensor tensor = at::rand(
+      at::IntArrayRef(sizes, ndims),
+      generator ? std::optional<at::Generator>(*generator) : std::nullopt,
+      torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_new_randn(int64_t* sizes, size_t ndims, Generator generator, TensorOptions options) {
-  at::Tensor tensor = at::randn(at::IntArrayRef(sizes, ndims), generator ? std::optional<at::Generator>(*generator) : std::nullopt, torchffi_make_tensor_options(options));
+tensor torchffi_tensor_new_randn(int64_t *sizes, size_t ndims,
+                                 Generator generator, TensorOptions options) {
+  at::Tensor tensor = at::randn(
+      at::IntArrayRef(sizes, ndims),
+      generator ? std::optional<at::Generator>(*generator) : std::nullopt,
+      torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
@@ -111,20 +129,18 @@ tensor torchffi_tensor_new_eye(int64_t n, int64_t m, TensorOptions options) {
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_new_from_blob(void* data, int64_t* dims, size_t ndims, TensorOptions options) {
-  at::Tensor tensor = at::from_blob(data, torch::IntArrayRef(dims, ndims), torchffi_make_tensor_options(options));
+tensor torchffi_tensor_new_from_blob(void *data, int64_t *dims, size_t ndims,
+                                     TensorOptions options) {
+  at::Tensor tensor = at::from_blob(data, torch::IntArrayRef(dims, ndims),
+                                    torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 
-void* torchffi_tensor_data_pointer(tensor t) {
-  return t->data_ptr();
-}
+void *torchffi_tensor_data_pointer(tensor t) { return t->data_ptr(); }
 
-size_t torchffi_tensor_dim(tensor t) {
-  return t->dim();
-}
+size_t torchffi_tensor_dim(tensor t) { return t->dim(); }
 
-void torchffi_tensor_sizes(tensor t, size_t dim, int64_t* shape) {
+void torchffi_tensor_sizes(tensor t, size_t dim, int64_t *shape) {
   int i = 0;
   for (int64_t dimShape : t->sizes()) {
     if (i == dim) {
@@ -147,28 +163,22 @@ Scalar torchffi_tensor_scalar(tensor t) {
   at::ScalarType type = scalar.type();
   if (scalar.isBoolean()) {
     return {
-      .dtype = 0,
-      .value = {
-        .b = scalar.toBool()
-      },
+        .dtype = 0,
+        .value = {.b = scalar.toBool()},
     };
   } else if (scalar.isIntegral(false)) {
     return {
-      .dtype = 1,
-      .value = {
-        .i = scalar.toLong()
-      },
+        .dtype = 1,
+        .value = {.i = scalar.toLong()},
     };
   } else if (scalar.isFloatingPoint()) {
     return {
-      .dtype = 2,
-      .value = {
-        .d = scalar.toDouble()
-      },
+        .dtype = 2,
+        .value = {.d = scalar.toDouble()},
     };
   } else {
     return {
-      .dtype = -1,
+        .dtype = -1,
     };
   }
 }
@@ -187,12 +197,13 @@ int8_t torchffi_tensor_get_datatype(tensor t) {
   return static_cast<int>(t->scalar_type());
 }
 
-tensor torchffi_tensor_to(tensor t, TensorOptions options, bool nonBlocking, bool copy) {
+tensor torchffi_tensor_to(tensor t, TensorOptions options, bool nonBlocking,
+                          bool copy) {
   auto tensor = t->to(torchffi_make_tensor_options(options), nonBlocking, copy);
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_index(tensor t, Index_t* indices, size_t ndims) {
+tensor torchffi_tensor_index(tensor t, Index_t *indices, size_t ndims) {
   std::vector<at::indexing::TensorIndex> indexer;
   for (int i = 0; i < ndims; i++) {
     indexer.push_back(torchffi_make_tensor_index(indices[i]));
@@ -201,12 +212,12 @@ tensor torchffi_tensor_index(tensor t, Index_t* indices, size_t ndims) {
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_view(tensor t, int64_t* sizes, size_t ndims) {
+tensor torchffi_tensor_view(tensor t, int64_t *sizes, size_t ndims) {
   at::Tensor tensor = t->view(at::IntArrayRef(sizes, ndims));
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_reshape(tensor t, int64_t* sizes, size_t ndims) {
+tensor torchffi_tensor_reshape(tensor t, int64_t *sizes, size_t ndims) {
   at::Tensor tensor = t->reshape(at::IntArrayRef(sizes, ndims));
   return new torch::Tensor(tensor);
 }
@@ -216,9 +227,9 @@ tensor torchffi_tensor_flatten(tensor t, int64_t startDim, int64_t endDim) {
   return new torch::Tensor(tensor);
 }
 
-tensor* torchffi_tensor_split_equally(tensor t, int64_t splits, int64_t dim) {
+tensor *torchffi_tensor_split_equally(tensor t, int64_t splits, int64_t dim) {
   auto tensors = t->split(splits, dim);
-  tensor* result = (tensor*)malloc((tensors.size() + 1) * sizeof(tensor));
+  tensor *result = (tensor *)malloc((tensors.size() + 1) * sizeof(tensor));
   for (int i = 0; i < tensors.size(); i++) {
     result[i] = new torch::Tensor(tensors[i]);
   }
@@ -227,9 +238,10 @@ tensor* torchffi_tensor_split_equally(tensor t, int64_t splits, int64_t dim) {
   return result;
 }
 
-tensor* torchffi_tensor_split(tensor t, int64_t* splits, size_t splitsSize, int64_t dim) {
+tensor *torchffi_tensor_split(tensor t, int64_t *splits, size_t splitsSize,
+                              int64_t dim) {
   auto tensors = t->split(at::IntArrayRef(splits, splitsSize), dim);
-  tensor* result = (tensor*)malloc((tensors.size() + 1) * sizeof(tensor));
+  tensor *result = (tensor *)malloc((tensors.size() + 1) * sizeof(tensor));
   for (int i = 0; i < tensors.size(); i++) {
     result[i] = new torch::Tensor(tensors[i]);
   }
@@ -238,9 +250,9 @@ tensor* torchffi_tensor_split(tensor t, int64_t* splits, size_t splitsSize, int6
   return result;
 }
 
-tensor* torchffi_tensor_chunk(tensor t, int64_t chunks, int64_t dim) {
+tensor *torchffi_tensor_chunk(tensor t, int64_t chunks, int64_t dim) {
   auto tensors = t->chunk(chunks, dim);
-  tensor* result = (tensor*)malloc((tensors.size() + 1) * sizeof(tensor));
+  tensor *result = (tensor *)malloc((tensors.size() + 1) * sizeof(tensor));
   for (int i = 0; i < tensors.size(); i++) {
     result[i] = new torch::Tensor(tensors[i]);
   }
@@ -248,12 +260,13 @@ tensor* torchffi_tensor_chunk(tensor t, int64_t chunks, int64_t dim) {
   return result;
 }
 
-tensor torchffi_tensor_expand(tensor t, int64_t* sizes, size_t ndims, bool implicit) {
+tensor torchffi_tensor_expand(tensor t, int64_t *sizes, size_t ndims,
+                              bool implicit) {
   at::Tensor tensor = t->expand(at::IntArrayRef(sizes, ndims), implicit);
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_permute(tensor t, int64_t* dims, size_t ndims) {
+tensor torchffi_tensor_permute(tensor t, int64_t *dims, size_t ndims) {
   at::Tensor tensor = t->permute(at::IntArrayRef(dims, ndims));
   return new torch::Tensor(tensor);
 }
@@ -268,7 +281,7 @@ tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat) {
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_squeeze(tensor t, int64_t* dim) {
+tensor torchffi_tensor_squeeze(tensor t, int64_t *dim) {
   at::Tensor tensor;
   if (dim == nullptr) {
     tensor = t->squeeze();
@@ -283,37 +296,34 @@ tensor torchffi_tensor_unsqueeze(tensor t, int64_t dim) {
   return new torch::Tensor(tensor);
 }
 
-const char* padModeName(uint8_t padMode) {
+const char *padModeName(uint8_t padMode) {
   switch (padMode) {
-    case padModeConstant:
-      return padModeNameConstant;
-    case padModeReflect:
-      return padModeNameReflect;
-    case padModeReplicate:
-      return padModeNameReplicate;
-    case padModeCircular:
-      return padModeNameCircular;
-    default:
-      return padModeNameConstant;
+  case padModeConstant:
+    return padModeNameConstant;
+  case padModeReflect:
+    return padModeNameReflect;
+  case padModeReplicate:
+    return padModeNameReplicate;
+  case padModeCircular:
+    return padModeNameCircular;
+  default:
+    return padModeNameConstant;
   }
 }
 
-tensor torchffi_tensor_pad(tensor t, int64_t* pad, size_t padArrayLength, uint8_t padMode, double* value) {
-  at::Tensor tensor = torch::pad(*t, at::IntArrayRef(pad, padArrayLength), padModeName(padMode), value ? std::optional<double>(*value) : std::nullopt);
+tensor torchffi_tensor_pad(tensor t, int64_t *pad, size_t padArrayLength,
+                           uint8_t padMode, double *value) {
+  at::Tensor tensor =
+      torch::pad(*t, at::IntArrayRef(pad, padArrayLength), padModeName(padMode),
+                 value ? std::optional<double>(*value) : std::nullopt);
   return new torch::Tensor(tensor);
 }
 
-void torchffi_tensor_ones_(tensor t) {
-  torch::nn::init::ones_(*t);
-}
+void torchffi_tensor_ones_(tensor t) { torch::nn::init::ones_(*t); }
 
-void torchffi_tensor_zeros_(tensor t) {
-  torch::nn::init::zeros_(*t);
-}
+void torchffi_tensor_zeros_(tensor t) { torch::nn::init::zeros_(*t); }
 
-void torchffi_tensor_eye_(tensor t) {
-  torch::nn::init::eye_(*t);
-}
+void torchffi_tensor_eye_(tensor t) { torch::nn::init::eye_(*t); }
 
 void torchffi_tensor_fill_(tensor t, Scalar value) {
   at::Scalar opValue = torchffi_to_scalar(value);
@@ -328,7 +338,8 @@ void torchffi_tensor_rand_(tensor t, Generator generator) {
   t->random_(opGenerator);
 }
 
-void torchffi_tensor_normal_(tensor t, Generator generator, double mean, double std) {
+void torchffi_tensor_normal_(tensor t, Generator generator, double mean,
+                             double std) {
   std::optional<at::Generator> opGenerator = std::nullopt;
   if (generator != nullptr) {
     opGenerator = *generator;
@@ -336,7 +347,8 @@ void torchffi_tensor_normal_(tensor t, Generator generator, double mean, double 
   t->normal_(mean, std, opGenerator);
 }
 
-void torchffi_tensor_uniform_(tensor t, Generator generator, double from, double to) {
+void torchffi_tensor_uniform_(tensor t, Generator generator, double from,
+                              double to) {
   std::optional<at::Generator> opGenerator = std::nullopt;
   if (generator != nullptr) {
     opGenerator = *generator;
@@ -344,7 +356,8 @@ void torchffi_tensor_uniform_(tensor t, Generator generator, double from, double
   t->uniform_(from, to, opGenerator);
 }
 
-bool torchffi_tensor_allclose(tensor a, tensor b, double rtol, double atol, bool equalNan) {
+bool torchffi_tensor_allclose(tensor a, tensor b, double rtol, double atol,
+                              bool equalNan) {
   return a->allclose(*b, rtol, atol, equalNan);
 }
 
@@ -394,6 +407,21 @@ tensor torchffi_tensor_rsqrt(tensor input) {
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_tensor_sin(tensor input) {
+  at::Tensor tensor = torch::sin(*input);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_cos(tensor input) {
+  at::Tensor tensor = torch::cos(*input);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_exp(tensor input) {
+  at::Tensor tensor = torch::exp(*input);
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_bitwise_not(tensor a) {
   at::Tensor tensor = a->bitwise_not();
   return new torch::Tensor(tensor);
@@ -414,7 +442,8 @@ tensor torchffi_tensor_bitwise_xor(tensor a, tensor b) {
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_sum(tensor input, int64_t* dim, size_t dimLength, bool keepdim, uint8_t* dtype) {
+tensor torchffi_tensor_sum(tensor input, int64_t *dim, size_t dimLength,
+                           bool keepdim, uint8_t *dtype) {
   std::optional<at::ScalarType> dopt = std::nullopt;
   if (dtype != nullptr) {
     dopt = at::ScalarType(*dtype);
@@ -427,7 +456,8 @@ tensor torchffi_tensor_sum(tensor input, int64_t* dim, size_t dimLength, bool ke
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_mean(tensor input, int64_t* dim, size_t dimLength, bool keepdim, uint8_t* dtype) {
+tensor torchffi_tensor_mean(tensor input, int64_t *dim, size_t dimLength,
+                            bool keepdim, uint8_t *dtype) {
   std::optional<at::ScalarType> dopt = std::nullopt;
   if (dtype != nullptr) {
     dopt = at::ScalarType(*dtype);
@@ -449,11 +479,9 @@ tensor torchffi_tensor_sigmoid(tensor t) {
   return new torch::Tensor(t->sigmoid());
 }
 
-tensor torchffi_tensor_relu(tensor t) {
-  return new torch::Tensor(t->relu());
-}
+tensor torchffi_tensor_relu(tensor t) { return new torch::Tensor(t->relu()); }
 
-tensor torchffi_tensor_gelu(tensor t, char* approximate) {
+tensor torchffi_tensor_gelu(tensor t, char *approximate) {
   return new torch::Tensor(torch::gelu(*t, approximate));
 }
 
@@ -462,21 +490,38 @@ tensor torchffi_tensor_silu(tensor t) {
 }
 
 tensor torchffi_linear(tensor input, tensor weight, tensor bias) {
-  return new torch::Tensor(torch::linear(*input, *weight, (bias ? ::std::optional<at::Tensor>(*bias) : ::std::nullopt)));
+  return new torch::Tensor(torch::linear(
+      *input, *weight,
+      (bias ? ::std::optional<at::Tensor>(*bias) : ::std::nullopt)));
 }
 
-tensor torchffi_layer_norm(tensor input, int64_t* normalizedShape, size_t normalizedShapeLength, tensor weight, tensor bias, double eps, bool cudnnEnable) {
-  auto tensor = torch::layer_norm(*input, at::IntArrayRef(normalizedShape, normalizedShapeLength), (weight ? ::std::optional<at::Tensor>(*weight) : ::std::nullopt), (bias ? ::std::optional<at::Tensor>(*bias) : ::std::nullopt), eps, cudnnEnable);
+tensor torchffi_layer_norm(tensor input, int64_t *normalizedShape,
+                           size_t normalizedShapeLength, tensor weight,
+                           tensor bias, double eps, bool cudnnEnable) {
+  auto tensor = torch::layer_norm(
+      *input, at::IntArrayRef(normalizedShape, normalizedShapeLength),
+      (weight ? ::std::optional<at::Tensor>(*weight) : ::std::nullopt),
+      (bias ? ::std::optional<at::Tensor>(*bias) : ::std::nullopt), eps,
+      cudnnEnable);
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_group_norm(tensor input, int64_t numGroups, tensor weight, tensor bias, float eps) {
-  auto tensor = torch::group_norm(*input, numGroups, (weight ? ::std::optional<at::Tensor>(*weight) : ::std::nullopt), (bias ? ::std::optional<at::Tensor>(*bias) : ::std::nullopt), eps, true);
+tensor torchffi_group_norm(tensor input, int64_t numGroups, tensor weight,
+                           tensor bias, float eps) {
+  auto tensor = torch::group_norm(
+      *input, numGroups,
+      (weight ? ::std::optional<at::Tensor>(*weight) : ::std::nullopt),
+      (bias ? ::std::optional<at::Tensor>(*bias) : ::std::nullopt), eps, true);
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_rms_norm(tensor input, int64_t* normalizedShape, size_t normalizedShapeLength, tensor weight, double* eps) {
-  auto tensor = torch::rms_norm(*input, at::IntArrayRef(normalizedShape, normalizedShapeLength), (weight ? ::std::optional<at::Tensor>(*weight) : ::std::nullopt), (eps ? ::std::optional<double>(*eps) : ::std::nullopt));
+tensor torchffi_rms_norm(tensor input, int64_t *normalizedShape,
+                         size_t normalizedShapeLength, tensor weight,
+                         double *eps) {
+  auto tensor = torch::rms_norm(
+      *input, at::IntArrayRef(normalizedShape, normalizedShapeLength),
+      (weight ? ::std::optional<at::Tensor>(*weight) : ::std::nullopt),
+      (eps ? ::std::optional<double>(*eps) : ::std::nullopt));
   return new torch::Tensor(tensor);
 }
 
@@ -489,7 +534,7 @@ void torchffi_dropout_(tensor t, double p, bool train) {
   torch::dropout_(*t, p, train);
 }
 
-tensor torchffi_tensor_softmax(tensor t, int64_t dim, uint8_t* dataType) {
+tensor torchffi_tensor_softmax(tensor t, int64_t dim, uint8_t *dataType) {
   std::optional<at::ScalarType> dtype = std::nullopt;
   if (dataType != nullptr) {
     dtype = at::ScalarType(*dataType);
@@ -498,90 +543,155 @@ tensor torchffi_tensor_softmax(tensor t, int64_t dim, uint8_t* dataType) {
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_embedding_renorm_(tensor weights, tensor indices, double maxNorm, double normType) {
-  at::Tensor tensor = torch::embedding_renorm_(*weights, *indices, maxNorm, normType);
+tensor torchffi_embedding_renorm_(tensor weights, tensor indices,
+                                  double maxNorm, double normType) {
+  at::Tensor tensor =
+      torch::embedding_renorm_(*weights, *indices, maxNorm, normType);
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_embedding(tensor weights, tensor indices, int64_t paddingIdx, bool scaleGradByFreq, bool sparse) {
-  at::Tensor tensor = torch::embedding(*weights, *indices, paddingIdx, scaleGradByFreq, sparse);
+tensor torchffi_embedding(tensor weights, tensor indices, int64_t paddingIdx,
+                          bool scaleGradByFreq, bool sparse) {
+  at::Tensor tensor =
+      torch::embedding(*weights, *indices, paddingIdx, scaleGradByFreq, sparse);
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_conv2d(tensor input, tensor weights, tensor bias, int64_t* strides, int64_t* paddings, int64_t* dilations, int64_t groups) {
-  at::Tensor tensor = torch::conv2d(*input, *weights, (bias ? std::optional<at::Tensor>(*bias) : ::std::nullopt), at::IntArrayRef(strides, 2), at::IntArrayRef(paddings, 2), at::IntArrayRef(dilations, 2), groups);
+tensor torchffi_conv2d(tensor input, tensor weights, tensor bias,
+                       int64_t *strides, int64_t *paddings, int64_t *dilations,
+                       int64_t groups) {
+  at::Tensor tensor =
+      torch::conv2d(*input, *weights,
+                    (bias ? std::optional<at::Tensor>(*bias) : ::std::nullopt),
+                    at::IntArrayRef(strides, 2), at::IntArrayRef(paddings, 2),
+                    at::IntArrayRef(dilations, 2), groups);
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_upsample_nearest(tensor input, int64_t* outputSize, size_t outputSizeLength) {
+tensor torchffi_upsample_nearest(tensor input, int64_t *outputSize,
+                                 size_t outputSizeLength) {
   at::Tensor tensor;
   switch (outputSizeLength) {
-    case 1:
-      tensor = torch::upsample_nearest1d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
-      return new torch::Tensor(tensor);
-    case 2:
-      tensor = torch::upsample_nearest2d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
-      return new torch::Tensor(tensor);
-    case 3:
-      tensor = torch::upsample_nearest3d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
-      return new torch::Tensor(tensor);
-    default:
-      return nullptr;
+  case 1:
+    tensor = torch::upsample_nearest1d(
+        *input,
+        std::optional<at::IntArrayRef>(
+            at::IntArrayRef(outputSize, outputSizeLength)),
+        ::std::nullopt);
+    return new torch::Tensor(tensor);
+  case 2:
+    tensor = torch::upsample_nearest2d(
+        *input,
+        std::optional<at::IntArrayRef>(
+            at::IntArrayRef(outputSize, outputSizeLength)),
+        ::std::nullopt);
+    return new torch::Tensor(tensor);
+  case 3:
+    tensor = torch::upsample_nearest3d(
+        *input,
+        std::optional<at::IntArrayRef>(
+            at::IntArrayRef(outputSize, outputSizeLength)),
+        ::std::nullopt);
+    return new torch::Tensor(tensor);
+  default:
+    return nullptr;
   }
 }
 
-tensor torchffi_upsample_nearest_scale(tensor input, double* scales, size_t scalesLength) {
+tensor torchffi_upsample_nearest_scale(tensor input, double *scales,
+                                       size_t scalesLength) {
   at::Tensor tensor;
   switch (scalesLength) {
-    case 1:
-      tensor = torch::upsample_nearest1d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
-      return new torch::Tensor(tensor);
-    case 2:
-      tensor = torch::upsample_nearest2d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
-      return new torch::Tensor(tensor);
-    case 3:
-      tensor = torch::upsample_nearest3d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
-      return new torch::Tensor(tensor);
-    default:
-      return nullptr;
+  case 1:
+    tensor = torch::upsample_nearest1d(
+        *input, ::std::nullopt,
+        std::optional<at::ArrayRef<double>>(
+            at::ArrayRef<double>(scales, scalesLength)));
+    return new torch::Tensor(tensor);
+  case 2:
+    tensor = torch::upsample_nearest2d(
+        *input, ::std::nullopt,
+        std::optional<at::ArrayRef<double>>(
+            at::ArrayRef<double>(scales, scalesLength)));
+    return new torch::Tensor(tensor);
+  case 3:
+    tensor = torch::upsample_nearest3d(
+        *input, ::std::nullopt,
+        std::optional<at::ArrayRef<double>>(
+            at::ArrayRef<double>(scales, scalesLength)));
+    return new torch::Tensor(tensor);
+  default:
+    return nullptr;
   }
 }
 
-tensor torchffi_upsample_nearest_exact(tensor input, int64_t* outputSize, size_t outputSizeLength) {
+tensor torchffi_upsample_nearest_exact(tensor input, int64_t *outputSize,
+                                       size_t outputSizeLength) {
   at::Tensor tensor;
   switch (outputSizeLength) {
-    case 1:
-      tensor = torch::_upsample_nearest_exact1d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
-      return new torch::Tensor(tensor);
-    case 2:
-      tensor = torch::_upsample_nearest_exact2d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
-      return new torch::Tensor(tensor);
-    case 3:
-      tensor = torch::_upsample_nearest_exact3d(*input, std::optional<at::IntArrayRef>(at::IntArrayRef(outputSize, outputSizeLength)), ::std::nullopt);
-      return new torch::Tensor(tensor);
-    default:
-      return nullptr;
+  case 1:
+    tensor = torch::_upsample_nearest_exact1d(
+        *input,
+        std::optional<at::IntArrayRef>(
+            at::IntArrayRef(outputSize, outputSizeLength)),
+        ::std::nullopt);
+    return new torch::Tensor(tensor);
+  case 2:
+    tensor = torch::_upsample_nearest_exact2d(
+        *input,
+        std::optional<at::IntArrayRef>(
+            at::IntArrayRef(outputSize, outputSizeLength)),
+        ::std::nullopt);
+    return new torch::Tensor(tensor);
+  case 3:
+    tensor = torch::_upsample_nearest_exact3d(
+        *input,
+        std::optional<at::IntArrayRef>(
+            at::IntArrayRef(outputSize, outputSizeLength)),
+        ::std::nullopt);
+    return new torch::Tensor(tensor);
+  default:
+    return nullptr;
   }
 }
 
-tensor torchffi_upsample_nearest_exact_scale(tensor input, double* scales, size_t scalesLength) {
+tensor torchffi_upsample_nearest_exact_scale(tensor input, double *scales,
+                                             size_t scalesLength) {
   at::Tensor tensor;
   switch (scalesLength) {
-    case 1:
-      tensor = torch::_upsample_nearest_exact1d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
-      return new torch::Tensor(tensor);
-    case 2:
-      tensor = torch::_upsample_nearest_exact1d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
-      return new torch::Tensor(tensor);
-    case 3:
-      tensor = torch::_upsample_nearest_exact1d(*input, ::std::nullopt, std::optional<at::ArrayRef<double>>(at::ArrayRef<double>(scales, scalesLength)));
-      return new torch::Tensor(tensor);
-    default:
-      return nullptr;
+  case 1:
+    tensor = torch::_upsample_nearest_exact1d(
+        *input, ::std::nullopt,
+        std::optional<at::ArrayRef<double>>(
+            at::ArrayRef<double>(scales, scalesLength)));
+    return new torch::Tensor(tensor);
+  case 2:
+    tensor = torch::_upsample_nearest_exact1d(
+        *input, ::std::nullopt,
+        std::optional<at::ArrayRef<double>>(
+            at::ArrayRef<double>(scales, scalesLength)));
+    return new torch::Tensor(tensor);
+  case 3:
+    tensor = torch::_upsample_nearest_exact1d(
+        *input, ::std::nullopt,
+        std::optional<at::ArrayRef<double>>(
+            at::ArrayRef<double>(scales, scalesLength)));
+    return new torch::Tensor(tensor);
+  default:
+    return nullptr;
   }
 }
 
-tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH, int64_t kernelSizeW, int64_t strideH, int64_t strideW, int64_t paddingH, int64_t paddingW, bool ceilMode, bool countIncludePad, int64_t* divisorOverride) {
-  at::Tensor tensor = torch::avg_pool2d(*input, at::IntArrayRef({kernelSizeH, kernelSizeW}), at::IntArrayRef({strideH, strideW}), at::IntArrayRef({paddingH, paddingW}), ceilMode, countIncludePad, divisorOverride ? std::optional<int64_t>(*divisorOverride) : std::nullopt);
+tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH,
+                           int64_t kernelSizeW, int64_t strideH,
+                           int64_t strideW, int64_t paddingH, int64_t paddingW,
+                           bool ceilMode, bool countIncludePad,
+                           int64_t *divisorOverride) {
+  at::Tensor tensor = torch::avg_pool2d(
+      *input, at::IntArrayRef({kernelSizeH, kernelSizeW}),
+      at::IntArrayRef({strideH, strideW}),
+      at::IntArrayRef({paddingH, paddingW}), ceilMode, countIncludePad,
+      divisorOverride ? std::optional<int64_t>(*divisorOverride)
+                      : std::nullopt);
   return new torch::Tensor(tensor);
 }

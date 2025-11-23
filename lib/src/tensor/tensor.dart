@@ -669,7 +669,19 @@ class Tensor implements ffi.Finalizable {
         );
         return Tensor(tensor);
       } else if (other is num) {
-        throw UnimplementedError('operator+num not implemented for Tensor');
+        var scalarTensor = Tensor.from(
+          [other.toDouble()],
+          [1],
+          datatype: dataType,
+        );
+        final alpha = FFIScalar.allocate(arena);
+        alpha.ref.setInt(1);
+        final tensor = FFITensor.addition(
+          nativePtr,
+          scalarTensor.nativePtr,
+          alpha.ref,
+        );
+        return Tensor(tensor);
       } else if (other is (Tensor, dynamic)) {
         final alpha = FFIScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
@@ -731,7 +743,16 @@ class Tensor implements ffi.Finalizable {
         final tensor = FFITensor.multiplication(nativePtr, other.nativePtr);
         return Tensor(tensor);
       } else if (other is num) {
-        throw UnimplementedError('operator+num not implemented for Tensor');
+        var scalarTensor = Tensor.from(
+          [other.toDouble()],
+          [1],
+          datatype: dataType,
+        );
+        final tensor = FFITensor.multiplication(
+          nativePtr,
+          scalarTensor.nativePtr,
+        );
+        return Tensor(tensor);
       } else if (other is (num, dynamic)) {
         throw UnimplementedError('operator+num not implemented for Tensor');
       }
@@ -779,6 +800,21 @@ class Tensor implements ffi.Finalizable {
 
   Tensor rsqrt() {
     final tensor = FFITensor.rsqrt(nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor sin() {
+    final tensor = FFITensor.sin(nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor cos() {
+    final tensor = FFITensor.cos(nativePtr);
+    return Tensor(tensor);
+  }
+
+  Tensor exp() {
+    final tensor = FFITensor.exp(nativePtr);
     return Tensor(tensor);
   }
 
@@ -930,6 +966,22 @@ class Tensor implements ffi.Finalizable {
   Tensor silu() {
     final tensor = FFITensor.silu(nativePtr);
     return Tensor(tensor);
+  }
+
+  static Tensor cat(List<Tensor> tensors, {int dim = 0}) {
+    final arena = ffi.Arena();
+    try {
+      final tensorsPtr = arena.allocate<CTensor>(
+        ffi.sizeOf<CTensor>() * tensors.length,
+      );
+      for (int i = 0; i < tensors.length; i++) {
+        (tensorsPtr + i).value = tensors[i].nativePtr;
+      }
+      final tensor = FFITensor.cat(tensorsPtr, tensors.length, dim);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
   }
 
   static void _print1d(StringBuffer sb, int size, Tensor tensor) {

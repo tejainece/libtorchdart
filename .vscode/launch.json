@@ -19,6 +19,13 @@
             "args": [],
         },
         {
+            "name": "resnet2d",
+            "request": "launch",
+            "type": "dart",
+            "program": "example/nn2d/resnet2d.dart",
+            "args": [],
+        },
+        {
             "name": "vae_decode.dart",
             "request": "launch",
             "type": "dart",

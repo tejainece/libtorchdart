@@ -36,8 +36,10 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
   @override
   Tensor forward(Tensor x, {Tensor? embeds}) {
     Tensor inputTensor = x;
+
     Tensor hiddenStates = norm1.forward(x);
     hiddenStates = nonlinearity.forward(hiddenStates);
+    print(hiddenStates);
 
     if (upSample != null) {
       if (hiddenStates.shape[0] >= 64) {

@@ -538,6 +538,24 @@ abstract class FFITensor {
         CTensor Function(CTensor tensor)
       >('torchffi_tensor_rsqrt');
 
+  static final sin = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor),
+        CTensor Function(CTensor tensor)
+      >('torchffi_tensor_sin');
+
+  static final cos = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor),
+        CTensor Function(CTensor tensor)
+      >('torchffi_tensor_cos');
+
+  static final exp = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor),
+        CTensor Function(CTensor tensor)
+      >('torchffi_tensor_exp');
+
   static final bitwiseNot = nativeLib
       .lookupFunction<
         CTensor Function(CTensor),
@@ -649,6 +667,12 @@ abstract class FFITensor {
           int outputSizeLen,
         )
       >('torchffi_upsample_nearest_exact_scale');
+
+  static final cat = nativeLib
+      .lookupFunction<
+        CTensor Function(Pointer<CTensor>, Int64, Int64),
+        CTensor Function(Pointer<CTensor> tensors, int length, int dim)
+      >('torchffi_cat');
 }
 
 abstract class FFINN {
