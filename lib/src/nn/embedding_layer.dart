@@ -212,4 +212,14 @@ class LinearLayer extends Module implements SimpleModule {
     }
     return LinearLayer(weight: weight, bias: bias);
   }
+
+  static LinearLayer make({
+    required int inFeatures,
+    required int outFeatures,
+    bool hasBias = true,
+  }) {
+    final weight = Tensor.empty([outFeatures, inFeatures]);
+    final bias = hasBias ? Tensor.empty([outFeatures]) : null;
+    return LinearLayer(weight: weight, bias: bias)..resetParameters();
+  }
 }

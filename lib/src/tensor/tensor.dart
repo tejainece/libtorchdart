@@ -425,6 +425,7 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  // TODO improve and dartify the arguments
   Tensor index(List<dynamic> indices) {
     final arena = ffi.Arena();
     try {

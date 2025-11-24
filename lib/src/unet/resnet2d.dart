@@ -39,7 +39,6 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
 
     Tensor hiddenStates = norm1.forward(x);
     hiddenStates = nonlinearity.forward(hiddenStates);
-    print(hiddenStates);
 
     if (upSample != null) {
       if (hiddenStates.shape[0] >= 64) {
@@ -60,12 +59,8 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
         if (!skipTimeAct) {
           embeds = nonlinearity.forward(embeds);
         }
-        embeds = timeEmbProj!.forward(embeds).index([
-          Slice.all(),
-          Slice.all(),
-          NewDim(),
-          NewDim(),
-        ]);
+        embeds = timeEmbProj!.forward(embeds);
+        embeds = embeds.index([Slice.all(), Slice.all(), NewDim(), NewDim()]);
       }
       if (timeEmbedNorm == .def) {
         hiddenStates = hiddenStates + embeds;
@@ -90,6 +85,7 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     }
 
     Tensor output = (hiddenStates + inputTensor) / outputScaleFactor;
+
     return output;
   }
 
@@ -197,16 +193,12 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     }
 
     LinearLayer? timeEmbProj;
-    /* TODO
-    if (tembChannels != null) {
-      if (loader.hasTensor('${prefix}time_emb_proj.weight')) {
-        timeEmbProj = await LinearLayer.loadFromSafeTensor(
-          loader,
-          prefix: '${prefix}time_emb_proj',
-        );
-      }
+    if (loader.hasTensor('${prefix}time_emb_proj')) {
+      timeEmbProj = await LinearLayer.loadFromSafeTensor(
+        loader,
+        prefix: '${prefix}time_emb_proj',
+      );
     }
-    */
 
     Conv2D? convShortcut;
     if (loader.hasTensor('${prefix}conv_shortcut.weight')) {
@@ -246,10 +238,15 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     bool up = false,
     bool down = false,
     double outputScaleFactor = 1.0,
-    int? tembChannels,
+    int? numTembChannels,
     bool skipTimeAct = false,
     Resnet2dTimeEmbedNormType timeEmbedNorm = Resnet2dTimeEmbedNormType.def,
   }) {
+    GroupNorm norm1 = GroupNorm.make(
+      numGroups: numGroups,
+      numChannels: numInChannels,
+      eps: eps,
+    );
     Conv2D conv1 = Conv2D.make(
       numInChannels: numInChannels,
       numOutChannels: numOutChannels,
@@ -257,6 +254,33 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       stride: const SymmetricPadding2D.same(1),
       padding: const SymmetricPadding2D.same(1),
     );
+
+    LinearLayer? timeEmbProj;
+    if (numTembChannels != null) {
+      if (timeEmbedNorm == .def) {
+        timeEmbProj = LinearLayer.make(
+          inFeatures: numTembChannels,
+          outFeatures: numOutChannels,
+        );
+      } else if (timeEmbedNorm == .scaleShift) {
+        timeEmbProj = LinearLayer.make(
+          inFeatures: numTembChannels,
+          outFeatures: numOutChannels * 2,
+        );
+      } else {
+        throw UnimplementedError(
+          'Unknown time embedding norm type: $timeEmbedNorm',
+        );
+      }
+    }
+
+    GroupNorm norm2 = GroupNorm.make(
+      numGroups: numOutGroups ?? numGroups,
+      numChannels: numOutChannels,
+      eps: eps,
+    );
+    Dropout dp = Dropout(dropout);
+
     Conv2D conv2 = Conv2D.make(
       numInChannels: numOutChannels,
       numOutChannels: numConv2dOutChannels ?? numOutChannels,
@@ -264,17 +288,6 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       stride: const SymmetricPadding2D.same(1),
       padding: const SymmetricPadding2D.same(1),
     );
-    GroupNorm norm1 = GroupNorm.make(
-      numGroups: numGroups,
-      numChannels: numInChannels,
-      eps: eps,
-    );
-    GroupNorm norm2 = GroupNorm.make(
-      numGroups: numOutGroups ?? numGroups,
-      numChannels: numOutChannels,
-      eps: eps,
-    );
-    Dropout dp = Dropout(dropout);
 
     SimpleModule? upSample;
     SimpleModule? downSample;
@@ -298,14 +311,6 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
           padding: SymmetricPadding2D.same(1),
         );
       }
-    }
-
-    LinearLayer? timeEmbProj;
-    if (tembChannels != null) {
-      timeEmbProj = LinearLayer(
-        weight: Tensor.empty([numOutChannels, tembChannels]),
-        bias: Tensor.empty([numOutChannels]),
-      );
     }
 
     Conv2D? convShortcut;
@@ -337,7 +342,7 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
   }
 }
 
-enum Resnet2dTimeEmbedNormType { none, def, scaleShift }
+enum Resnet2dTimeEmbedNormType { def, scaleShift }
 
 class Resnet2DKernel {
   final String name;

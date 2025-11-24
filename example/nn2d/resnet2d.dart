@@ -13,7 +13,7 @@ void main() {
   final resnet = ResnetBlock2D.make(
     numInChannels: 32,
     numOutChannels: 32,
-    tembChannels: 128,
+    numTembChannels: 128,
   );
   final out = resnet.forward(sample, embeds: temb);
   //print('Basic block output shape: ${out.shape}');
