@@ -5,7 +5,7 @@ void main() async {
   Device device = Device(deviceType: DeviceType.cpu, deviceIndex: -1);
 
   final file = await SafeTensorsFile.load(
-    './test_data/nn/conv2d/conv2d_tests.safetensors',
+    './test_data/conv2d/conv2d_tests.safetensors',
   );
   final loader = file.mmapTensorLoader();
   final tests = await _TestCase.loadAllFromSafeTensor(loader);

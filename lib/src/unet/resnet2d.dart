@@ -142,24 +142,24 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
   }) async {
     final norm1 = await GroupNorm.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}norm1',
+      prefix: '${prefix}norm1.',
       eps: eps,
       numGroups: numGroups,
     );
     final conv1 = await Conv2D.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}conv1',
+      prefix: '${prefix}conv1.',
       padding: const SymmetricPadding2D.same(1),
     );
     final norm2 = await GroupNorm.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}norm2',
+      prefix: '${prefix}norm2.',
       eps: eps,
       numGroups: numOutGroups ?? numGroups,
     );
     final conv2 = await Conv2D.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}conv2',
+      prefix: '${prefix}conv2.',
       padding: const SymmetricPadding2D.same(1),
     );
     final dropoutLayer = Dropout(dropout);
@@ -174,7 +174,7 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       } else {
         upSample = await Upsample2D.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}upsample',
+          prefix: '${prefix}upsample.',
           numChannels: conv1.numInChannels,
         );
       }
@@ -186,22 +186,22 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       } else {
         downSample = await Downsample2D.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}downsample',
+          prefix: '${prefix}downsample.',
           numChannels: conv1.numInChannels,
         );
       }
     }
 
     LinearLayer? timeEmbProj;
-    if (loader.hasTensor('${prefix}time_emb_proj')) {
+    if (loader.hasTensorWithPrefix('${prefix}time_emb_proj.')) {
       timeEmbProj = await LinearLayer.loadFromSafeTensor(
         loader,
-        prefix: '${prefix}time_emb_proj',
+        prefix: '${prefix}time_emb_proj.',
       );
     }
 
     Conv2D? convShortcut;
-    if (loader.hasTensor('${prefix}conv_shortcut.weight')) {
+    if (loader.hasTensorWithPrefix('${prefix}conv_shortcut.')) {
       convShortcut = await Conv2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}conv_shortcut',

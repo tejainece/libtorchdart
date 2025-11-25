@@ -11,7 +11,16 @@ abstract class SafeTensorLoader {
 
   bool hasTensor(String name) => tensorInfos.containsKey(name);
 
+  bool hasTensorWithPrefix(String prefix) {
+    for (final name in tensorInfos.keys) {
+      if (name.startsWith(prefix)) return true;
+    }
+    return false;
+  }
+
   FutureOr<Tensor> loadByName(String name);
+
+  FutureOr<Tensor?> tryLoadByName(String name);
 }
 
 class FileIOSafeTensorLoader extends SafeTensorLoader {
@@ -22,6 +31,12 @@ class FileIOSafeTensorLoader extends SafeTensorLoader {
 
   @override
   Tensor loadByName(String name) {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  @override
+  Tensor? tryLoadByName(String name) {
     // TODO
     throw UnimplementedError();
   }
@@ -44,11 +59,9 @@ class MmapSafeTensorLoader extends SafeTensorLoader {
   }) : _pointer = pointer;
 
   @override
-  Tensor loadByName(String name) {
+  Tensor? tryLoadByName(String name) {
     final info = header.tensorInfos[name];
-    if (info == null) {
-      throw Exception('Tensor $name not found');
-    }
+    if (info == null) return null;
 
     final datatype = DataType.fromSafeTensorName(info.dtype);
     if (datatype == null) {
@@ -63,6 +76,15 @@ class MmapSafeTensorLoader extends SafeTensorLoader {
       datatype: datatype,
       device: Device.cpu, // TODO
     );
+  }
+
+  @override
+  Tensor loadByName(String name) {
+    final tensor = tryLoadByName(name);
+    if (tensor == null) {
+      throw Exception('Tensor $name not found');
+    }
+    return tensor;
   }
 
   void release() {
@@ -131,6 +153,12 @@ class CudaGDSSafeTensorLoader extends SafeTensorLoader {
 
   @override
   Tensor loadByName(String name) {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  @override
+  Tensor? tryLoadByName(String name) {
     // TODO
     throw UnimplementedError();
   }

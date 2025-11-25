@@ -703,6 +703,28 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  List<int>? allCloseSlow(Tensor other, {double atol = 1e-08}) {
+    if (isScalar) {
+      if (!other.isScalar) return [];
+      if ((scalar - other.scalar).abs() > atol) {
+        print(
+          'Scalar mismatch: $scalar vs ${other.scalar} diff: ${(scalar - other.scalar).abs()}',
+        );
+        return [];
+      }
+      return null;
+    }
+
+    final shape = this.shape;
+    if (shape.first != other.shape.first) return [];
+
+    for (int i = 0; i < shape.first; i++) {
+      final result = this[i].allCloseSlow(other[i], atol: atol);
+      if (result != null) return [i, ...result];
+    }
+    return null;
+  }
+
   Tensor operator -(dynamic /* Tensor | num */ other) {
     final arena = ffi.Arena();
     try {
@@ -989,10 +1011,15 @@ class Tensor implements ffi.Finalizable {
     sb.write('[');
     for (int i = 0; i < size; i++) {
       if (i > 0) sb.write(', ');
-      sb.write(tensor.scalarAt(i));
-      if (i == 50 && size > 100) {
+      final scalar = tensor.scalarAt(i);
+      if (scalar is double) {
+        sb.write(scalar.toStringAsFixed(4));
+      } else {
+        sb.write(scalar);
+      }
+      if (i == 10 && size > 20) {
         sb.write(', ..............');
-        i = size - 50;
+        i = size - 10;
       }
     }
     sb.write(']');
@@ -1002,9 +1029,9 @@ class Tensor implements ffi.Finalizable {
     sb.write('[');
     for (int i = 0; i < size0; i++) {
       _print1d(sb, size1, tensor.get(i));
-      if (i == 50 && size0 > 100) {
+      if (i == 3 && size0 > 6) {
         sb.writeln(',\n ..............');
-        i = size0 - 50;
+        i = size0 - 3;
       } else {
         if (i != size0 - 1) sb.write(',\n ');
       }
