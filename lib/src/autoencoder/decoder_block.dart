@@ -1,10 +1,10 @@
 import 'package:libtorchdart/libtorchdart.dart';
 
-class VaeDecoderBlock2D extends Module implements EmbeddableModule {
+class UpDecoderBlock2D extends Module implements EmbeddableModule {
   final List<ResnetBlock2D> resnets;
   final List<SimpleModule> upsamplers;
 
-  VaeDecoderBlock2D({required this.resnets, required this.upsamplers});
+  UpDecoderBlock2D({required this.resnets, required this.upsamplers});
 
   @override
   Tensor forward(Tensor sample, {Tensor? embeds}) {
@@ -35,7 +35,7 @@ class VaeDecoderBlock2D extends Module implements EmbeddableModule {
     "upsamplers": upsamplers.map((e) => e.meta).toList(),
   };
 
-  static Future<VaeDecoderBlock2D> loadFromSafeTensor(
+  static Future<UpDecoderBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
     required int numInChannels,
@@ -72,6 +72,6 @@ class VaeDecoderBlock2D extends Module implements EmbeddableModule {
       );
     }
 
-    return VaeDecoderBlock2D(resnets: resnets, upsamplers: upsamplers);
+    return UpDecoderBlock2D(resnets: resnets, upsamplers: upsamplers);
   }
 }

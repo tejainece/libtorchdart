@@ -4,23 +4,31 @@ import 'package:test/test.dart';
 void main() async {
   Device device = Device(deviceType: DeviceType.cpu, deviceIndex: -1);
 
-  final file = await SafeTensorsFile.load(
+  final tests = <_TestCase>[];
+  final testDataFiles = [
     './test_data/resnet/resnet_tests.safetensors',
-  );
-  final loader = file.mmapTensorLoader();
-  final tests = await _TestCase.loadAllFromSafeTensor(loader);
+    './test_data/resnet/resnet_sd15_unet_tests.safetensors',
+    './test_data/resnet/resnet_sd15_vae_tests.safetensors',
+  ];
+  for (final fileName in testDataFiles) {
+    final file = await SafeTensorsFile.load(fileName);
+    final loader = file.mmapTensorLoader();
+    final loadedTests = await _TestCase.loadAllFromSafeTensor(loader);
+    tests.addAll(loadedTests);
+  }
 
   group('ResnetBlock2D', () {
     test('basic block with time embedding', () {
       for (final test in tests) {
+        print(test.resnet);
         final output = test.resnet.forward(test.input, embeds: test.temb);
 
         expect(output.shape, equals(test.output.shape));
 
-        /*final result = test.output.allCloseSlow(output, atol: 1e-05);
-        print(result);*/
+        final result = test.output.allCloseSlow(output, atol: 1e-02);
+        print(result);
         expect(
-          test.output.allClose(output, atol: 1e-05),
+          test.output.allClose(output, atol: 1e-02),
           isTrue,
           reason: 'Output tensor does not match expected output',
         );

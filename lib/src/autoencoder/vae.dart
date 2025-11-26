@@ -141,7 +141,7 @@ class VaeEncoder extends Module {
 class VaeDecoder extends Module {
   final Conv2D convIn;
   final UNet2DMidBlock midBlock;
-  final List<VaeDecoderBlock2D> upBlocks;
+  final List<UpDecoderBlock2D> upBlocks;
   final Normalization convNormOut;
   final SiLU convActivation;
   final Conv2D convOut;
@@ -215,7 +215,7 @@ class VaeDecoder extends Module {
       prefix: '$prefix$midBlockName.',
     );
 
-    final upBlocks = <VaeDecoderBlock2D>[];
+    final upBlocks = <UpDecoderBlock2D>[];
     // TODO upBlocks
 
     Normalization convNormOut;

@@ -160,10 +160,10 @@ class GroupNorm extends Module implements Normalization {
 
   @override
   Map<String, dynamic> get meta => {
-    "eps": eps,
-    "isElementwiseAffine": isElementwiseAffine,
     "numGroups": numGroups,
     "numChannels": numChannels,
+    "eps": eps,
+    "isElementwiseAffine": isElementwiseAffine,
   };
 
   static Future<GroupNorm> loadFromSafeTensor(

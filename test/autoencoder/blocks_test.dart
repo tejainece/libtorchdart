@@ -36,7 +36,7 @@ void main() {
       );
       final upSampler = Upsample2D.make(numChannels: 32, useConv: true);
 
-      final block = VaeDecoderBlock2D(
+      final block = UpDecoderBlock2D(
         resnets: [resnet],
         upsamplers: [upSampler],
       );

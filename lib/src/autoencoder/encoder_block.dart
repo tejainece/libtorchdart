@@ -12,8 +12,8 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
       sample = resnet.forward(sample, embeds: embeds);
     }
 
-    for (final doenSampler in downSamplers) {
-      sample = doenSampler.forward(sample);
+    for (final downSampler in downSamplers) {
+      sample = downSampler.forward(sample);
     }
 
     return sample;
