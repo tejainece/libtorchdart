@@ -84,7 +84,10 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
       inputTensor = convShortcut!.forward(inputTensor);
     }
 
-    Tensor output = (hiddenStates + inputTensor) / outputScaleFactor;
+    Tensor output = (hiddenStates + inputTensor);
+    if (outputScaleFactor != 1.0) {
+      output = output / outputScaleFactor;
+    }
 
     return output;
   }
@@ -204,7 +207,8 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
     if (loader.hasTensorWithPrefix('${prefix}conv_shortcut.')) {
       convShortcut = await Conv2D.loadFromSafeTensor(
         loader,
-        prefix: '${prefix}conv_shortcut',
+        prefix: '${prefix}conv_shortcut.',
+        padding: const SymmetricPadding2D.same(0),
       );
     }
 

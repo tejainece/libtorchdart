@@ -154,11 +154,13 @@ class Dropout extends Module implements SimpleModule, InplaceModule {
 
   @override
   Tensor forward(Tensor x) {
+    if (p == 0.0 || !isTraining) return x;
     return NNUtil.dropout(x, p, training: isTraining);
   }
 
   @override
   void forward_(Tensor x) {
+    if (p == 0.0 || !isTraining) return;
     NNUtil.dropout_(x, p, training: isTraining);
   }
 
