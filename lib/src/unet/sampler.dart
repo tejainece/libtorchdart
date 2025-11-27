@@ -239,10 +239,7 @@ class Downsample2D extends Module implements SimpleModule {
   static Future<Downsample2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
-    SymmetricPadding2D padding = const SymmetricPadding2D(
-      vertical: 1,
-      horizontal: 1,
-    ),
+    SymmetricPadding2D padding = const SymmetricPadding2D.same(1),
     SamplerNormalizationConfig? normConfig,
     required int numChannels,
   }) async {

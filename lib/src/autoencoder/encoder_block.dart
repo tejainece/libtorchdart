@@ -38,9 +38,6 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
   static Future<DownEncoderBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
-    required int numInChannels,
-    required int numOutChannels,
-    required int numLayers,
     bool addDownsample = true,
     double resnetEps = 1e-6,
     Activation resnetActFn = Activation.silu,
@@ -49,11 +46,13 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
     double dropout = 0.0,
   }) async {
     final resnets = <ResnetBlock2D>[];
-    for (var i = 0; i < numLayers; i++) {
+    for (var i = 0; true; i++) {
+      final name = '${prefix}resnets.$i.';
+      if (!loader.hasTensorWithPrefix(name)) break;
       resnets.add(
         await ResnetBlock2D.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}resnets.$i.',
+          prefix: name,
           eps: resnetEps,
           activation: resnetActFn,
           numGroups: resnetGroups,
@@ -77,5 +76,14 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
     }
 
     return DownEncoderBlock2D(resnets: resnets, downSamplers: downSamplers);
+  }
+
+  static DownEncoderBlock2D make({
+    required int numInChannels,
+    required int numOutChannels,
+    required int numLayers,
+  }) {
+    // TODO
+    throw UnimplementedError();
   }
 }

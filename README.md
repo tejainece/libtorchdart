@@ -2,6 +2,8 @@
 
 ## Phase 0
 + Save Module to disk as Safetensor
++ Module Device
++ Intelligent Tensor offlaoding
 
 ## Phase 1: DownEncoderBlock2D
 
