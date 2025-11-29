@@ -7,7 +7,7 @@ abstract class Activation {
 
   const Activation();
 
-  Tensor forward(Tensor x);
+  Tensor forward(Tensor x, {required Context context});
 
   static const ReLU relu = ReLU();
   static const QuickGeluActivation quickGelu = QuickGeluActivation();
@@ -35,7 +35,7 @@ class ReLU implements Activation {
   const ReLU();
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     return x.relu();
   }
 }
@@ -47,7 +47,7 @@ class QuickGeluActivation implements Activation {
   const QuickGeluActivation();
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     return x * (x * 1.702).sigmoid();
   }
 }
@@ -59,7 +59,7 @@ class GeluActivation implements Activation {
   const GeluActivation();
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     return x.gelu(GeluApporimate.none);
   }
 }
@@ -77,7 +77,7 @@ class SiLU implements Activation {
   const SiLU();
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     return x.silu();
   }
 }

@@ -3,6 +3,7 @@ import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/autoencoder/autoencoder.dart';
 
 void main() {
+  final context = Context.best();
   group('VAE Blocks', () {
     test('DownEncoderBlock2D forward pass', () {
       final resnet = ResnetBlock2D.make(
@@ -10,7 +11,7 @@ void main() {
         numOutChannels: 32,
         numGroups: 32,
       );
-      final downSampler = Downsample2D.make(
+      final downSampler = DownSample2D.make(
         numChannels: 32,
         useConv: true,
         padding: const SymmetricPadding2D.same(1),
@@ -42,7 +43,7 @@ void main() {
       );
 
       final input = Tensor.randn([1, 32, 32, 32]);
-      final output = block.forward(input);
+      final output = block.forward(input, context: context);
 
       // Resnet keeps shape, Upsample doubles it (32 -> 64)
       expect(output.shape, [1, 32, 64, 64]);

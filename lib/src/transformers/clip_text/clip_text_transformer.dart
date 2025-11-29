@@ -7,6 +7,7 @@ class ClipTextTransformer extends Module implements TextEncoder {
   final LayerNorm norm;
 
   ClipTextTransformer({
+    required super.name,
     required this.embeddings,
     required this.encoder,
     required this.norm,
@@ -16,9 +17,14 @@ class ClipTextTransformer extends Module implements TextEncoder {
     Tensor inputIds, {
     Tensor? attentionMask,
     Tensor? positionIds,
+    required Context context,
   }) {
     inputIds = inputIds.view([-1, inputIds.shape.last]);
-    final hiddenStates = embeddings.forward(inputIds, positionIds: positionIds);
+    final hiddenStates = embeddings.forward(
+      inputIds,
+      positionIds: positionIds,
+      context: context,
+    );
     final attentionMaskMade = createCausalMask(
       inputEmbeds: hiddenStates,
       attentionMask: attentionMask,
@@ -30,8 +36,9 @@ class ClipTextTransformer extends Module implements TextEncoder {
     Tensor lastHiddenState = encoder.forward(
       hiddenStates,
       attentionMask: attentionMaskMade,
+      context: context,
     );
-    lastHiddenState = norm.forward(lastHiddenState);
+    lastHiddenState = norm.forward(lastHiddenState, context: context);
 
     /* TODO pooled layer
     Tensor pooledOutput = lastHiddenState.index([
@@ -54,27 +61,38 @@ class ClipTextTransformer extends Module implements TextEncoder {
     'norm': norm.meta,
   };
 
+  @override
+  final Iterable<Tensor> parameters = [];
+
+  @override
+  late final Iterable<Module> submodules = [embeddings, encoder, norm];
+
   static Future<ClipTextTransformer> loadFromSafeTensor(
     SafeTensorLoader loader, {
     required ClipTextConfig config,
     String prefix = 'text_model.',
+    required String name,
   }) async {
     final embeddings = await ClipTextEmbeddings.loadFromSafeTensor(
       loader,
       prefix: '${prefix}embeddings.',
+      name: 'embeddings',
     );
     final encoder = await ClipEncoder.loadFromSafeTensor(
       loader,
       prefix: '${prefix}encoder.',
+      name: 'encoder',
       config: config,
     );
     final norm = await LayerNorm.loadFromSafeTensor(
       loader,
       prefix: '${prefix}final_layer_norm.',
+      name: 'final_layer_norm',
       eps: config.layerNormEps,
       normalizedShape: [config.embedDim],
     );
     return ClipTextTransformer(
+      name: name,
       embeddings: embeddings,
       encoder: encoder,
       norm: norm,
@@ -93,22 +111,40 @@ dynamic createCausalMask({
   // TODO
 }
 
-class ClipEncoder {
+class ClipEncoder extends Module implements SimpleModule {
   final List<ClipEncoderLayer> layers;
 
-  ClipEncoder({required this.layers});
+  ClipEncoder({required super.name, required this.layers});
 
-  Tensor forward(Tensor x, {Tensor? attentionMask}) {
+  @override
+  Tensor forward(Tensor x, {Tensor? attentionMask, required Context context}) {
     for (final layer in layers) {
-      x = layer.forward(x, attentionMask: attentionMask);
+      x = layer.forward(x, attentionMask: attentionMask, context: context);
     }
     return x;
   }
+
+  @override
+  final Map<String, dynamic> meta = const {};
+
+  @override
+  void resetParameters() {
+    for (final layer in layers) {
+      layer.resetParameters();
+    }
+  }
+
+  @override
+  final Iterable<Tensor> parameters = [];
+
+  @override
+  final Iterable<Module> submodules = [];
 
   static Future<ClipEncoder> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = 'text_model.encoder.',
     required ClipTextConfig config,
+    required String name,
   }) async {
     final layers = <ClipEncoderLayer>[];
     int layerId = 0;
@@ -119,70 +155,105 @@ class ClipEncoder {
       final layer = await ClipEncoderLayer.loadFromSafeTensor(
         loader,
         prefix: '${prefix}layer.$layerId.',
+        name: 'layer.$layerId',
         config: config,
       );
       layers.add(layer);
       layerId++;
     }
-    return ClipEncoder(layers: layers);
+    return ClipEncoder(name: name, layers: layers);
   }
 }
 
-class ClipEncoderLayer {
+class ClipEncoderLayer extends Module implements SimpleModule {
   final ClipAttention selfAttention;
   final LayerNorm layerNorm1;
   final ClipMlp mlp;
   final LayerNorm layerNorm2;
 
   ClipEncoderLayer({
+    required super.name,
     required this.selfAttention,
     required this.layerNorm1,
     required this.mlp,
     required this.layerNorm2,
   });
 
-  Tensor forward(Tensor x, {Tensor? attentionMask}) {
+  @override
+  Tensor forward(Tensor x, {Tensor? attentionMask, required Context context}) {
     Tensor residual = x;
-    x = layerNorm1.forward(x);
-    (x, _) = selfAttention.forward(x, attentionMask: attentionMask);
+    x = layerNorm1.forward(x, context: context);
+    (x, _) = selfAttention.forward(
+      x,
+      attentionMask: attentionMask,
+      context: context,
+    );
     x = residual + x;
 
     residual = x;
-    x = layerNorm2.forward(x);
-    x = mlp.forward(x);
+    x = layerNorm2.forward(x, context: context);
+    x = mlp.forward(x, context: context);
     x = residual + x;
     return x;
   }
 
+  @override
+  void resetParameters() {
+    selfAttention.resetParameters();
+    layerNorm1.resetParameters();
+    mlp.resetParameters();
+    layerNorm2.resetParameters();
+  }
+
+  @override
+  final Map<String, dynamic> meta = const {};
+
+  @override
+  final Iterable<Tensor> parameters = [];
+
+  @override
+  late final Iterable<Module> submodules = [
+    selfAttention,
+    layerNorm1,
+    mlp,
+    layerNorm2,
+  ];
+
   static Future<ClipEncoderLayer> loadFromSafeTensor(
     SafeTensorLoader loader, {
     required ClipTextConfig config,
-
     String prefix = '',
+    ClipEncoderLayerNames names = const ClipEncoderLayerNames(),
+    required String name,
   }) async {
     final selfAttention = await ClipAttention.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}self_attn.',
+      prefix: '$prefix${names.selfAttention}.',
+      name: names.selfAttention,
       config: config,
     );
     final layerNorm1 = await LayerNorm.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}layer_norm1.',
+      prefix: '$prefix${names.layerNorm1}.',
+      name: names.layerNorm1,
       normalizedShape: [config.embedDim],
       eps: config.layerNormEps,
     );
     final layerNorm2 = await LayerNorm.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}layer_norm2.',
+      prefix: '$prefix${names.layerNorm2}.',
+      name: names.layerNorm2,
       normalizedShape: [config.embedDim],
       eps: config.layerNormEps,
     );
     final mlp = await ClipMlp.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}mlp.',
+      prefix: '$prefix${names.mlp}.',
+      name: names.mlp,
       config: config,
     );
     return ClipEncoderLayer(
+      name: name,
       selfAttention: selfAttention,
       layerNorm1: layerNorm1,
       mlp: mlp,
@@ -191,29 +262,44 @@ class ClipEncoderLayer {
   }
 }
 
+class ClipEncoderLayerNames {
+  final String selfAttention;
+  final String layerNorm1;
+  final String mlp;
+  final String layerNorm2;
+
+  const ClipEncoderLayerNames({
+    this.selfAttention = 'self_attn',
+    this.layerNorm1 = 'layer_norm1',
+    this.mlp = 'mlp',
+    this.layerNorm2 = 'layer_norm2',
+  });
+}
+
 class ClipMlp extends Module implements SimpleModule {
   final LinearLayer linear1;
   final LinearLayer linear2;
   final Activation activation;
 
   ClipMlp({
+    required super.name,
     required this.linear1,
     required this.linear2,
     required this.activation,
   });
 
   @override
-  Tensor forward(Tensor x) {
-    x = linear1.forward(x);
-    x = activation.forward(x);
-    x = linear2.forward(x);
+  Tensor forward(Tensor x, {required Context context}) {
+    x = linear1.forward(x, context: context);
+    x = activation.forward(x, context: context);
+    x = linear2.forward(x, context: context);
     return x;
   }
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    linear1.resetParameters();
+    linear2.resetParameters();
   }
 
   @override
@@ -223,10 +309,17 @@ class ClipMlp extends Module implements SimpleModule {
     'activation': activation.runtimeType.toString(),
   };
 
+  @override
+  late final Iterable<Tensor> parameters = [];
+
+  @override
+  late final Iterable<Module> submodules = [linear1, linear2];
+
   static Future<ClipMlp> loadFromSafeTensor(
     SafeTensorLoader loader, {
     required ClipTextConfig config,
     String prefix = '',
+    required String name,
   }) async {
     final linear1 = await LinearLayer.loadFromSafeTensor(
       loader,
@@ -238,6 +331,7 @@ class ClipMlp extends Module implements SimpleModule {
     );
     // TODO verify shape against config
     return ClipMlp(
+      name: name,
       linear1: linear1,
       linear2: linear2,
       activation: config.activation,
@@ -251,13 +345,18 @@ class ClipTextEmbeddings extends Module implements SimpleModule {
   final Tensor positionIds;
 
   ClipTextEmbeddings({
+    required super.name,
     required this.tokenEmbedding,
     required this.positionEmbedding,
     required this.positionIds,
   });
 
   @override
-  Tensor forward(Tensor inputIds, {Tensor? positionIds}) {
+  Tensor forward(
+    Tensor inputIds, {
+    Tensor? positionIds,
+    required Context context,
+  }) {
     final seqLength = inputIds.shape.last;
     if (seqLength > maxPositionEmbeddings) {
       throw ArgumentError.value(
@@ -265,8 +364,12 @@ class ClipTextEmbeddings extends Module implements SimpleModule {
       );
     }
     positionIds ??= this.positionIds.expand([-1, seqLength]);
-    final positionEmbeddings = positionEmbedding.forward(positionIds);
-    return tokenEmbedding.forward(inputIds) + positionEmbeddings;
+    final positionEmbeddings = positionEmbedding.forward(
+      positionIds,
+      context: context,
+    );
+    return tokenEmbedding.forward(inputIds, context: context) +
+        positionEmbeddings;
   }
 
   int get embeddingDim => tokenEmbedding.embeddingDim;
@@ -277,8 +380,8 @@ class ClipTextEmbeddings extends Module implements SimpleModule {
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    tokenEmbedding.resetParameters();
+    positionEmbedding.resetParameters();
   }
 
   @override
@@ -287,23 +390,38 @@ class ClipTextEmbeddings extends Module implements SimpleModule {
     'positionEmbedding': positionEmbedding.meta,
   };
 
+  @override
+  late final Iterable<Module> submodules = [tokenEmbedding, positionEmbedding];
+
+  @override
+  late final Iterable<Tensor> parameters = [positionIds];
+
   static Future<ClipTextEmbeddings> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = 'text_model.embeddings.',
+    required String name,
+    final String tokenEmbeddingName = 'token_embedding',
+    final String positionEmbeddingName = 'position_embedding',
+    final String positionIdsName = 'position_ids',
   }) async {
     // final tokenEmbedding = loader.loadByName(prefix + 'token_embedding.weight');
     final tokenEmbedding = await EmbeddingLayer.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}token_embedding.',
+      name: tokenEmbeddingName,
+      prefix: '$prefix$tokenEmbeddingName.',
     );
     final positionEmbedding = await EmbeddingLayer.loadFromSafeTensor(
       loader,
-      prefix: '${prefix}position_embedding.',
+      name: positionEmbeddingName,
+      prefix: '$prefix$positionEmbeddingName.',
     );
     final Tensor positionIds = Tensor.arange(
+      name: positionIdsName,
       positionEmbedding.numEmbeddings,
     ).expand([1, -1]);
+
     return ClipTextEmbeddings(
+      name: name,
       tokenEmbedding: tokenEmbedding,
       positionEmbedding: positionEmbedding,
       positionIds: positionIds,

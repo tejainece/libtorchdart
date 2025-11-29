@@ -4,9 +4,10 @@ import 'package:libtorchdart/src/unet/transformer_2d.dart';
 class CrossAttnDownBlock2D extends Module implements UNet2DDownBlock {
   final List<ResnetBlock2D> resnets;
   final List<Transformer2DModel> attentions;
-  final List<Downsample2D> downSamplers;
+  final List<DownSample2D> downSamplers;
 
   CrossAttnDownBlock2D({
+    super.name = 'cross_attn_down_block',
     required this.resnets,
     required this.attentions,
     required this.downSamplers,
@@ -20,15 +21,21 @@ class CrossAttnDownBlock2D extends Module implements UNet2DDownBlock {
     Tensor? attentionMask,
     Tensor? encoderAttentionMask,
     Tensor? additionalResiduals,
+    required Context context,
   }) {
     final outputStates = <Tensor>[];
 
     for (int i = 0; i < resnets.length; i++) {
       // TODO handle gradient checkpointing
-      hiddenStates = resnets[i].forward(hiddenStates, embeds: timeEmbedding);
+      hiddenStates = resnets[i].forward(
+        hiddenStates,
+        embeds: timeEmbedding,
+        context: context,
+      );
       hiddenStates = attentions[i].forward(
         hiddenStates,
         embeds: encoderHiddenStates,
+        context: context,
       );
 
       if (i == resnets.length - 1 && additionalResiduals != null) {
@@ -39,7 +46,7 @@ class CrossAttnDownBlock2D extends Module implements UNet2DDownBlock {
     }
 
     for (int i = 0; i < downSamplers.length; i++) {
-      hiddenStates = downSamplers[i].forward(hiddenStates);
+      hiddenStates = downSamplers[i].forward(hiddenStates, context: context);
       outputStates.add(hiddenStates);
     }
 
@@ -66,6 +73,16 @@ class CrossAttnDownBlock2D extends Module implements UNet2DDownBlock {
     "downSamplers": downSamplers.map((e) => e.meta).toList(),
   };
 
+  @override
+  final Iterable<Tensor> parameters = const [];
+
+  @override
+  late final Iterable<Module> submodules = [
+    ...resnets,
+    ...attentions,
+    ...downSamplers,
+  ];
+
   static Future<CrossAttnDownBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -75,35 +92,40 @@ class CrossAttnDownBlock2D extends Module implements UNet2DDownBlock {
     bool resnetTimeScaleShift = false,
     required int inChannels,
     required int outChannels,
+    required String name,
   }) async {
     final resnets = <ResnetBlock2D>[];
     final attentions = <Transformer2DModel>[];
-    final downSamplers = <Downsample2D>[];
+    final downSamplers = <DownSample2D>[];
 
     for (int i = 0; i < numLayers; i++) {
       final resnet = await ResnetBlock2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}resnets.$i.',
+        name: 'resnets.$i',
       );
       resnets.add(resnet);
 
       final attention = await Transformer2DModel.loadFromSafeTensor(
         loader,
         prefix: '${prefix}attentions.$i.',
+        name: 'attentions.$i',
       );
       attentions.add(attention);
     }
 
     if (addDownsample) {
-      final ds = await Downsample2D.loadFromSafeTensor(
+      final ds = await DownSample2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}downsamplers.0.',
+        name: 'downsamplers.0',
         numChannels: outChannels,
       );
       downSamplers.add(ds);
     }
 
     return CrossAttnDownBlock2D(
+      name: name,
       resnets: resnets,
       attentions: attentions,
       downSamplers: downSamplers,
@@ -113,23 +135,32 @@ class CrossAttnDownBlock2D extends Module implements UNet2DDownBlock {
 
 class DownBlock2D extends Module implements UNet2DDownBlock {
   final List<ResnetBlock2D> resnets;
-  final List<Downsample2D> downSamplers;
+  final List<DownSample2D> downSamplers;
 
-  DownBlock2D({required this.resnets, required this.downSamplers});
+  DownBlock2D({
+    required super.name,
+    required this.resnets,
+    required this.downSamplers,
+  });
 
   @override
   (Tensor, List<Tensor>) forward(
     Tensor input, {
     required Tensor timeEmbedding,
+    required Context context,
   }) {
     final outputStates = <Tensor>[];
 
     for (int i = 0; i < resnets.length; i++) {
-      input = resnets[i].forward(input, embeds: timeEmbedding);
+      input = resnets[i].forward(
+        input,
+        embeds: timeEmbedding,
+        context: context,
+      );
       outputStates.add(input);
     }
     for (int i = 0; i < downSamplers.length; i++) {
-      input = downSamplers[i].forward(input);
+      input = downSamplers[i].forward(input, context: context);
       outputStates.add(input);
     }
     return (input, outputStates);
@@ -151,6 +182,12 @@ class DownBlock2D extends Module implements UNet2DDownBlock {
     "downSamplers": downSamplers.map((e) => e.meta).toList(),
   };
 
+  @override
+  final Iterable<Tensor> parameters = const [];
+
+  @override
+  late final Iterable<Module> submodules = [...resnets, ...downSamplers];
+
   static Future<DownBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -160,27 +197,34 @@ class DownBlock2D extends Module implements UNet2DDownBlock {
     bool resnetTimeScaleShift = false,
     required int inChannels,
     required int outChannels,
+    required String name,
   }) async {
     final resnets = <ResnetBlock2D>[];
-    final downSamplers = <Downsample2D>[];
+    final downSamplers = <DownSample2D>[];
 
     for (int i = 0; i < numLayers; i++) {
       final resnet = await ResnetBlock2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}resnets.$i.',
+        name: 'resnets.$i',
       );
       resnets.add(resnet);
     }
 
     if (addDownsample) {
-      final ds = await Downsample2D.loadFromSafeTensor(
+      final ds = await DownSample2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}downsamplers.0.',
+        name: 'downsamplers.0',
         numChannels: outChannels,
       );
       downSamplers.add(ds);
     }
 
-    return DownBlock2D(resnets: resnets, downSamplers: downSamplers);
+    return DownBlock2D(
+      name: name,
+      resnets: resnets,
+      downSamplers: downSamplers,
+    );
   }
 }

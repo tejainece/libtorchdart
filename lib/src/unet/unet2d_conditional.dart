@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/unet/cross_attention_up2d.dart';
 
 abstract class UNet {}
 
@@ -42,6 +41,7 @@ abstract class UNet2DDownBlock implements UNet2DBlock {
   (Tensor, List<Tensor>) forward(
     Tensor hiddenStates, {
     required Tensor timeEmbedding,
+    required Context context,
   });
 }
 
@@ -54,6 +54,7 @@ abstract class UNet2DUpBlock implements UNet2DBlock {
     Tensor? attentionMask,
     Tensor? encoderAttentionMask,
     Tensor? additionalResiduals,
+    required Context context,
   });
 }
 
@@ -69,7 +70,12 @@ class Timesteps extends Module {
   final bool flipSinCos;
   final double downscaleFreq;
 
-  Timesteps(this.numChannels, {this.flipSinCos = true, this.downscaleFreq = 0});
+  Timesteps(
+    this.numChannels, {
+    super.name = '',
+    this.flipSinCos = true,
+    this.downscaleFreq = 0,
+  });
 
   Tensor forward(int timestep) {
     int halfDim = numChannels ~/ 2;
@@ -96,23 +102,30 @@ class Timesteps extends Module {
     "flipSinCos": flipSinCos,
     "downscaleFreq": downscaleFreq,
   };
+
+  @override
+  final Iterable<Tensor> parameters = const [];
+
+  @override
+  final Iterable<Module> submodules = const [];
 }
 
-class TimestepEmbedding extends Module {
+class TimestepEmbedding extends Module implements SimpleModule {
   final LinearLayer linear1;
   final LinearLayer linear2;
   final Activation act;
 
   TimestepEmbedding({
+    super.name = '',
     required this.linear1,
     required this.linear2,
     required this.act,
   });
 
-  Tensor forward(Tensor sample) {
-    sample = linear1.forward(sample);
-    sample = act.forward(sample);
-    sample = linear2.forward(sample);
+  Tensor forward(Tensor sample, {required Context context}) {
+    sample = linear1.forward(sample, context: context);
+    sample = act.forward(sample, context: context);
+    sample = linear2.forward(sample, context: context);
     return sample;
   }
 
@@ -129,20 +142,30 @@ class TimestepEmbedding extends Module {
     "act": act.name,
   };
 
+  @override
+  final Iterable<Tensor> parameters = const [];
+
+  @override
+  late final Iterable<Module> submodules = [linear1, linear2];
+
   static Future<TimestepEmbedding> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    required String name,
   }) async {
     final linear1 = await LinearLayer.loadFromSafeTensor(
       loader,
       prefix: '${prefix}linear_1.',
+      name: 'linear_1',
     );
     final linear2 = await LinearLayer.loadFromSafeTensor(
       loader,
       prefix: '${prefix}linear_2.',
+      name: 'linear_2',
     );
     // Assuming SiLU for now, but should probably be configurable or inferred
     return TimestepEmbedding(
+      name: name,
       linear1: linear1,
       linear2: linear2,
       act: Activation.silu,

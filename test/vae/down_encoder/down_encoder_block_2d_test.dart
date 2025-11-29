@@ -6,6 +6,7 @@ void main() async {
   final tests = <_TestCase>[];
   final testDataFiles = [
     './test_data/vae/down_encoder/down_encoder_simple.safetensors',
+    './test_data/vae/down_encoder/down_encoder_vae.safetensors',
   ];
 
   for (final fileName in testDataFiles) {
@@ -28,6 +29,13 @@ void main() async {
 
       for (final test in tests) {
         print('Running test: ${test.name}');
+        print('Block has ${test.block.resnets.length} resnets');
+        for (var i = 0; i < test.block.resnets.length; i++) {
+          final r = test.block.resnets[i];
+          print(
+            'Resnet $i: ${r.conv1.numInChannels}→${r.conv1.numOutChannels}, ${r.conv2.numInChannels}→${r.conv2.numOutChannels}${r.convShortcut != null ? ", shortcut: ${r.convShortcut!.numInChannels}→${r.convShortcut!.numOutChannels}" : ""}',
+          );
+        }
         final output = test.block.forward(test.input);
 
         expect(output.shape, equals(test.output.shape));
@@ -69,9 +77,6 @@ class _TestCase {
     final block = await DownEncoderBlock2D.loadFromSafeTensor(
       loader,
       prefix: '$name.block.',
-      numInChannels: input.shape[1],
-      numOutChannels: output.shape[1],
-      numLayers: 2,
     );
     return _TestCase(name: name, input: input, output: output, block: block);
   }

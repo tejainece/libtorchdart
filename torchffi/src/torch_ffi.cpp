@@ -4,6 +4,8 @@
 
 #include <optional>
 
+bool torchffi_is_cuda_available() { return torch::cuda::is_available(); }
+
 at::TensorOptions torchffi_make_tensor_options(TensorOptions options) {
   at::TensorOptions tensorOptions;
   if (options.dtype != nullptr) {

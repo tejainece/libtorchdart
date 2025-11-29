@@ -1,14 +1,9 @@
 import 'package:collection/collection.dart';
 import 'package:libtorchdart/libtorchdart.dart';
 
-abstract class Normalization implements Module {
-  Tensor forward(Tensor x);
-}
+abstract class Normalization implements SimpleModule {}
 
-abstract class EmbeddableNormalizer implements Normalization {
-  @override
-  Tensor forward(Tensor hiddenStates, {Tensor? embeds});
-}
+abstract class EmbeddableNormalizer implements EmbeddableModule {}
 
 class LayerNorm extends Module implements Normalization {
   final Tensor? weight;
@@ -17,6 +12,7 @@ class LayerNorm extends Module implements Normalization {
   final List<int> normalizedShape;
 
   LayerNorm({
+    super.name = 'norm',
     this.weight,
     this.bias,
     required this.normalizedShape,
@@ -33,17 +29,7 @@ class LayerNorm extends Module implements Normalization {
   }
 
   @override
-  void resetParameters() {
-    weight?.ones_();
-    bias?.zeros_();
-  }
-
-  bool get isElementwiseAffine => weight != null && bias != null;
-
-  bool get hasBias => bias != null;
-
-  @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {Tensor? embeds, required Context context}) {
     return NNUtil.layerNorm(
       x,
       normalizedShape,
@@ -52,6 +38,25 @@ class LayerNorm extends Module implements Normalization {
       eps: eps,
     );
   }
+
+  @override
+  void resetParameters() {
+    weight?.ones_();
+    bias?.zeros_();
+  }
+
+  @override
+  late final Iterable<Tensor> parameters = [
+    if (weight != null) weight!,
+    if (bias != null) bias!,
+  ];
+
+  @override
+  final Iterable<Module> submodules = const [];
+
+  bool get isElementwiseAffine => weight != null && bias != null;
+
+  bool get hasBias => bias != null;
 
   @override
   Map<String, dynamic> get meta => {
@@ -64,6 +69,7 @@ class LayerNorm extends Module implements Normalization {
   static Future<LayerNorm> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    required String name,
     required List<int> normalizedShape,
     double eps = 1e-5,
   }) async {
@@ -77,6 +83,7 @@ class LayerNorm extends Module implements Normalization {
       }
     }
     return LayerNorm(
+      name: name,
       weight: weight,
       bias: bias,
       normalizedShape: normalizedShape,
@@ -85,6 +92,7 @@ class LayerNorm extends Module implements Normalization {
   }
 
   static LayerNorm make({
+    required String name,
     required List<int> normalizedShape,
     double eps = 1e-5,
     bool isElementwiseAffine = true,
@@ -109,6 +117,7 @@ class LayerNorm extends Module implements Normalization {
       }
     }
     return LayerNorm(
+      name: name,
       normalizedShape: normalizedShape,
       eps: eps,
       weight: weight,
@@ -126,6 +135,7 @@ class GroupNorm extends Module implements Normalization {
   final int numGroups;
 
   GroupNorm({
+    super.name = 'norm',
     required this.eps,
     required this.weight,
     required this.bias,
@@ -144,7 +154,7 @@ class GroupNorm extends Module implements Normalization {
   }
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     return NNUtil.groupNorm(x, numGroups, weight: weight, bias: bias, eps: eps);
   }
 
@@ -153,6 +163,15 @@ class GroupNorm extends Module implements Normalization {
     weight?.ones_();
     bias?.zeros_();
   }
+
+  @override
+  late final Iterable<Tensor> parameters = [
+    if (weight != null) weight!,
+    if (bias != null) bias!,
+  ];
+
+  @override
+  final Iterable<Module> submodules = const [];
 
   late final bool isElementwiseAffine = weight != null && bias != null;
 
@@ -169,6 +188,7 @@ class GroupNorm extends Module implements Normalization {
   static Future<GroupNorm> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    String name = 'norm',
     double eps = 1e-5,
     required int numGroups,
   }) async {
@@ -183,6 +203,7 @@ class GroupNorm extends Module implements Normalization {
     }
 
     return GroupNorm(
+      name: name,
       eps: eps,
       weight: weight,
       bias: bias,
@@ -191,6 +212,7 @@ class GroupNorm extends Module implements Normalization {
   }
 
   static GroupNorm make({
+    String name = 'norm',
     required int numGroups,
     required int numChannels,
     double eps = 1e-5,
@@ -219,8 +241,13 @@ class GroupNorm extends Module implements Normalization {
         );
       }
     }
-    return GroupNorm(eps: eps, weight: weight, bias: bias, numGroups: numGroups)
-      ..resetParameters();
+    return GroupNorm(
+      name: name,
+      eps: eps,
+      weight: weight,
+      bias: bias,
+      numGroups: numGroups,
+    )..resetParameters();
   }
 }
 
@@ -230,10 +257,10 @@ class RMSNorm extends Module implements Normalization {
   final List<int> normalizedShape;
   final double? eps;
 
-  RMSNorm(this.normalizedShape, {this.weight, this.eps});
+  RMSNorm(this.normalizedShape, {super.name = 'norm', this.weight, this.eps});
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     return NNUtil.rmsNorm(x, normalizedShape, weight: weight, eps: eps);
   }
 
@@ -249,9 +276,16 @@ class RMSNorm extends Module implements Normalization {
     weight?.ones_();
   }
 
+  @override
+  late final Iterable<Tensor> parameters = [if (weight != null) weight!];
+
+  @override
+  final Iterable<Module> submodules = const [];
+
   static Future<RMSNorm> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    String name = 'norm',
     required List<int> normalizedShape,
     double? eps,
   }) async {
@@ -260,10 +294,11 @@ class RMSNorm extends Module implements Normalization {
       weight = await loader.loadByName('${prefix}weight');
       assert(const ListEquality().equals(weight.shape, normalizedShape));
     }
-    return RMSNorm(normalizedShape, weight: weight, eps: eps);
+    return RMSNorm(normalizedShape, name: name, weight: weight, eps: eps);
   }
 
   static RMSNorm make({
+    String name = 'norm',
     required List<int> normalizedShape,
     double? eps,
     bool isElementwiseAffine = true,
@@ -278,7 +313,7 @@ class RMSNorm extends Module implements Normalization {
         device: device ?? Device.cpu,
       );
     }
-    return RMSNorm(normalizedShape, weight: weight, eps: eps)
+    return RMSNorm(name: name, normalizedShape, weight: weight, eps: eps)
       ..resetParameters();
   }
 }
@@ -289,10 +324,15 @@ class RMSNormWithBias extends Module implements Normalization {
   final Tensor? bias;
   final double eps;
 
-  RMSNormWithBias({this.weight, this.bias, this.eps = 1e-5});
+  RMSNormWithBias({
+    super.name = 'norm',
+    this.weight,
+    this.bias,
+    this.eps = 1e-5,
+  });
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     Tensor variance = x.pow(2).mean(dim: [-1], keepDim: true);
     x = x * (variance + eps).rsqrt();
 
@@ -312,6 +352,15 @@ class RMSNormWithBias extends Module implements Normalization {
     bias?.zeros_();
   }
 
+  @override
+  late final Iterable<Tensor> parameters = [
+    if (weight != null) weight!,
+    if (bias != null) bias!,
+  ];
+
+  @override
+  final Iterable<Module> submodules = const [];
+
   bool get isElementwiseAffine => weight != null || bias != null;
 
   @override
@@ -324,6 +373,7 @@ class RMSNormWithBias extends Module implements Normalization {
   static Future<RMSNormWithBias> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    String name = 'norm',
     double eps = 1e-5,
   }) async {
     Tensor? weight;
@@ -336,10 +386,11 @@ class RMSNormWithBias extends Module implements Normalization {
       }
     }
 
-    return RMSNormWithBias(weight: weight, bias: bias, eps: eps);
+    return RMSNormWithBias(name: name, weight: weight, bias: bias, eps: eps);
   }
 
   static RMSNormWithBias make({
+    String name = 'norm',
     required List<int> normalizedShape,
     double eps = 1e-5,
     bool isElementwiseAffine = true,
@@ -364,7 +415,7 @@ class RMSNormWithBias extends Module implements Normalization {
       }
     }
 
-    return RMSNormWithBias(weight: weight, bias: bias, eps: eps)
+    return RMSNormWithBias(name: name, weight: weight, bias: bias, eps: eps)
       ..resetParameters();
   }
 }
@@ -375,10 +426,15 @@ class SpatialNorm extends Module implements Normalization {
   final Conv2D convY;
   final Conv2D convB;
 
-  SpatialNorm({required this.norm, required this.convY, required this.convB});
+  SpatialNorm({
+    super.name = 'norm',
+    required this.norm,
+    required this.convY,
+    required this.convB,
+  });
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     // TODO
     throw UnimplementedError();
   }
@@ -393,4 +449,12 @@ class SpatialNorm extends Module implements Normalization {
   Map<String, dynamic> get meta => {
     // TODO
   };
+
+  @override
+  late final Iterable<Tensor> parameters = [
+    // TODO
+  ];
+
+  @override
+  late final Iterable<Module> submodules = [norm, convY, convB];
 }

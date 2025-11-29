@@ -4,6 +4,8 @@ import 'package:libtorchdart/src/unet/cross_attention_up2d.dart';
 import 'package:libtorchdart/src/unet/transformer_2d.dart';
 
 void main() {
+  final context = Context.best();
+
   test('UNet2DConditionModel instantiation and forward pass', () {
     // Create dummy sub-modules
     final convIn = Conv2D.make(
@@ -22,7 +24,7 @@ void main() {
       CrossAttnDownBlock2D(
         resnets: [ResnetBlock2D.make(numInChannels: 320, numOutChannels: 320)],
         attentions: [Transformer2DModel()],
-        downSamplers: [Downsample2D.make(numChannels: 320)],
+        downSamplers: [DownSample2D.make(numChannels: 320)],
       ),
     ];
 
@@ -33,6 +35,7 @@ void main() {
 
     final upBlocks = <UNet2DUpBlock>[
       CrossAttnUpBlock2D(
+        name: 'up_block_0',
         resnets: [
           ResnetBlock2D.make(numInChannels: 640, numOutChannels: 320),
         ], // 320 from down + 320 from up

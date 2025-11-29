@@ -3,22 +3,22 @@
 ## Phase 0
 + Save Module to disk as Safetensor
 + Module Device
-+ Intelligent Tensor offlaoding
++ Intelligent Tensor offloading
 
-## Phase 1: DownEncoderBlock2D
+## Phase 1: DownSample2D, UpSample2D
 
-## Phase 2: UpDecoderBlock2D
+## Phase 2: DownEncoderBlock2D, UpDecoderBlock2D
 
-## Phase 3: VAE
+## Phase 4: VAE
 + Test Flux VAE
 + Test SD 1.5 VAE
 + Test SDXL VAE
 + Test Qwen Image VAE
 
-## Phase 4: Unet
+## Phase 5: Unet
 
-## Phase 5: Text encoding
+## Phase 6: Text encoding
 
-## Phase 6
+## Phase 7
 + LowVRAM: Comfyui model manager like system to dynamically manage what Tensor is loaded to GPU.
 + Graceful handling of C++ exceptions thrown by libtorch

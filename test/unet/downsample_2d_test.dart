@@ -6,10 +6,10 @@ void main() async {
 
   final tests = <_TestCase>[];
   final testDataFiles = [
-    './test_data/resnet/resnet_tests.safetensors',
-    './test_data/resnet/resnet_sd15_unet_tests.safetensors',
-    './test_data/resnet/resnet_sd15_vae_tests.safetensors',
+    './test_data/unet/downsample/downsample_simple.safetensors',
+    './test_data/unet/downsample/downsample_vae.safetensors',
   ];
+
   for (final fileName in testDataFiles) {
     final file = await SafeTensorsFile.load(fileName);
     final loader = file.mmapTensorLoader();
@@ -17,26 +17,26 @@ void main() async {
     tests.addAll(loadedTests);
   }
 
-  group('ResnetBlock2D', () {
-    test('basic block with time embedding', () {
+  group('DownSample2D', () {
+    test('forward pass matches expected output', () {
       for (final test in tests) {
-        print(test.resnet);
-        final output = test.resnet.forward(
-          test.input,
-          embeds: test.temb,
-          context: context,
-        );
+        final output = test.downsampler.forward(test.input, context: context);
 
         expect(output.shape, equals(test.output.shape));
 
         final result = test.output.allCloseSlow(output, atol: 1e-02);
-        print(result);
+        if (result != null) {
+          print(
+            'Max difference: $result, ${output.index(result)}, ${test.output.index(result)} ${output.index(result) - test.output.index(result)}',
+          );
+        }
+
         expect(
           test.output.allClose(output, atol: 1e-02),
           isTrue,
-          reason: 'Output tensor does not match expected output',
+          reason:
+              'Output tensor does not match expected output for ${test.name}',
         );
-        print('Test ${test.name} passed');
       }
     });
   });
@@ -45,16 +45,14 @@ void main() async {
 class _TestCase {
   final String name;
   final Tensor input;
-  final Tensor? temb;
   final Tensor output;
-  final ResnetBlock2D resnet;
+  final DownSample2D downsampler;
 
   _TestCase({
     required this.name,
     required this.input,
     required this.output,
-    required this.temb,
-    required this.resnet,
+    required this.downsampler,
   });
 
   static Future<_TestCase> loadFromSafeTensor(
@@ -63,17 +61,21 @@ class _TestCase {
   ) async {
     final input = await loader.loadByName('$name.input');
     final output = await loader.loadByName('$name.output');
-    final temb = await loader.tryLoadByName('$name.temb');
-    final resnet = await ResnetBlock2D.loadFromSafeTensor(
+    final padding = SymmetricPadding2D.fromPytorchString(
+      loader.header.metadata['$name.padding']!,
+    );
+
+    final downsampler = await DownSample2D.loadFromSafeTensor(
       loader,
-      prefix: '$name.resnet.',
+      prefix: '$name.downsample.',
+      numChannels: input.shape[1], // Assuming NCHW layout
+      padding: padding,
     );
     return _TestCase(
       name: name,
       input: input,
       output: output,
-      temb: temb,
-      resnet: resnet,
+      downsampler: downsampler,
     );
   }
 

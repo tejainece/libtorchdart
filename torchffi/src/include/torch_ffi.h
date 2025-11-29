@@ -65,6 +65,8 @@ typedef void *Generator;
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern bool torchffi_is_cuda_available();
+
 extern tensor torchffi_tensor_new(void);
 
 extern void torchffi_tensor_delete(tensor t);

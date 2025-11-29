@@ -2,7 +2,7 @@ import 'package:libtorchdart/libtorchdart.dart';
 import 'package:test/test.dart';
 
 void main() async {
-  Device device = Device(deviceType: DeviceType.cpu, deviceIndex: -1);
+  final context = Context.best();
 
   final file = await SafeTensorsFile.load(
     './test_data/conv2d/conv2d_tests.safetensors',
@@ -13,7 +13,7 @@ void main() async {
   group('Conv2D', () {
     test('test', () {
       for (final test in tests) {
-        final generator = Generator.getDefault(device: device);
+        /*final generator = Generator.getDefault(device: device);
         generator.currentSeed = 0;
         final conv = Conv2D.make(
           numInChannels: 32,
@@ -23,8 +23,8 @@ void main() async {
           stride: SymmetricPadding2D.same(1),
           generator: generator,
           device: device,
-        );
-        final output = conv.forward(test.input);
+        );*/
+        final output = test.conv.forward(test.input, context: context);
         expect(test.output.allClose(output), true);
         print('success');
       }
@@ -35,8 +35,9 @@ void main() async {
 class _TestCase {
   final Tensor input;
   final Tensor output;
+  final Conv2D conv;
 
-  _TestCase({required this.input, required this.output});
+  _TestCase({required this.input, required this.output, required this.conv});
 
   static Future<_TestCase> loadFromSafeTensor(
     SafeTensorLoader loader,
@@ -44,7 +45,13 @@ class _TestCase {
   ) async {
     final output = await loader.loadByName('$name.output');
     final input = await loader.loadByName('$name.input');
-    return _TestCase(input: input, output: output);
+    final conv = await Conv2D.loadFromSafeTensor(
+      loader,
+      prefix: '$name.conv',
+      padding: SymmetricPadding2D.same(1),
+      stride: SymmetricPadding2D.same(1),
+    );
+    return _TestCase(input: input, output: output, conv: conv);
   }
 
   static Future<List<_TestCase>> loadAllFromSafeTensor(

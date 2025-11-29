@@ -15,6 +15,7 @@ class Conv2D extends Module implements SimpleModule {
 
   Conv2D(
     this.weight, {
+    super.name = 'conv',
     this.bias,
     this.groups = 1,
     this.stride = const SymmetricPadding2D.same(1),
@@ -35,6 +36,7 @@ class Conv2D extends Module implements SimpleModule {
 
   factory Conv2D._(
     Tensor weight, {
+    String name = 'conv',
     required Tensor? bias,
     required PadMode? padMode,
     required SymmetricPadding2D stride,
@@ -62,6 +64,7 @@ class Conv2D extends Module implements SimpleModule {
 
     return Conv2D(
       weight,
+      name: name,
       bias: bias,
       groups: groups,
       stride: stride,
@@ -72,7 +75,7 @@ class Conv2D extends Module implements SimpleModule {
   }
 
   @override
-  Tensor forward(Tensor input) {
+  Tensor forward(Tensor input, {required Context context}) {
     if (customPad == null) {
       return NN2DUtil.conv2d(
         input,
@@ -108,6 +111,12 @@ class Conv2D extends Module implements SimpleModule {
     }
   }
 
+  @override
+  late final Iterable<Tensor> parameters = {weight, if (bias != null) bias!};
+
+  @override
+  final Iterable<Module> submodules = const [];
+
   int get numInChannels => weight.shape[1] * groups;
 
   int get numOutChannels => weight.shape[0] * groups;
@@ -135,6 +144,7 @@ class Conv2D extends Module implements SimpleModule {
   static Future<Conv2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    String name = 'conv',
     int groups = 1,
     SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
     SymmetricPadding2D? padding,
@@ -148,6 +158,7 @@ class Conv2D extends Module implements SimpleModule {
     }
 
     return Conv2D._(
+      name: name,
       weight,
       bias: bias,
       groups: groups,
@@ -159,6 +170,7 @@ class Conv2D extends Module implements SimpleModule {
   }
 
   static Conv2D make({
+    String name = 'conv',
     required int numInChannels,
     required int numOutChannels,
     SymmetricPadding2D kernelSize = const SymmetricPadding2D.same(3),
@@ -187,6 +199,7 @@ class Conv2D extends Module implements SimpleModule {
     }
     return Conv2D._(
       weights,
+      name: name,
       bias: bias,
       groups: groups,
       stride: stride,
@@ -195,6 +208,40 @@ class Conv2D extends Module implements SimpleModule {
       padMode: padMode,
     )..resetParameters(generator: generator);
   }
+}
+
+class Conv2DTransposed extends Module implements SimpleModule {
+  final Tensor weight;
+  final Tensor? bias;
+  final int groups;
+
+  Conv2DTransposed(
+    this.weight, {
+    super.name = 'conv',
+    this.bias,
+    this.groups = 1,
+  });
+
+  @override
+  Tensor forward(Tensor x, {required Context context}) {
+    // TODO: implement forward
+    throw UnimplementedError();
+  }
+
+  @override
+  // TODO: implement meta
+  Map<String, dynamic> get meta => throw UnimplementedError();
+
+  @override
+  void resetParameters() {
+    // TODO: implement resetParameters
+  }
+
+  @override
+  late final Iterable<Tensor> parameters = {weight, if (bias != null) bias!};
+
+  @override
+  final Iterable<Module> submodules = const [];
 }
 
 enum PadMode {
@@ -234,6 +281,23 @@ class SymmetricPadding2D implements Padding2D {
   const SymmetricPadding2D.same(int value)
     : vertical = value,
       horizontal = value;
+
+  factory SymmetricPadding2D.fromPytorchString(String str) {
+    {
+      final ret = int.tryParse(str.trim());
+      if (ret != null) return SymmetricPadding2D.same(ret);
+    }
+    if (str.startsWith('(') && str.endsWith(')')) {
+      final parts = str.substring(1, str.length - 1).split(',');
+      if (parts.length == 2) {
+        return SymmetricPadding2D(
+          vertical: int.parse(parts[0].trim()),
+          horizontal: int.parse(parts[1].trim()),
+        );
+      }
+    }
+    throw UnimplementedError('Cannot parse SymmetricPadding2D from $str');
+  }
 
   SymmetricPadding2D multiplySymmetric(SymmetricPadding2D other) {
     return SymmetricPadding2D(

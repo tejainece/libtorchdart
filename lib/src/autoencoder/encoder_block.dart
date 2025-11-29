@@ -4,16 +4,20 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
   final List<ResnetBlock2D> resnets;
   final List<SimpleModule> downSamplers;
 
-  DownEncoderBlock2D({required this.resnets, required this.downSamplers});
+  DownEncoderBlock2D({
+    super.name = 'down_block',
+    required this.resnets,
+    required this.downSamplers,
+  });
 
   @override
-  Tensor forward(Tensor sample, {Tensor? embeds}) {
+  Tensor forward(Tensor sample, {Tensor? embeds, required Context context}) {
     for (final resnet in resnets) {
-      sample = resnet.forward(sample, embeds: embeds);
+      sample = resnet.forward(sample, embeds: embeds, context: context);
     }
 
     for (final downSampler in downSamplers) {
-      sample = downSampler.forward(sample);
+      sample = downSampler.forward(sample, context: context);
     }
 
     return sample;
@@ -35,6 +39,12 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
     "downSamplers": downSamplers.map((e) => e.meta).toList(),
   };
 
+  @override
+  late final Iterable<Tensor> parameters = [];
+
+  @override
+  late final Iterable<Module> submodules = [...resnets, ...downSamplers];
+
   static Future<DownEncoderBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -42,7 +52,7 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
     double resnetEps = 1e-6,
     Activation resnetActFn = Activation.silu,
     int resnetGroups = 32,
-    bool downsamplePadding = true,
+    SymmetricPadding2D downsamplePadding = const SymmetricPadding2D.same(1),
     double dropout = 0.0,
   }) async {
     final resnets = <ResnetBlock2D>[];
@@ -60,17 +70,18 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
         ),
       );
     }
+    // TODO verify that resnets are not empty
+
+    final numOutChannels = resnets.last.conv2.numOutChannels;
 
     final downSamplers = <SimpleModule>[];
     if (addDownsample) {
       downSamplers.add(
-        await Downsample2D.loadFromSafeTensor(
+        await DownSample2D.loadFromSafeTensor(
           loader,
           prefix: '${prefix}downsamplers.0.',
           numChannels: numOutChannels,
-          padding: downsamplePadding
-              ? const SymmetricPadding2D.same(1)
-              : const SymmetricPadding2D.same(0),
+          padding: downsamplePadding,
         ),
       );
     }

@@ -7,6 +7,7 @@ class CrossAttnUpBlock2D extends Module implements UNet2DUpBlock {
   final List<Upsample2D> upsamplers;
 
   CrossAttnUpBlock2D({
+    required super.name,
     required this.resnets,
     required this.attentions,
     required this.upsamplers,
@@ -21,20 +22,26 @@ class CrossAttnUpBlock2D extends Module implements UNet2DUpBlock {
     Tensor? attentionMask,
     Tensor? encoderAttentionMask,
     Tensor? additionalResiduals,
+    required Context context,
   }) {
     for (int i = 0; i < resnets.length; i++) {
       final resHiddenState = resHiddenStates[resHiddenStates.length - 1 - i];
       hiddenStates = Tensor.cat([hiddenStates, resHiddenState], dim: 1);
 
-      hiddenStates = resnets[i].forward(hiddenStates, embeds: timeEmbedding);
+      hiddenStates = resnets[i].forward(
+        hiddenStates,
+        embeds: timeEmbedding,
+        context: context,
+      );
       hiddenStates = attentions[i].forward(
         hiddenStates,
         embeds: encoderHiddenStates,
+        context: context,
       );
     }
 
     for (int i = 0; i < upsamplers.length; i++) {
-      hiddenStates = upsamplers[i].forward(hiddenStates);
+      hiddenStates = upsamplers[i].forward(hiddenStates, context: context);
     }
 
     return hiddenStates;
@@ -60,6 +67,16 @@ class CrossAttnUpBlock2D extends Module implements UNet2DUpBlock {
     "upsamplers": upsamplers.map((e) => e.meta).toList(),
   };
 
+  @override
+  final Iterable<Tensor> parameters = const [];
+
+  @override
+  late final Iterable<Module> submodules = [
+    ...resnets,
+    ...attentions,
+    ...upsamplers,
+  ];
+
   static Future<CrossAttnUpBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -69,6 +86,7 @@ class CrossAttnUpBlock2D extends Module implements UNet2DUpBlock {
     required int inChannels,
     required int outChannels,
     required int prevOutputChannel,
+    required String name,
   }) async {
     final resnets = <ResnetBlock2D>[];
     final attentions = <Transformer2DModel>[];
@@ -78,12 +96,14 @@ class CrossAttnUpBlock2D extends Module implements UNet2DUpBlock {
       final resnet = await ResnetBlock2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}resnets.$i.',
+        name: 'resnets.$i',
       );
       resnets.add(resnet);
 
       final attention = await Transformer2DModel.loadFromSafeTensor(
         loader,
         prefix: '${prefix}attentions.$i.',
+        name: 'attentions.$i',
       );
       attentions.add(attention);
     }
@@ -92,12 +112,14 @@ class CrossAttnUpBlock2D extends Module implements UNet2DUpBlock {
       final upsampler = await Upsample2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}upsamplers.0.',
+        name: 'upsamplers.0',
         numChannels: outChannels,
       );
       upsamplers.add(upsampler);
     }
 
     return CrossAttnUpBlock2D(
+      name: name,
       resnets: resnets,
       attentions: attentions,
       upsamplers: upsamplers,
@@ -109,7 +131,11 @@ class UpBlock2D extends Module implements UNet2DUpBlock {
   final List<ResnetBlock2D> resnets;
   final List<Upsample2D> upsamplers;
 
-  UpBlock2D({required this.resnets, required this.upsamplers});
+  UpBlock2D({
+    required super.name,
+    required this.resnets,
+    required this.upsamplers,
+  });
 
   @override
   Tensor forward(
@@ -120,16 +146,21 @@ class UpBlock2D extends Module implements UNet2DUpBlock {
     Tensor? attentionMask,
     Tensor? encoderAttentionMask,
     Tensor? additionalResiduals,
+    required Context context,
   }) {
     for (int i = 0; i < resnets.length; i++) {
       final resHiddenState = resHiddenStates[resHiddenStates.length - 1 - i];
       hiddenStates = Tensor.cat([hiddenStates, resHiddenState], dim: 1);
 
-      hiddenStates = resnets[i].forward(hiddenStates, embeds: timeEmbedding);
+      hiddenStates = resnets[i].forward(
+        hiddenStates,
+        embeds: timeEmbedding,
+        context: context,
+      );
     }
 
     for (int i = 0; i < upsamplers.length; i++) {
-      hiddenStates = upsamplers[i].forward(hiddenStates);
+      hiddenStates = upsamplers[i].forward(hiddenStates, context: context);
     }
 
     return hiddenStates;
@@ -151,6 +182,12 @@ class UpBlock2D extends Module implements UNet2DUpBlock {
     "upsamplers": upsamplers.map((e) => e.meta).toList(),
   };
 
+  @override
+  final Iterable<Tensor> parameters = const [];
+
+  @override
+  late final Iterable<Module> submodules = [...resnets, ...upsamplers];
+
   static Future<UpBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
@@ -160,6 +197,7 @@ class UpBlock2D extends Module implements UNet2DUpBlock {
     required int inChannels,
     required int outChannels,
     required int prevOutputChannel,
+    required String name,
   }) async {
     final resnets = <ResnetBlock2D>[];
     final upsamplers = <Upsample2D>[];
@@ -168,6 +206,7 @@ class UpBlock2D extends Module implements UNet2DUpBlock {
       final resnet = await ResnetBlock2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}resnets.$i.',
+        name: 'resnets.$i',
       );
       resnets.add(resnet);
     }
@@ -176,11 +215,12 @@ class UpBlock2D extends Module implements UNet2DUpBlock {
       final upsampler = await Upsample2D.loadFromSafeTensor(
         loader,
         prefix: '${prefix}upsamplers.0.',
+        name: 'upsamplers.0',
         numChannels: outChannels,
       );
       upsamplers.add(upsampler);
     }
 
-    return UpBlock2D(resnets: resnets, upsamplers: upsamplers);
+    return UpBlock2D(name: name, resnets: resnets, upsamplers: upsamplers);
   }
 }

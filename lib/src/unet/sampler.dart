@@ -7,29 +7,40 @@ import 'package:libtorchdart/src/nn/pooling.dart';
 class Upsample2D extends Module implements SimpleModule {
   final Normalization? norm;
   final Conv2D? conv;
-  final bool useConvTransposed;
   final bool interpolate;
 
   Upsample2D({
+    super.name = 'upsample',
     required this.norm,
     required this.conv,
-    this.useConvTransposed = false,
     this.interpolate = true,
-  });
+  }) {
+    if (norm != null && conv != null) {
+      if (norm is LayerNorm) {
+        assert((norm as LayerNorm).normalizedShape.length == 1);
+        assert((norm as LayerNorm).normalizedShape[0] == conv!.numInChannels);
+      }
+    }
+  }
 
   @override
-  Tensor forward(Tensor hiddenStates, {SymmetricPadding2D? outputSize}) {
+  Tensor forward(
+    Tensor hiddenStates, {
+    SymmetricPadding2D? outputSize,
+    required Context context,
+  }) {
+    if (numInChannels != null) {
+      assert(hiddenStates.shape[1] == numInChannels);
+    }
+
     if (norm != null) {
-      hiddenStates = norm!.forward(hiddenStates.permute([0, 2, 3, 1])).permute([
-        0,
-        3,
-        1,
-        2,
-      ]);
+      hiddenStates = norm!
+          .forward(hiddenStates.permute([0, 2, 3, 1]), context: context)
+          .permute([0, 3, 1, 2]);
     }
 
     if (useConvTransposed) {
-      return conv!.forward(hiddenStates);
+      return conv!.forward(hiddenStates, context: context);
     }
 
     if (hiddenStates.shape[0] >= 64) {
@@ -58,7 +69,7 @@ class Upsample2D extends Module implements SimpleModule {
     }
 
     if (conv != null) {
-      hiddenStates = conv!.forward(hiddenStates);
+      hiddenStates = conv!.forward(hiddenStates, context: context);
     }
     return hiddenStates;
   }
@@ -67,6 +78,29 @@ class Upsample2D extends Module implements SimpleModule {
   void resetParameters() {
     conv?.resetParameters();
     norm?.resetParameters();
+  }
+
+  @override
+  late final Iterable<Tensor> parameters = [];
+
+  @override
+  late final Iterable<Module> submodules = [
+    if (norm != null) norm!,
+    if (conv != null) conv!,
+  ];
+
+  bool get useConvTransposed => conv is Conv2DTransposed;
+
+  int? get numInChannels {
+    if (norm != null) {
+      if (norm is LayerNorm) {
+        return (norm as LayerNorm).normalizedShape[0];
+      }
+    }
+    if (conv != null) {
+      return conv!.numInChannels;
+    }
+    return null;
   }
 
   @override
@@ -80,25 +114,29 @@ class Upsample2D extends Module implements SimpleModule {
   static Future<Upsample2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    String name = 'upsample',
     required int numChannels,
     bool useConvTransposed = false,
     bool interpolate = true,
     SymmetricPadding2D padding = const SymmetricPadding2D.same(1),
     SamplerNormalizationConfig? normConfig,
+    String convName = 'conv',
+    String normName = 'norm',
   }) async {
     Normalization? norm;
     if (normConfig != null) {
-      if (normConfig.normType == 'ln_norm') {
+      if (normConfig.normType == .lnNorm) {
         norm = await LayerNorm.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}norm',
+          prefix: '$prefix$normName.',
+          name: normName,
           normalizedShape: [numChannels],
           eps: normConfig.eps,
         );
-      } else if (normConfig.normType == 'rms_norm') {
+      } else if (normConfig.normType == .rmsNorm) {
         norm = await RMSNormWithBias.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}norm',
+          prefix: '$prefix$normName.',
           eps: normConfig.eps,
         );
       } else {
@@ -112,10 +150,11 @@ class Upsample2D extends Module implements SimpleModule {
     if (useConvTransposed) {
       throw UnimplementedError();
     } else {
-      if (loader.hasTensor('${prefix}conv')) {
+      if (loader.hasTensorWithPrefix('$prefix$convName')) {
         conv = await Conv2D.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}conv',
+          prefix: '$prefix$convName.',
+          name: convName,
           padding: padding,
         );
         assert(numChannels == conv.numInChannels);
@@ -123,9 +162,9 @@ class Upsample2D extends Module implements SimpleModule {
     }
 
     return Upsample2D(
+      name: name,
       conv: conv,
       norm: norm,
-      useConvTransposed: useConvTransposed,
       interpolate: interpolate,
     );
   }
@@ -140,16 +179,21 @@ class Upsample2D extends Module implements SimpleModule {
     SamplerNormalizationConfig? normConfig,
     bool hasBias = true,
     bool interpolate = true,
+    String name = 'upsample',
+    String convName = 'conv',
+    String normName = 'norm',
   }) {
     Normalization? norm;
     if (normConfig != null) {
-      if (normConfig.normType == 'ln_norm') {
+      if (normConfig.normType == .lnNorm) {
         norm = LayerNorm.make(
+          name: normName,
           normalizedShape: [numChannels],
           isElementwiseAffine: normConfig.isElementwiseAffine,
         );
-      } else if (normConfig.normType == 'rms_norm') {
+      } else if (normConfig.normType == .rmsNorm) {
         norm = RMSNormWithBias.make(
+          name: normName,
           normalizedShape: [numChannels],
           isElementwiseAffine: normConfig.isElementwiseAffine,
         );
@@ -160,14 +204,15 @@ class Upsample2D extends Module implements SimpleModule {
       }
     }
 
-    Conv2D conv;
+    Conv2D? conv;
     if (useConvTransposed) {
       kernelSize ??= SymmetricPadding2D.same(4);
 
       throw UnimplementedError();
-    } else {
+    } else if (useConv) {
       kernelSize ??= SymmetricPadding2D.same(3);
       conv = Conv2D.make(
+        name: convName,
         numInChannels: numChannels,
         numOutChannels: numOutChannels ?? numChannels,
         kernelSize: kernelSize,
@@ -177,43 +222,27 @@ class Upsample2D extends Module implements SimpleModule {
     }
 
     return Upsample2D(
+      name: name,
       conv: conv,
       norm: norm,
-      useConvTransposed: useConvTransposed,
       interpolate: interpolate,
     );
   }
 }
 
-class SamplerNormalizationConfig {
-  final String normType;
-
-  final double eps;
-
-  final bool isElementwiseAffine;
-
-  SamplerNormalizationConfig({
-    required this.normType,
-    this.eps = 1e-5,
-    this.isElementwiseAffine = false,
-  });
-}
-
-class Downsample2D extends Module implements SimpleModule {
+/// A 2D downsampling layer with an optional convolution.
+class DownSample2D extends Module implements SimpleModule {
   final Normalization? norm;
   final SimpleModule? conv;
 
-  Downsample2D({this.norm, this.conv});
+  DownSample2D({super.name = 'downsample', this.norm, this.conv});
 
   @override
-  Tensor forward(Tensor hiddenStates) {
+  Tensor forward(Tensor hiddenStates, {required Context context}) {
     if (norm != null) {
-      hiddenStates = norm!.forward(hiddenStates.permute([0, 2, 3, 1])).permute([
-        0,
-        3,
-        1,
-        2,
-      ]);
+      hiddenStates = norm!
+          .forward(hiddenStates.permute([0, 2, 3, 1]), context: context)
+          .permute([0, 3, 1, 2]);
     }
 
     if (conv is Conv2D &&
@@ -222,7 +251,7 @@ class Downsample2D extends Module implements SimpleModule {
     }
 
     if (conv != null) {
-      hiddenStates = conv!.forward(hiddenStates);
+      hiddenStates = conv!.forward(hiddenStates, context: context);
     }
     return hiddenStates;
   }
@@ -236,26 +265,39 @@ class Downsample2D extends Module implements SimpleModule {
   @override
   Map<String, dynamic> get meta => {"norm": norm?.meta, "conv": conv?.meta};
 
-  static Future<Downsample2D> loadFromSafeTensor(
+  @override
+  late final Iterable<Tensor> parameters = [];
+
+  @override
+  late final Iterable<Module> submodules = [
+    if (norm != null) norm!,
+    if (conv != null) conv!,
+  ];
+
+  static Future<DownSample2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
     SymmetricPadding2D padding = const SymmetricPadding2D.same(1),
     SamplerNormalizationConfig? normConfig,
     required int numChannels,
+    String name = 'downsample',
+    String convName = 'conv',
+    String normName = 'norm',
   }) async {
     final stride = SymmetricPadding2D.same(2);
     Normalization? norm;
     if (normConfig != null) {
-      if (normConfig.normType == 'ln_norm') {
+      if (normConfig.normType == .lnNorm) {
         norm = await LayerNorm.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}norm',
+          prefix: '$prefix$normName.',
+          name: normName,
           normalizedShape: [numChannels],
         );
-      } else if (normConfig.normType == 'rms_norm') {
+      } else if (normConfig.normType == .rmsNorm) {
         norm = await RMSNormWithBias.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}norm',
+          prefix: '$prefix$normName.',
         );
       } else {
         throw UnimplementedError(
@@ -265,10 +307,11 @@ class Downsample2D extends Module implements SimpleModule {
     }
 
     SimpleModule? conv;
-    if (loader.hasTensor('${prefix}conv')) {
+    if (loader.hasTensorWithPrefix('${prefix}conv')) {
       conv = await Conv2D.loadFromSafeTensor(
         loader,
-        prefix: '${prefix}conv',
+        prefix: '$prefix$convName.',
+        name: convName,
         padding: padding,
         stride: stride,
       );
@@ -276,10 +319,10 @@ class Downsample2D extends Module implements SimpleModule {
     } else {
       conv = AvgPool2D(kernelSize: stride, stride: stride);
     }
-    return Downsample2D(norm: norm, conv: conv);
+    return DownSample2D(name: name, norm: norm, conv: conv);
   }
 
-  static Downsample2D make({
+  static DownSample2D make({
     required int numChannels,
     int? numOutChannels,
     bool useConv = false,
@@ -287,17 +330,39 @@ class Downsample2D extends Module implements SimpleModule {
     SymmetricPadding2D padding = const SymmetricPadding2D.same(1),
     bool hasBias = true,
     SamplerNormalizationConfig? normConfig,
+    double eps = 1e-5,
+    String name = 'downsample',
+    String convName = 'conv',
+    String normName = 'norm',
   }) {
     final stride = SymmetricPadding2D.same(2);
     Normalization? norm;
     if (normConfig != null) {
-      // TODO
-      throw UnimplementedError();
+      if (normConfig.normType == .lnNorm) {
+        norm = LayerNorm.make(
+          name: normName,
+          normalizedShape: [numChannels],
+          eps: eps,
+          isElementwiseAffine: normConfig.isElementwiseAffine,
+        );
+      } else if (normConfig.normType == .rmsNorm) {
+        norm = RMSNormWithBias.make(
+          name: normName,
+          normalizedShape: [numChannels],
+          eps: eps,
+          isElementwiseAffine: normConfig.isElementwiseAffine,
+        );
+      } else {
+        throw UnimplementedError(
+          'Unknown Upsampler2D normalization type: ${normConfig.normType}',
+        );
+      }
     }
 
     SimpleModule conv;
     if (useConv) {
       conv = Conv2D.make(
+        name: convName,
         numInChannels: numChannels,
         numOutChannels: numOutChannels ?? numChannels,
         kernelSize: kernelSize,
@@ -308,6 +373,22 @@ class Downsample2D extends Module implements SimpleModule {
     } else {
       conv = AvgPool2D(kernelSize: stride, stride: stride);
     }
-    return Downsample2D(norm: norm, conv: conv);
+    return DownSample2D(name: name, norm: norm, conv: conv);
   }
+}
+
+enum SamplerNormType { lnNorm, rmsNorm }
+
+class SamplerNormalizationConfig {
+  final SamplerNormType normType;
+
+  final double eps;
+
+  final bool isElementwiseAffine;
+
+  SamplerNormalizationConfig({
+    required this.normType,
+    this.eps = 1e-5,
+    this.isElementwiseAffine = false,
+  });
 }

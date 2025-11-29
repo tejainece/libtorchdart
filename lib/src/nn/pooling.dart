@@ -9,6 +9,7 @@ class AvgPool2D extends Module implements SimpleModule {
   final int? divisorOverride;
 
   AvgPool2D({
+    super.name = 'avg_pool2d',
     required this.kernelSize,
     this.stride,
     this.padding = const SymmetricPadding2D(vertical: 0, horizontal: 0),
@@ -18,7 +19,7 @@ class AvgPool2D extends Module implements SimpleModule {
   });
 
   @override
-  Tensor forward(Tensor x) {
+  Tensor forward(Tensor x, {required Context context}) {
     return NN2DUtil.avgPool2D(
       x,
       kernelSize,
@@ -31,10 +32,13 @@ class AvgPool2D extends Module implements SimpleModule {
   }
 
   @override
-  void resetParameters() {
-    // TODO
-    throw UnimplementedError();
-  }
+  void resetParameters() {}
+
+  @override
+  final Iterable<Tensor> parameters = const [];
+
+  @override
+  final Iterable<Module> submodules = const [];
 
   @override
   late final Map<String, dynamic> meta = {

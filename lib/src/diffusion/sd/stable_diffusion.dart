@@ -80,6 +80,7 @@ class StableDiffusion implements SimpleDiffusionPipeline {
       loader,
       prefix: 'cond_stage_model.transformer.text_model.',
       config: ClipTextConfig.v1_5 /* TODO */,
+      name: 'text_model',
     );
     final featureExtractor = CLIPImageProcessor();
     final unet = await UNet2DConditionModel.loadFromSafeTensor(loader);

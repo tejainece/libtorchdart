@@ -1,20 +1,40 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/unet/transformer_2d.dart';
 
 class UNet2DMidBlock extends Module implements UNet2DBlock {
-  final ResnetBlock2D resnet;
+  final ResnetBlock2D resnet0;
   final List<Resnet2DWithAttention> resnets;
 
-  UNet2DMidBlock(this.resnet, {required this.resnets});
+  UNet2DMidBlock(
+    this.resnet0, {
+    super.name = 'mid_block',
+    required this.resnets,
+  });
 
-  Tensor forward(Tensor hiddenStates, {Tensor? embeds}) {
-    hiddenStates = resnet.forward(hiddenStates, embeds: embeds);
+  Tensor forward(
+    Tensor hiddenStates, {
+    Tensor? embeds,
+    required Context context,
+  }) {
+    hiddenStates = resnet0.forward(
+      hiddenStates,
+      embeds: embeds,
+      context: context,
+    );
+
     for (final block in resnets) {
       // TODO handle gradient checkpointing
       if (block.attention != null) {
-        hiddenStates = block.attention!.forward(hiddenStates, embeds: embeds);
+        hiddenStates = block.attention!.forward(
+          hiddenStates,
+          embeds: embeds,
+          context: context,
+        );
       }
-      hiddenStates = block.resnet.forward(hiddenStates, embeds: embeds);
+      hiddenStates = block.resnet.forward(
+        hiddenStates,
+        embeds: embeds,
+        context: context,
+      );
     }
 
     return hiddenStates;
@@ -22,7 +42,7 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
 
   @override
   void resetParameters() {
-    resnet.resetParameters();
+    resnet0.resetParameters();
     for (final block in resnets) {
       block.resnet.resetParameters();
       block.attention?.resetParameters();
@@ -34,12 +54,23 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
     // TODO
   };
 
+  @override
+  final Iterable<Tensor> parameters = const [];
+
+  @override
+  late final Iterable<Module> submodules = [
+    resnet0,
+    ...resnets.map((e) => e.resnet),
+    ...resnets.map((e) => e.attention).nonNulls,
+  ];
+
   static Future<UNet2DMidBlock> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
     String resnetPrefix = '',
     bool resnetTimeScaleShift = false,
     bool useAttention = true,
+    String name = 'mid_block',
   }) async {
     ResnetBlock2D resnet;
     final resnets = <Resnet2DWithAttention>[];
@@ -59,6 +90,7 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
       resnet = await ResnetBlock2D.loadFromSafeTensor(
         loader,
         prefix: '$prefix$resnetPrefix$resnetIndex.',
+        name: '$resnetPrefix$resnetIndex',
       );
     }
     resnetIndex++;
@@ -72,6 +104,7 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
         resnetPart = await ResnetBlock2D.loadFromSafeTensor(
           loader,
           prefix: '$prefix$resnetPrefix$resnetIndex.',
+          name: '$resnetPrefix$resnetIndex',
         );
       }
       EmbeddableModule? attention;
@@ -85,6 +118,6 @@ class UNet2DMidBlock extends Module implements UNet2DBlock {
       resnetIndex++;
     }
 
-    return UNet2DMidBlock(resnet, resnets: resnets);
+    return UNet2DMidBlock(name: name, resnet, resnets: resnets);
   }
 }

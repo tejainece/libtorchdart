@@ -1,9 +1,9 @@
 import 'package:libtorchdart/libtorchdart.dart';
 
 void main() {
-  Device device = Device(deviceType: DeviceType.cpu, deviceIndex: -1);
+  final context = Context.best();
 
-  final generator = Generator.getDefault(device: device);
+  final generator = Generator.getDefault(device: context.device);
   generator.currentSeed = 0;
 
   final conv = Conv2D.make(
@@ -18,6 +18,6 @@ void main() {
   // print(conv.bias);
 
   final input = Tensor.ones([1, 32, 28, 28]);
-  final output = conv.forward(input);
+  final output = conv.forward(input, context: context);
   print(output);
 }

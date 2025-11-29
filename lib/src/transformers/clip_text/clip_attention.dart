@@ -15,6 +15,7 @@ class ClipAttention extends Module {
   final AttentionFunction attentionFunction;
 
   ClipAttention({
+    required super.name,
     required this.kProj,
     required this.vProj,
     required this.qProj,
@@ -26,11 +27,15 @@ class ClipAttention extends Module {
     required this.attentionFunction,
   });
 
-  (Tensor, Tensor) forward(Tensor x, {Tensor? attentionMask}) {
+  (Tensor, Tensor) forward(
+    Tensor x, {
+    Tensor? attentionMask,
+    required Context context,
+  }) {
     final [batchSize, seqLength, embedDim] = x.sizes;
-    Tensor queries = qProj.forward(x);
-    Tensor keys = kProj.forward(x);
-    Tensor values = vProj.forward(x);
+    Tensor queries = qProj.forward(x, context: context);
+    Tensor keys = kProj.forward(x, context: context);
+    Tensor values = vProj.forward(x, context: context);
 
     queries = queries.view([batchSize, seqLength, -1, headDim]).transpose(1, 2);
     keys = keys.view([batchSize, seqLength, -1, headDim]).transpose(1, 2);
@@ -42,7 +47,7 @@ class ClipAttention extends Module {
       values,
       attentionMask: attentionMask,
       scaling: scale,
-      dropout: isTraining ? dropout : 0,
+      dropout: context.isTraining ? dropout : 0,
     );
 
     attentionOutput = attentionOutput.reshape([
@@ -50,7 +55,7 @@ class ClipAttention extends Module {
       seqLength,
       -1,
     ]).contiguous();
-    attentionOutput = outProj.forward(attentionOutput);
+    attentionOutput = outProj.forward(attentionOutput, context: context);
 
     return (attentionOutput, attentionWeights);
   }
@@ -59,8 +64,10 @@ class ClipAttention extends Module {
 
   @override
   void resetParameters() {
-    // TODO
-    throw UnimplementedError();
+    kProj.resetParameters();
+    vProj.resetParameters();
+    qProj.resetParameters();
+    outProj.resetParameters();
   }
 
   @override
@@ -76,9 +83,16 @@ class ClipAttention extends Module {
     'attentionFunction': attentionFunction.runtimeType.toString(),
   };
 
+  @override
+  late final Iterable<Tensor> parameters = [];
+
+  @override
+  Iterable<Module> get submodules => [kProj, vProj, qProj, outProj];
+
   static Future<ClipAttention> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
+    required String name,
     required ClipTextConfig config,
   }) async {
     final qProj = await LinearLayer.loadFromSafeTensor(
@@ -99,6 +113,7 @@ class ClipAttention extends Module {
     );
 
     return ClipAttention(
+      name: name,
       kProj: kProj,
       vProj: vProj,
       qProj: qProj,

@@ -1,13 +1,13 @@
 import 'package:libtorchdart/libtorchdart.dart';
 
 void main() {
-  Device device = Device(deviceType: DeviceType.cpu, deviceIndex: -1);
+  final context = Context.best();
 
-  final generator = Generator.getDefault(device: device);
+  final generator = Generator.getDefault(device: context.device);
   generator.currentSeed = 0;
 
-  final sample = Tensor.randn([1, 32, 64, 64], device: device);
-  final temb = Tensor.randn([1, 128], device: device);
+  final sample = Tensor.randn([1, 32, 64, 64], device: context.device);
+  final temb = Tensor.randn([1, 128], device: context.device);
 
   // Basic block
   final resnet = ResnetBlock2D.make(
@@ -15,7 +15,7 @@ void main() {
     numOutChannels: 32,
     numTembChannels: 128,
   );
-  final out = resnet.forward(sample, embeds: temb);
+  final out = resnet.forward(sample, embeds: temb, context: context);
   //print('Basic block output shape: ${out.shape}');
   //print(out);
 

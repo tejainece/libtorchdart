@@ -1,6 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
-import 'package:libtorchdart/src/nn/conv2d.dart';
+import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
 import 'generator.dart';
 
@@ -11,7 +11,9 @@ class Tensor implements ffi.Finalizable {
   ffi.Pointer<ffi.Void> nativePtr;
   final bool shouldDelete;
 
-  Tensor(this.nativePtr, {this.shouldDelete = true}) {
+  String? name;
+
+  Tensor(this.nativePtr, {this.shouldDelete = true, this.name}) {
     if (shouldDelete) {
       _finalizer.attach(this, nativePtr);
     }
@@ -21,6 +23,7 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor empty(
     List<int> sizes, {
+    String? name,
     Device? device,
     DataType? datatype,
     Layout? layout,
@@ -44,7 +47,7 @@ class Tensor implements ffi.Finalizable {
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
       final tensor = FFITensor.empty(sizesPointer, sizes.length, options.ref);
-      return Tensor(tensor);
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }
@@ -52,6 +55,7 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor zeros(
     List<int> sizes, {
+    String? name,
     Device? device,
     DataType? datatype,
     Layout? layout,
@@ -75,7 +79,7 @@ class Tensor implements ffi.Finalizable {
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
       final tensor = FFITensor.zeros(sizesPointer, sizes.length, options.ref);
-      return Tensor(tensor);
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }
@@ -83,6 +87,7 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor ones(
     List<int> sizes, {
+    String? name,
     Device? device,
     DataType? datatype,
     Layout? layout,
@@ -106,7 +111,7 @@ class Tensor implements ffi.Finalizable {
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
       final tensor = FFITensor.ones(sizesPointer, sizes.length, options.ref);
-      return Tensor(tensor);
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }
@@ -114,6 +119,7 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor arange(
     int end, {
+    String? name,
     Device? device,
     DataType? datatype,
     Layout? layout,
@@ -133,7 +139,7 @@ class Tensor implements ffi.Finalizable {
         allocator: arena,
       );
       final tensor = FFITensor.arange(end, options.ref);
-      return Tensor(tensor);
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }
@@ -141,6 +147,7 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor rand(
     List<int> sizes, {
+    String? name,
     Generator? generator,
     Device? device,
     DataType? datatype,
@@ -171,7 +178,7 @@ class Tensor implements ffi.Finalizable {
         cGenerator,
         options.ref,
       );
-      return Tensor(tensor);
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }
@@ -179,6 +186,7 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor randn(
     List<int> sizes, {
+    String? name,
     Generator? generator,
     Device? device,
     DataType? datatype,
@@ -209,7 +217,7 @@ class Tensor implements ffi.Finalizable {
         cGenerator,
         options.ref,
       );
-      return Tensor(tensor);
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }
@@ -217,6 +225,7 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor eye(
     int n, {
+    String? name,
     int? m,
     Device? device,
     DataType? datatype,
@@ -238,7 +247,7 @@ class Tensor implements ffi.Finalizable {
         allocator: arena,
       );
       final tensor = FFITensor.eye(n, m, options.ref);
-      return Tensor(tensor);
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }
@@ -248,6 +257,7 @@ class Tensor implements ffi.Finalizable {
     // TODO this should also accept int data and TypedList
     List<double> data,
     List<int> sizes, {
+    String? name,
     required DataType datatype,
     Device? device,
     Layout? layout,
@@ -283,7 +293,7 @@ class Tensor implements ffi.Finalizable {
         sizes.length,
         options.ref,
       );
-      return Tensor(tensor).clone();
+      return Tensor(tensor, name: name).clone();
     } finally {
       arena.releaseAll();
     }
@@ -292,6 +302,7 @@ class Tensor implements ffi.Finalizable {
   static Tensor fromBlob(
     ffi.Pointer<ffi.Void> dataPointer,
     List<int> sizes, {
+    String? name,
     required DataType datatype,
     Device? device,
     Layout? layout,
@@ -321,7 +332,7 @@ class Tensor implements ffi.Finalizable {
         sizes.length,
         options.ref,
       );
-      return Tensor(tensor);
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }
@@ -1188,10 +1199,27 @@ class Device {
 
   const Device({required this.deviceType, required this.deviceIndex});
 
+  factory Device.cuda([int deviceIndex = 0]) =>
+      Device(deviceType: DeviceType.cuda, deviceIndex: deviceIndex);
+
+  factory Device.tryCuda([int deviceIndex = 0]) {
+    if (!isCudaAvailable) return Device.cpu;
+    return Device.cuda(deviceIndex);
+  }
+
+  factory Device.best() {
+    if (isCudaAvailable) return Device.cuda();
+    // TODO check for metal
+    // TODO check for mps
+    return Device.cpu;
+  }
+
   @override
   String toString() => '$deviceType:$deviceIndex';
 
   static const cpu = Device(deviceType: DeviceType.cpu, deviceIndex: -1);
+
+  static bool get isCudaAvailable => FFIDevice.isCudaAvailable();
 }
 
 class DataType {
