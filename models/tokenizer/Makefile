@@ -1,5 +1,5 @@
-sd15: v1-5-pruned-emaonly.safetensors
-	wget https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
-
 clean:
 	rm *.safetensorss
+
+bpe16e6:
+	wget https://huggingface.co/lmz/rust-stable-diffusion-v2-1/resolve/main/weights/bpe_simple_vocab_16e6.txt

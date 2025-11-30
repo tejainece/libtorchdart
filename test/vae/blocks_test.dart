@@ -23,7 +23,7 @@ void main() {
       );
 
       final input = Tensor.randn([1, 32, 64, 64]);
-      final output = block.forward(input);
+      final output = block.forward(input, context: context);
 
       // Resnet keeps shape, Downsample halves it (64 -> 32)
       expect(output.shape, [1, 32, 32, 32]);

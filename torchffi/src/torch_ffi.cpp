@@ -298,6 +298,8 @@ tensor torchffi_tensor_unsqueeze(tensor t, int64_t dim) {
   return new torch::Tensor(tensor);
 }
 
+int64_t torchffi_tensor_element_size(tensor t) { return t->element_size(); }
+
 const char *padModeName(uint8_t padMode) {
   switch (padMode) {
   case padModeConstant:

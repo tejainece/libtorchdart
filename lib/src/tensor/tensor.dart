@@ -33,7 +33,7 @@ class Tensor implements ffi.Finalizable {
   }) {
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -65,7 +65,7 @@ class Tensor implements ffi.Finalizable {
   }) {
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -97,7 +97,7 @@ class Tensor implements ffi.Finalizable {
   }) {
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -129,7 +129,7 @@ class Tensor implements ffi.Finalizable {
   }) {
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -159,7 +159,7 @@ class Tensor implements ffi.Finalizable {
     CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -198,7 +198,7 @@ class Tensor implements ffi.Finalizable {
     CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -237,7 +237,7 @@ class Tensor implements ffi.Finalizable {
     m ??= n;
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -272,7 +272,7 @@ class Tensor implements ffi.Finalizable {
       );
       dataPointer.asTypedList(data.length).setAll(0, data);
 
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -312,7 +312,7 @@ class Tensor implements ffi.Finalizable {
   }) {
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: datatype,
         device: device,
         layout: layout,
@@ -353,7 +353,7 @@ class Tensor implements ffi.Finalizable {
   void fill_(dynamic value) {
     final arena = ffi.Arena();
     try {
-      final scalar = FFIScalar.allocate(arena);
+      final scalar = CScalar.allocate(arena);
       scalar.ref.setValue(value);
       FFITensor.fill_(nativePtr, scalar.ref);
     } finally {
@@ -379,6 +379,10 @@ class Tensor implements ffi.Finalizable {
   ffi.Pointer<void> get dataPointer => FFITensor.dataPointer(nativePtr);
 
   int get dim => FFITensor.dim(nativePtr);
+
+  int get elementSize => FFITensor.elementSize(nativePtr);
+
+  int get memorySize => elementSize * numel;
 
   List<int> get sizes {
     final dim = this.dim;
@@ -589,7 +593,7 @@ class Tensor implements ffi.Finalizable {
   }) {
     final arena = ffi.Arena();
     try {
-      final options = FFITensorOptions.make(
+      final options = CTensorOptions.make(
         dataType: dataType,
         device: device,
         layout: layout,
@@ -603,6 +607,19 @@ class Tensor implements ffi.Finalizable {
     } finally {
       arena.releaseAll();
     }
+  }
+
+  void to_({
+    DataType? dataType,
+    Device? device,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
+    bool copy = false,
+    bool nonblocking = false,
+  }) {
+    // TODO
   }
 
   Tensor contiguous({MemoryFormat format = MemoryFormat.contiguous}) {
@@ -672,7 +689,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       if (other is Tensor) {
-        final alpha = FFIScalar.allocate(arena);
+        final alpha = CScalar.allocate(arena);
         alpha.ref.setInt(1);
         final tensor = FFITensor.addition(
           nativePtr,
@@ -686,7 +703,7 @@ class Tensor implements ffi.Finalizable {
           [1],
           datatype: dataType,
         );
-        final alpha = FFIScalar.allocate(arena);
+        final alpha = CScalar.allocate(arena);
         alpha.ref.setInt(1);
         final tensor = FFITensor.addition(
           nativePtr,
@@ -695,7 +712,7 @@ class Tensor implements ffi.Finalizable {
         );
         return Tensor(tensor);
       } else if (other is (Tensor, dynamic)) {
-        final alpha = FFIScalar.allocate(arena);
+        final alpha = CScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
         final tensor = FFITensor.addition(
           nativePtr,
@@ -740,7 +757,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       if (other is Tensor) {
-        final alpha = FFIScalar.allocate(arena);
+        final alpha = CScalar.allocate(arena);
         alpha.ref.setInt(1);
         final tensor = FFITensor.subtraction(
           nativePtr,
@@ -751,7 +768,7 @@ class Tensor implements ffi.Finalizable {
       } else if (other is num) {
         throw UnimplementedError('operator+num not implemented for Tensor');
       } else if (other is (Tensor, dynamic)) {
-        final alpha = FFIScalar.allocate(arena);
+        final alpha = CScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
         final tensor = FFITensor.subtraction(
           nativePtr,
@@ -805,7 +822,7 @@ class Tensor implements ffi.Finalizable {
         final tensor = FFITensor.division(nativePtr, other.nativePtr);
         return Tensor(tensor);
       } else if (other is num) {
-        final scalar = FFIScalar.allocate(arena);
+        final scalar = CScalar.allocate(arena);
         scalar.ref.setValue(other);
         final tensor = FFITensor.divisionScalar(nativePtr, scalar.ref);
         return Tensor(tensor);
@@ -823,7 +840,7 @@ class Tensor implements ffi.Finalizable {
   Tensor pow(dynamic exponent) {
     final arena = ffi.Arena();
     try {
-      final exponentScalar = FFIScalar.allocate(arena);
+      final exponentScalar = CScalar.allocate(arena);
       exponentScalar.ref.setValue(exponent);
       final tensor = FFITensor.pow(nativePtr, exponentScalar.ref);
       return Tensor(tensor);
@@ -1215,11 +1232,20 @@ class Device {
   }
 
   @override
+  bool operator ==(Object other) {
+    if (other is! Device) return false;
+    return deviceType == other.deviceType && deviceIndex == other.deviceIndex;
+  }
+
+  @override
   String toString() => '$deviceType:$deviceIndex';
 
   static const cpu = Device(deviceType: DeviceType.cpu, deviceIndex: -1);
 
   static bool get isCudaAvailable => FFIDevice.isCudaAvailable();
+
+  @override
+  int get hashCode => Object.hashAll([deviceType.type, deviceIndex]);
 }
 
 class DataType {

@@ -31,9 +31,9 @@ class Generator {
   static Generator getDefault({Device? device}) {
     final arena = Arena();
     try {
-      Pointer<FFIDevice> devicePtr = nullptr;
+      Pointer<CDevice> devicePtr = nullptr;
       if (device != null) {
-        devicePtr = FFIDevice.make(
+        devicePtr = CDevice.make(
           deviceType: device.deviceType,
           deviceIndex: device.deviceIndex,
           allocator: arena,

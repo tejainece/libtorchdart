@@ -1,17 +1,5 @@
 import 'package:libtorchdart/libtorchdart.dart';
 
-class Context {
-  bool isTraining;
-
-  Device device;
-
-  Context({required this.isTraining, required this.device});
-
-  factory Context.best({bool isTraining = false}) {
-    return Context(isTraining: isTraining, device: Device.best());
-  }
-}
-
 abstract class Module {
   String name;
 
@@ -65,4 +53,36 @@ abstract class EmbeddableModule implements Module {
 
 abstract class InplaceModule implements Module {
   void forward_(Tensor x, {required Context context});
+}
+
+class Context {
+  bool isTraining;
+
+  Device device;
+
+  Context({required this.isTraining, required this.device});
+
+  factory Context.best({bool isTraining = false}) {
+    return Context(isTraining: isTraining, device: Device.best());
+  }
+
+  void loadModule(Module module) {
+    for (final parameter in module.parameters) {
+      final device = parameter.device;
+      if (device == this.device) continue;
+      parameter.to_(device: this.device);
+    }
+  }
+}
+
+class Offloader {
+  // TODO track tensors that are onloaded
+
+  void load() {
+    // TODO
+  }
+
+  void makeSpace() {
+    // TODO
+  }
 }

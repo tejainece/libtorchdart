@@ -3,6 +3,8 @@ import 'package:libtorchdart/src/autoencoder/encoder_block.dart';
 import 'package:test/test.dart';
 
 void main() async {
+  final context = Context.best();
+
   final tests = <_TestCase>[];
   final testDataFiles = [
     './test_data/vae/down_encoder/down_encoder_simple.safetensors',
@@ -36,7 +38,7 @@ void main() async {
             'Resnet $i: ${r.conv1.numInChannels}→${r.conv1.numOutChannels}, ${r.conv2.numInChannels}→${r.conv2.numOutChannels}${r.convShortcut != null ? ", shortcut: ${r.convShortcut!.numInChannels}→${r.convShortcut!.numOutChannels}" : ""}',
           );
         }
-        final output = test.block.forward(test.input);
+        final output = test.block.forward(test.input, context: context);
 
         expect(output.shape, equals(test.output.shape));
         final result = test.output.allCloseSlow(output, atol: 1e-02);

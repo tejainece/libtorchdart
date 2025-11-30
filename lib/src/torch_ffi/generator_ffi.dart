@@ -7,8 +7,8 @@ typedef CGenerator = Pointer<Void>;
 abstract class FFIGenerator {
   static final getDefaultGenerator = nativeLib
       .lookupFunction<
-        CGenerator Function(Pointer<FFIDevice>),
-        CGenerator Function(Pointer<FFIDevice>)
+        CGenerator Function(Pointer<CDevice>),
+        CGenerator Function(Pointer<CDevice>)
       >('torchffi_get_default_generator');
 
   static final getCurrentSeed = nativeLib

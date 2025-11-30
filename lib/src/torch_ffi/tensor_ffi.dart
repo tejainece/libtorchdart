@@ -85,44 +85,44 @@ abstract class FFITensor {
 
   static final empty = nativeLib
       .lookupFunction<
-        CTensor Function(Pointer<Int64>, Size, FFITensorOptions),
-        CTensor Function(Pointer<Int64>, int dims, FFITensorOptions)
+        CTensor Function(Pointer<Int64>, Size, CTensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, CTensorOptions)
       >('torchffi_tensor_new_empty');
 
   static final zeros = nativeLib
       .lookupFunction<
-        CTensor Function(Pointer<Int64>, Size, FFITensorOptions),
-        CTensor Function(Pointer<Int64>, int dims, FFITensorOptions)
+        CTensor Function(Pointer<Int64>, Size, CTensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, CTensorOptions)
       >('torchffi_tensor_new_zeros');
 
   static final ones = nativeLib
       .lookupFunction<
-        CTensor Function(Pointer<Int64>, Size, FFITensorOptions),
-        CTensor Function(Pointer<Int64>, int dims, FFITensorOptions)
+        CTensor Function(Pointer<Int64>, Size, CTensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, CTensorOptions)
       >('torchffi_tensor_new_ones');
 
   static final arange = nativeLib
       .lookupFunction<
-        CTensor Function(Int64 end, FFITensorOptions),
-        CTensor Function(int end, FFITensorOptions)
+        CTensor Function(Int64 end, CTensorOptions),
+        CTensor Function(int end, CTensorOptions)
       >('torchffi_tensor_new_arange');
 
   static final rand = nativeLib
       .lookupFunction<
-        CTensor Function(Pointer<Int64>, Size, CGenerator, FFITensorOptions),
-        CTensor Function(Pointer<Int64>, int dims, CGenerator, FFITensorOptions)
+        CTensor Function(Pointer<Int64>, Size, CGenerator, CTensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, CGenerator, CTensorOptions)
       >('torchffi_tensor_new_rand');
 
   static final randn = nativeLib
       .lookupFunction<
-        CTensor Function(Pointer<Int64>, Size, CGenerator, FFITensorOptions),
-        CTensor Function(Pointer<Int64>, int dims, CGenerator, FFITensorOptions)
+        CTensor Function(Pointer<Int64>, Size, CGenerator, CTensorOptions),
+        CTensor Function(Pointer<Int64>, int dims, CGenerator, CTensorOptions)
       >('torchffi_tensor_new_randn');
 
   static final eye = nativeLib
       .lookupFunction<
-        CTensor Function(Int64, Int64, FFITensorOptions),
-        CTensor Function(int n, int m, FFITensorOptions options)
+        CTensor Function(Int64, Int64, CTensorOptions),
+        CTensor Function(int n, int m, CTensorOptions options)
       >('torchffi_tensor_new_eye');
 
   static final fromBlob = nativeLib
@@ -131,13 +131,13 @@ abstract class FFITensor {
           Pointer<Void>,
           Pointer<Int64>,
           Size dims,
-          FFITensorOptions,
+          CTensorOptions,
         ),
         CTensor Function(
           Pointer<Void>,
           Pointer<Int64>,
           int dims,
-          FFITensorOptions,
+          CTensorOptions,
         )
       >('torchffi_tensor_new_from_blob');
 
@@ -164,8 +164,8 @@ abstract class FFITensor {
 
   static final fill_ = nativeLib
       .lookupFunction<
-        Void Function(CTensor, FFIScalar),
-        void Function(CTensor, FFIScalar)
+        Void Function(CTensor, CScalar),
+        void Function(CTensor, CScalar)
       >('torchffi_tensor_fill_');
 
   static final rand_ = nativeLib
@@ -199,20 +199,20 @@ abstract class FFITensor {
 
   static final tensorGetDevice = nativeLib
       .lookupFunction<
-        FFIDevice Function(CTensor),
-        FFIDevice Function(CTensor tensor)
+        CDevice Function(CTensor),
+        CDevice Function(CTensor tensor)
       >('torchffi_tensor_device');
 
   static final scalar = nativeLib
       .lookupFunction<
-        FFIScalar Function(CTensor),
-        FFIScalar Function(CTensor tensor)
+        CScalar Function(CTensor),
+        CScalar Function(CTensor tensor)
       >('torchffi_tensor_scalar');
 
   static final scalarAt = nativeLib
       .lookupFunction<
-        FFIScalar Function(CTensor, Int64),
-        FFIScalar Function(CTensor, int)
+        CScalar Function(CTensor, Int64),
+        CScalar Function(CTensor, int)
       >('torchffi_tensor_scalar_at');
 
   static final get = nativeLib
@@ -228,10 +228,10 @@ abstract class FFITensor {
 
   static final to = nativeLib
       .lookupFunction<
-        CTensor Function(CTensor, FFITensorOptions, Bool, Bool),
+        CTensor Function(CTensor, CTensorOptions, Bool, Bool),
         CTensor Function(
           CTensor tensor,
-          FFITensorOptions,
+          CTensorOptions,
           bool nonBlocking,
           bool copy,
         )
@@ -315,6 +315,11 @@ abstract class FFITensor {
         CTensor Function(CTensor, int)
       >('torchffi_tensor_unsqueeze');
 
+  static final elementSize = nativeLib
+      .lookupFunction<Int64 Function(CTensor), int Function(CTensor)>(
+        'torchffi_tensor_element_size',
+      );
+
   static final pad = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Pointer<Int64>, Size, Uint8, Pointer<Double>),
@@ -341,14 +346,14 @@ abstract class FFITensor {
 
   static final addition = nativeLib
       .lookupFunction<
-        CTensor Function(CTensor, CTensor, FFIScalar alpha),
-        CTensor Function(CTensor tensor1, CTensor tensor2, FFIScalar alpha)
+        CTensor Function(CTensor, CTensor, CScalar alpha),
+        CTensor Function(CTensor tensor1, CTensor tensor2, CScalar alpha)
       >('torchffi_tensor_addition');
 
   static final subtraction = nativeLib
       .lookupFunction<
-        CTensor Function(CTensor, CTensor, FFIScalar alpha),
-        CTensor Function(CTensor tensor1, CTensor tensor2, FFIScalar alpha)
+        CTensor Function(CTensor, CTensor, CScalar alpha),
+        CTensor Function(CTensor tensor1, CTensor tensor2, CScalar alpha)
       >('torchffi_tensor_subtraction');
 
   static final multiplication = nativeLib
@@ -365,8 +370,8 @@ abstract class FFITensor {
 
   static final divisionScalar = nativeLib
       .lookupFunction<
-        CTensor Function(CTensor, FFIScalar),
-        CTensor Function(CTensor tensor, FFIScalar scalar)
+        CTensor Function(CTensor, CScalar),
+        CTensor Function(CTensor tensor, CScalar scalar)
       >('torchffi_tensor_division_scalar');
 
   static final clone = nativeLib
@@ -377,8 +382,8 @@ abstract class FFITensor {
 
   static final pow = nativeLib
       .lookupFunction<
-        CTensor Function(CTensor, FFIScalar),
-        CTensor Function(CTensor tensor, FFIScalar exponent)
+        CTensor Function(CTensor, CScalar),
+        CTensor Function(CTensor tensor, CScalar exponent)
       >('torchffi_tensor_pow');
 
   static final rsqrt = nativeLib

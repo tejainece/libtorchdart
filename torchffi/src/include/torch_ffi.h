@@ -146,6 +146,8 @@ extern tensor torchffi_tensor_squeeze(tensor t, int64_t *dim);
 
 extern tensor torchffi_tensor_unsqueeze(tensor t, int64_t dim);
 
+extern int64_t torchffi_tensor_element_size(tensor t);
+
 extern tensor torchffi_tensor_pad(tensor t, int64_t *pad, size_t padArrayLength,
                                   uint8_t padMode, double *value);
 

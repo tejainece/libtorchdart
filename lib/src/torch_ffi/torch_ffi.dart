@@ -21,16 +21,16 @@ String getLibraryPath() {
 
 final DynamicLibrary nativeLib = DynamicLibrary.open(getLibraryPath());
 
-final class FFIDevice extends Struct {
+final class CDevice extends Struct {
   @Int8()
   external int deviceType;
   @Int8()
   external int deviceIndex;
 
-  static Pointer<FFIDevice> allocate(Allocator allocator) =>
-      allocator.allocate<FFIDevice>(sizeOf<FFIDevice>());
+  static Pointer<CDevice> allocate(Allocator allocator) =>
+      allocator.allocate<CDevice>(sizeOf<CDevice>());
 
-  static Pointer<FFIDevice> make({
+  static Pointer<CDevice> make({
     required DeviceType deviceType,
     required int deviceIndex,
     required Allocator allocator,
@@ -40,25 +40,20 @@ final class FFIDevice extends Struct {
     device.ref.deviceIndex = deviceIndex;
     return device;
   }
-
-  static final isCudaAvailable = nativeLib
-      .lookupFunction<Bool Function(), bool Function()>(
-        'torchffi_is_cuda_available',
-      );
 }
 
-final class FFITensorOptions extends Struct {
+final class CTensorOptions extends Struct {
   external Pointer<Int8> dataType;
-  external Pointer<FFIDevice> device;
+  external Pointer<CDevice> device;
   external Pointer<Int8> layout;
   external Pointer<Int8> memoryFormat;
   external Pointer<Bool> requiresGrad;
   external Pointer<Bool> pinnedMemory;
 
-  static Pointer<FFITensorOptions> allocate(Allocator allocator) =>
-      allocator.allocate<FFITensorOptions>(sizeOf<FFITensorOptions>());
+  static Pointer<CTensorOptions> allocate(Allocator allocator) =>
+      allocator.allocate<CTensorOptions>(sizeOf<CTensorOptions>());
 
-  static Pointer<FFITensorOptions> make({
+  static Pointer<CTensorOptions> make({
     required DataType? dataType,
     required Device? device,
     required Layout? layout,
@@ -73,7 +68,7 @@ final class FFITensorOptions extends Struct {
         ..value = dataType.type;
     }
     if (device != null) {
-      options.ref.device = FFIDevice.make(
+      options.ref.device = CDevice.make(
         deviceType: device.deviceType,
         deviceIndex: device.deviceIndex,
         allocator: allocator,
@@ -110,7 +105,7 @@ final class _ScalarValue extends Union {
   external double d;
 }
 
-final class FFIScalar extends Struct {
+final class CScalar extends Struct {
   @Int8()
   external int dataType;
 
@@ -156,6 +151,13 @@ final class FFIScalar extends Struct {
     }
   }
 
-  static Pointer<FFIScalar> allocate(Allocator allocator) =>
-      malloc.allocate<FFIScalar>(sizeOf<FFIScalar>());
+  static Pointer<CScalar> allocate(Allocator allocator) =>
+      malloc.allocate<CScalar>(sizeOf<CScalar>());
+}
+
+abstract class FFIDevice {
+  static final isCudaAvailable = nativeLib
+      .lookupFunction<Bool Function(), bool Function()>(
+        'torchffi_is_cuda_available',
+      );
 }
