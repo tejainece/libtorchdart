@@ -100,7 +100,6 @@ class Offloader {
     if (modules.contains(module)) return;
 
     int requiredMemory = module.parameters.fold(0, (previousValue, element) {
-      print('element.device: ${element.device}, device: $device');
       if (element.device == device) return previousValue;
       return previousValue + element.elementSize;
     });

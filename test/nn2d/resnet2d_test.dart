@@ -32,8 +32,8 @@ void main() async {
 
         expect(output.shape, equals(test.output.shape));
 
-        final result = test.output.allCloseSlow(output, atol: 1e-02);
-        print(result);
+        /*final result = test.output.allCloseSlow(output, atol: 1e-02);
+        print(result);*/
         expect(
           test.output.allClose(output, atol: 1e-02),
           isTrue,

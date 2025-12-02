@@ -1,4 +1,5 @@
 import 'dart:ffi' as ffi;
+import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
@@ -758,6 +759,9 @@ class Tensor implements ffi.Finalizable {
     double atol = 1e-08,
     bool equalNan = false,
   }) {
+    if (!ListEquality().equals(shape, other.shape)) {
+      return false;
+    }
     return FFITensor.allClose(nativePtr, other.nativePtr, rtol, atol, equalNan);
   }
 

@@ -70,13 +70,18 @@ class MmapSafeTensorLoader extends SafeTensorLoader {
 
     final dataPointer = _pointer + header.dataOffset + info.startOffset;
 
-    return Tensor.fromBlob(
+    final tensor = Tensor.fromBlob(
       dataPointer.cast<Void>(),
       info.shape,
       datatype: datatype,
-      device: device,
+      device: Device.cpu,
       // TODO other parameters
     );
+
+    if (device.deviceType != DeviceType.cpu) {
+      return tensor.to(device: device);
+    }
+    return tensor;
   }
 
   @override

@@ -251,7 +251,29 @@ enum PadMode {
   constant,
   reflect,
   replicate,
-  circular,
+  circular;
+
+  static PadMode? tryFromPytorchString(String? value) {
+    if (value == null) return null;
+    return fromPytorchString(value);
+  }
+
+  static PadMode fromPytorchString(String value) {
+    switch (value) {
+      case '':
+      case 'constant':
+      case 'zeros':
+        return PadMode.constant;
+      case 'reflect':
+        return PadMode.reflect;
+      case 'replicate':
+        return PadMode.replicate;
+      case 'circular':
+        return PadMode.circular;
+      default:
+        throw UnimplementedError('Unknown pad mode: $value');
+    }
+  }
 }
 
 class Padding2D {
