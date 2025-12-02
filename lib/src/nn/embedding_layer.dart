@@ -34,6 +34,7 @@ class EmbeddingLayer extends Module implements SimpleModule {
 
   @override
   Tensor forward(Tensor x, {required Context context}) {
+    context.onloadModule(this);
     return NNUtil.embedding(
       weights,
       x,
@@ -121,6 +122,7 @@ class Dropout extends Module implements SimpleModule, InplaceModule {
 
   @override
   Tensor forward(Tensor x, {required Context context}) {
+    context.onloadModule(this);
     if (p == 0.0 || !context.isTraining) return x;
     return NNUtil.dropout(x, p, training: context.isTraining);
   }
@@ -156,6 +158,7 @@ class LinearLayer extends Module implements SimpleModule {
 
   @override
   Tensor forward(Tensor x, {required Context context}) {
+    context.onloadModule(this);
     return NNUtil.linear(x, weight, bias: bias);
   }
 

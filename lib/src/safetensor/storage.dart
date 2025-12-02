@@ -18,9 +18,9 @@ abstract class SafeTensorLoader {
     return false;
   }
 
-  FutureOr<Tensor> loadByName(String name);
+  FutureOr<Tensor> loadByName(String name, {Device device = Device.cpu});
 
-  FutureOr<Tensor?> tryLoadByName(String name);
+  FutureOr<Tensor?> tryLoadByName(String name, {Device device = Device.cpu});
 }
 
 class FileIOSafeTensorLoader extends SafeTensorLoader {
@@ -30,13 +30,13 @@ class FileIOSafeTensorLoader extends SafeTensorLoader {
   FileIOSafeTensorLoader({required this.header});
 
   @override
-  Tensor loadByName(String name) {
+  Tensor loadByName(String name, {Device device = Device.cpu}) {
     // TODO
     throw UnimplementedError();
   }
 
   @override
-  Tensor? tryLoadByName(String name) {
+  Tensor? tryLoadByName(String name, {Device device = Device.cpu}) {
     // TODO
     throw UnimplementedError();
   }
@@ -59,7 +59,7 @@ class MmapSafeTensorLoader extends SafeTensorLoader {
   }) : _pointer = pointer;
 
   @override
-  Tensor? tryLoadByName(String name) {
+  Tensor? tryLoadByName(String name, {Device device = Device.cpu}) {
     final info = header.tensorInfos[name];
     if (info == null) return null;
 
@@ -74,13 +74,14 @@ class MmapSafeTensorLoader extends SafeTensorLoader {
       dataPointer.cast<Void>(),
       info.shape,
       datatype: datatype,
-      device: Device.cpu, // TODO
+      device: device,
+      // TODO other parameters
     );
   }
 
   @override
-  Tensor loadByName(String name) {
-    final tensor = tryLoadByName(name);
+  Tensor loadByName(String name, {Device device = Device.cpu}) {
+    final tensor = tryLoadByName(name, device: device);
     if (tensor == null) {
       throw Exception('Tensor $name not found');
     }
@@ -152,13 +153,13 @@ class CudaGDSSafeTensorLoader extends SafeTensorLoader {
   CudaGDSSafeTensorLoader({required this.header});
 
   @override
-  Tensor loadByName(String name) {
+  Tensor loadByName(String name, {Device device = Device.cpu}) {
     // TODO
     throw UnimplementedError();
   }
 
   @override
-  Tensor? tryLoadByName(String name) {
+  Tensor? tryLoadByName(String name, {Device device = Device.cpu}) {
     // TODO
     throw UnimplementedError();
   }

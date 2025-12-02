@@ -76,6 +76,7 @@ class Conv2D extends Module implements SimpleModule {
 
   @override
   Tensor forward(Tensor input, {required Context context}) {
+    context.onloadModule(this);
     if (customPad == null) {
       return NN2DUtil.conv2d(
         input,
@@ -224,6 +225,7 @@ class Conv2DTransposed extends Module implements SimpleModule {
 
   @override
   Tensor forward(Tensor x, {required Context context}) {
+    context.onloadModule(this);
     // TODO: implement forward
     throw UnimplementedError();
   }

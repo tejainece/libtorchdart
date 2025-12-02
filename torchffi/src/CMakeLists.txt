@@ -15,7 +15,7 @@ else()
   message(STATUS "libtorch ${libtorch_VERSION} - found")
 endif()
 
-add_library(torchffi SHARED torch_ffi.cpp generator.cpp)
+add_library(torchffi SHARED torch_ffi.cpp generator.cpp device.cpp)
 target_include_directories(torchffi PRIVATE ./include)
 target_include_directories(torchffi PRIVATE ../libtorch/include)
 target_include_directories(torchffi PRIVATE ../libtorch/include/torch/csrc/api/include)

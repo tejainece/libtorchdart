@@ -2,9 +2,7 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
-import 'generator.dart';
 
-export 'generator.dart';
 export 'nn.dart';
 
 class Tensor implements ffi.Finalizable {
@@ -15,11 +13,18 @@ class Tensor implements ffi.Finalizable {
 
   Tensor(this.nativePtr, {this.shouldDelete = true, this.name}) {
     if (shouldDelete) {
-      _finalizer.attach(this, nativePtr);
+      _finalizer.attach(this, nativePtr, detach: this);
     }
   }
 
   static final _finalizer = ffi.NativeFinalizer(FFITensor.delete);
+
+  void release() {
+    if (shouldDelete) {
+      _finalizer.detach(this);
+      FFITensor.deleteTensor(nativePtr);
+    }
+  }
 
   static Tensor empty(
     List<int> sizes, {
@@ -255,7 +260,7 @@ class Tensor implements ffi.Finalizable {
 
   static Tensor from(
     // TODO this should also accept int data and TypedList
-    List<double> data,
+    List<num> data,
     List<int> sizes, {
     String? name,
     required DataType datatype,
@@ -267,10 +272,46 @@ class Tensor implements ffi.Finalizable {
   }) {
     final arena = ffi.Arena();
     try {
-      final dataPointer = arena.allocate<ffi.Double>(
-        data.length * ffi.sizeOf<ffi.Double>(),
-      );
-      dataPointer.asTypedList(data.length).setAll(0, data);
+      ffi.Pointer<ffi.Void> dataPointer;
+      if (datatype == DataType.float) {
+        final ptr = arena.allocate<ffi.Float>(
+          data.length * ffi.sizeOf<ffi.Float>(),
+        );
+        ptr.asTypedList(data.length).setAll(0, data.cast<double>());
+        dataPointer = ptr.cast<ffi.Void>();
+      } else if (datatype == DataType.float64) {
+        final ptr = arena.allocate<ffi.Double>(
+          data.length * ffi.sizeOf<ffi.Double>(),
+        );
+        ptr.asTypedList(data.length).setAll(0, data.cast<double>());
+        dataPointer = ptr.cast<ffi.Void>();
+      } else if (datatype == DataType.int64) {
+        final ptr = arena.allocate<ffi.Int64>(
+          data.length * ffi.sizeOf<ffi.Int64>(),
+        );
+        ptr.asTypedList(data.length).setAll(0, data.cast<int>());
+        dataPointer = ptr.cast<ffi.Void>();
+      } else if (datatype == DataType.int32) {
+        final ptr = arena.allocate<ffi.Int32>(
+          data.length * ffi.sizeOf<ffi.Int32>(),
+        );
+        ptr.asTypedList(data.length).setAll(0, data.cast<int>());
+        dataPointer = ptr.cast<ffi.Void>();
+      } else if (datatype == DataType.int16) {
+        final ptr = arena.allocate<ffi.Int16>(
+          data.length * ffi.sizeOf<ffi.Int16>(),
+        );
+        ptr.asTypedList(data.length).setAll(0, data.cast<int>());
+        dataPointer = ptr.cast<ffi.Void>();
+      } else if (datatype == DataType.int8) {
+        final ptr = arena.allocate<ffi.Int8>(
+          data.length * ffi.sizeOf<ffi.Int8>(),
+        );
+        ptr.asTypedList(data.length).setAll(0, data.cast<int>());
+        dataPointer = ptr.cast<ffi.Void>();
+      } else {
+        throw Exception('Unsupported data type: $datatype');
+      }
 
       final options = CTensorOptions.make(
         dataType: datatype,
@@ -619,7 +660,42 @@ class Tensor implements ffi.Finalizable {
     bool copy = false,
     bool nonblocking = false,
   }) {
-    // TODO
+    final arena = ffi.Arena();
+    try {
+      final options = CTensorOptions.make(
+        dataType: dataType,
+        device: device,
+        layout: layout,
+        memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
+        allocator: arena,
+      );
+      final newTensorPtr = FFITensor.to(
+        nativePtr,
+        options.ref,
+        nonblocking,
+        copy,
+      );
+
+      if (nativePtr == newTensorPtr) return;
+
+      // Release the old tensor
+      if (shouldDelete) {
+        _finalizer.detach(this);
+        FFITensor.deleteTensor(nativePtr);
+      }
+
+      // Update to the new tensor
+      nativePtr = newTensorPtr;
+
+      // Attach finalizer to the new tensor
+      if (shouldDelete) {
+        _finalizer.attach(this, nativePtr, detach: this);
+      }
+    } finally {
+      arena.releaseAll();
+    }
   }
 
   Tensor contiguous({MemoryFormat format = MemoryFormat.contiguous}) {
@@ -1135,118 +1211,6 @@ class Slice implements Index {
 }
 
 enum GeluApporimate { none, tanh }
-
-class DeviceType {
-  final String name;
-  final int type;
-
-  const DeviceType(this.name, this.type);
-
-  @override
-  String toString() => name;
-
-  static const cpu = DeviceType('CPU', 0);
-  static const cuda = DeviceType('CUDA', 1);
-  static const mkldnn = DeviceType('MKLDNN', 2);
-  static const opengl = DeviceType('OpenGL', 3);
-  static const opencl = DeviceType('OpenCL', 4);
-  static const ideep = DeviceType('IDEEP', 5);
-  static const hip = DeviceType('HIP', 6);
-  static const fpga = DeviceType('FPGA', 7);
-
-  /// ONNX Runtime / Microsoft
-  static const maia = DeviceType('MAIA', 8);
-  static const xla = DeviceType('XLA', 9);
-  static const vulkan = DeviceType('Vulkan', 10);
-  static const metal = DeviceType('Metal', 11);
-  static const xpu = DeviceType('XPU', 12);
-  static const mps = DeviceType('MPS', 13);
-
-  /// Meta (tensors with no data)
-  static const meta = DeviceType('Meta', 14);
-
-  /// HPU / HABANA
-  static const hpu = DeviceType('HPU', 15);
-  // // SX-Aurora / NEC
-  static const ve = DeviceType('VE', 16);
-
-  /// Lazy Tensors
-  static const lazy = DeviceType('Lazy', 17);
-
-  /// Graphcore IPU
-  static const ipu = DeviceType('IPU', 18);
-
-  /// Meta training and inference devices
-  static const mtia = DeviceType('MTIA', 19);
-
-  static DeviceType fromId(int type) =>
-      _byId[type] ?? DeviceType('Unknown', type);
-
-  static final Map<int, DeviceType> _byId = Map.fromEntries(
-    list.map((v) => MapEntry(v.type, v)),
-  );
-
-  static const List<DeviceType> list = [
-    cpu,
-    cuda,
-    mkldnn,
-    opengl,
-    opencl,
-    ideep,
-    hip,
-    fpga,
-    maia,
-    xla,
-    vulkan,
-    metal,
-    xpu,
-    mps,
-    meta,
-    hpu,
-    ve,
-    lazy,
-    ipu,
-    mtia,
-  ];
-}
-
-class Device {
-  final DeviceType deviceType;
-  final int deviceIndex;
-
-  const Device({required this.deviceType, required this.deviceIndex});
-
-  factory Device.cuda([int deviceIndex = 0]) =>
-      Device(deviceType: DeviceType.cuda, deviceIndex: deviceIndex);
-
-  factory Device.tryCuda([int deviceIndex = 0]) {
-    if (!isCudaAvailable) return Device.cpu;
-    return Device.cuda(deviceIndex);
-  }
-
-  factory Device.best() {
-    if (isCudaAvailable) return Device.cuda();
-    // TODO check for metal
-    // TODO check for mps
-    return Device.cpu;
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (other is! Device) return false;
-    return deviceType == other.deviceType && deviceIndex == other.deviceIndex;
-  }
-
-  @override
-  String toString() => '$deviceType:$deviceIndex';
-
-  static const cpu = Device(deviceType: DeviceType.cpu, deviceIndex: -1);
-
-  static bool get isCudaAvailable => FFIDevice.isCudaAvailable();
-
-  @override
-  int get hashCode => Object.hashAll([deviceType.type, deviceIndex]);
-}
 
 class DataType {
   final String? name;

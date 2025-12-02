@@ -30,6 +30,7 @@ class LayerNorm extends Module implements Normalization {
 
   @override
   Tensor forward(Tensor x, {Tensor? embeds, required Context context}) {
+    context.onloadModule(this);
     return NNUtil.layerNorm(
       x,
       normalizedShape,
@@ -155,6 +156,7 @@ class GroupNorm extends Module implements Normalization {
 
   @override
   Tensor forward(Tensor x, {required Context context}) {
+    context.onloadModule(this);
     return NNUtil.groupNorm(x, numGroups, weight: weight, bias: bias, eps: eps);
   }
 
@@ -261,6 +263,7 @@ class RMSNorm extends Module implements Normalization {
 
   @override
   Tensor forward(Tensor x, {required Context context}) {
+    context.onloadModule(this);
     return NNUtil.rmsNorm(x, normalizedShape, weight: weight, eps: eps);
   }
 
@@ -333,6 +336,7 @@ class RMSNormWithBias extends Module implements Normalization {
 
   @override
   Tensor forward(Tensor x, {required Context context}) {
+    context.onloadModule(this);
     Tensor variance = x.pow(2).mean(dim: [-1], keepDim: true);
     x = x * (variance + eps).rsqrt();
 
@@ -435,6 +439,7 @@ class SpatialNorm extends Module implements Normalization {
 
   @override
   Tensor forward(Tensor x, {required Context context}) {
+    context.onloadModule(this);
     // TODO
     throw UnimplementedError();
   }

@@ -1,10 +1,14 @@
+#include <ATen/cuda/CUDAContextLight.h>
+#include <cstdint>
 #include <stdlib.h>
 #include <torch/all.h>
 #include <torch_ffi.h>
 
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDACachingAllocator.h>
+#include <c10/cuda/CUDAGuard.h>
+#include <cstring>
 #include <optional>
-
-bool torchffi_is_cuda_available() { return torch::cuda::is_available(); }
 
 at::TensorOptions torchffi_make_tensor_options(TensorOptions options) {
   at::TensorOptions tensorOptions;

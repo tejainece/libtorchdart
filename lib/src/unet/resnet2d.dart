@@ -36,6 +36,7 @@ class ResnetBlock2D extends Module implements EmbeddableModule {
 
   @override
   Tensor forward(Tensor x, {Tensor? embeds, required Context context}) {
+    context.onloadModule(this);
     Tensor inputTensor = x;
 
     Tensor hiddenStates = norm1.forward(x, context: context);

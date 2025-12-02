@@ -3,7 +3,9 @@ import 'package:ffi/ffi.dart';
 
 import 'package:libtorchdart/libtorchdart.dart';
 import 'package:universal_io/io.dart';
+import 'device.dart';
 
+export 'device.dart';
 export 'generator_ffi.dart';
 export 'tensor_ffi.dart';
 
@@ -20,27 +22,6 @@ String getLibraryPath() {
 }
 
 final DynamicLibrary nativeLib = DynamicLibrary.open(getLibraryPath());
-
-final class CDevice extends Struct {
-  @Int8()
-  external int deviceType;
-  @Int8()
-  external int deviceIndex;
-
-  static Pointer<CDevice> allocate(Allocator allocator) =>
-      allocator.allocate<CDevice>(sizeOf<CDevice>());
-
-  static Pointer<CDevice> make({
-    required DeviceType deviceType,
-    required int deviceIndex,
-    required Allocator allocator,
-  }) {
-    final device = allocate(allocator);
-    device.ref.deviceType = deviceType.type;
-    device.ref.deviceIndex = deviceIndex;
-    return device;
-  }
-}
 
 final class CTensorOptions extends Struct {
   external Pointer<Int8> dataType;
@@ -153,11 +134,4 @@ final class CScalar extends Struct {
 
   static Pointer<CScalar> allocate(Allocator allocator) =>
       malloc.allocate<CScalar>(sizeOf<CScalar>());
-}
-
-abstract class FFIDevice {
-  static final isCudaAvailable = nativeLib
-      .lookupFunction<Bool Function(), bool Function()>(
-        'torchffi_is_cuda_available',
-      );
 }

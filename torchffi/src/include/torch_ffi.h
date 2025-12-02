@@ -289,6 +289,22 @@ extern tensor torchffi_generator_get_state(Generator generator);
 
 extern Device torchffi_generator_get_device(Generator generator);
 
+typedef struct CDeviceProperties_t {
+  const char *name;
+  int64_t totalMemory;
+  int64_t multiProcessorCount;
+  int major;
+  int minor;
+} CDeviceProperties;
+
+extern CDeviceProperties *torchffi_cuda_get_device_properties(int deviceIndex);
+
+extern int64_t torchffi_cuda_memory_total(int deviceIndex);
+
+extern int64_t torchffi_cuda_memory_allocated(int8_t deviceIndex, char **error);
+
+extern int64_t torchffi_cuda_memory_reserved(int8_t deviceIndex, char **error);
+
 #ifdef __cplusplus
 }
 #endif

@@ -83,6 +83,10 @@ abstract class FFITensor {
         'torchffi_tensor_delete',
       );
 
+  static void deleteTensor(CTensor tensor) {
+    delete.asFunction<void Function(CTensor)>()(tensor);
+  }
+
   static final empty = nativeLib
       .lookupFunction<
         CTensor Function(Pointer<Int64>, Size, CTensorOptions),
