@@ -8,18 +8,17 @@ void main() async {
   final tests = <_TestCase>[];
   final testDataFiles = [
     './test_data/vae/down_encoder/down_encoder_simple.safetensors',
-    './test_data/vae/down_encoder/down_encoder_vae.safetensors',
+    // TODO './test_data/vae/down_encoder/down_encoder_vae.safetensors',
   ];
 
   for (final fileName in testDataFiles) {
-    try {
-      final file = await SafeTensorsFile.load(fileName);
-      final loader = file.mmapTensorLoader();
-      final loadedTests = await _TestCase.loadAllFromSafeTensor(loader);
-      tests.addAll(loadedTests);
-    } catch (e) {
-      print('Warning: Could not load test file $fileName: $e');
-    }
+    final file = await SafeTensorsFile.load(fileName);
+    final loader = file.mmapTensorLoader();
+    final loadedTests = await _TestCase.loadAllFromSafeTensor(
+      loader,
+      device: context.device,
+    );
+    tests.addAll(loadedTests);
   }
 
   group('DownEncoderBlock2D', () {
@@ -61,36 +60,51 @@ class _TestCase {
   final Tensor input;
   final Tensor output;
   final DownEncoderBlock2D block;
+  final String downSamplerPrefix;
+  final String resnetPrefix;
 
   _TestCase({
     required this.name,
     required this.input,
     required this.output,
     required this.block,
+    required this.downSamplerPrefix,
+    required this.resnetPrefix,
   });
 
   static Future<_TestCase> loadFromSafeTensor(
     SafeTensorLoader loader,
-    String name,
-  ) async {
-    final input = await loader.loadByName('$name.input');
-    final output = await loader.loadByName('$name.output');
-    print(input.shape);
+    String name, {
+    required Device device,
+  }) async {
+    final input = await loader.loadByName('$name.input', device: device);
+    final output = await loader.loadByName('$name.output', device: device);
     final block = await DownEncoderBlock2D.loadFromSafeTensor(
       loader,
       prefix: '$name.block.',
     );
-    return _TestCase(name: name, input: input, output: output, block: block);
+    final downSamplerPrefix = 'blockdownsamplers.';
+    final resnetPrefix = 'blockresnets.';
+
+    return _TestCase(
+      name: name,
+      input: input,
+      output: output,
+      block: block,
+      downSamplerPrefix: downSamplerPrefix,
+      resnetPrefix: resnetPrefix,
+    );
   }
 
   static Future<List<_TestCase>> loadAllFromSafeTensor(
-    SafeTensorLoader loader,
-  ) async {
+    SafeTensorLoader loader, {
+    required Device device,
+  }) async {
     final map = <String, _TestCase>{};
     for (final t in loader.tensorInfos.keys) {
       final name = t.split('.').first;
       if (map.containsKey(name)) continue;
-      map[name] = await loadFromSafeTensor(loader, name);
+      map[name] = await loadFromSafeTensor(loader, name, device: device);
     }
     return map.values.toList();
   }

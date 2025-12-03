@@ -13,7 +13,10 @@ void main() async {
   for (final fileName in testDataFiles) {
     final file = await SafeTensorsFile.load(fileName);
     final loader = file.mmapTensorLoader();
-    final loadedTests = await _TestCase.loadAllFromSafeTensor(loader);
+    final loadedTests = await _TestCase.loadAllFromSafeTensor(
+      loader,
+      device: context.device,
+    );
     tests.addAll(loadedTests);
   }
 
@@ -76,10 +79,11 @@ class _TestCase {
 
   static Future<_TestCase> loadFromSafeTensor(
     SafeTensorLoader loader,
-    String name,
-  ) async {
-    final input = await loader.loadByName('$name.input');
-    final output = await loader.loadByName('$name.output');
+    String name, {
+    required Device device,
+  }) async {
+    final input = await loader.loadByName('$name.input', device: device);
+    final output = await loader.loadByName('$name.output', device: device);
     final padding = SymmetricPadding2D.fromPytorchString(
       loader.header.metadata['$name.padding']!,
     );
@@ -99,13 +103,14 @@ class _TestCase {
   }
 
   static Future<List<_TestCase>> loadAllFromSafeTensor(
-    SafeTensorLoader loader,
-  ) async {
+    SafeTensorLoader loader, {
+    required Device device,
+  }) async {
     final map = <String, _TestCase>{};
     for (final t in loader.tensorInfos.keys) {
       final name = t.split('.').first;
       if (map.containsKey(name)) continue;
-      map[name] = await loadFromSafeTensor(loader, name);
+      map[name] = await loadFromSafeTensor(loader, name, device: device);
     }
     return map.values.toList();
   }

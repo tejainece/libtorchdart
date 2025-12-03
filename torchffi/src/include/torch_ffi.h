@@ -244,6 +244,12 @@ extern tensor torchffi_conv2d(tensor input, tensor weights, tensor bias,
                               int64_t *strides, int64_t *paddings,
                               int64_t *dilations, int64_t groups);
 
+extern tensor torchffi_conv2d_transpose(tensor input, tensor weights,
+                                        tensor bias, int64_t *strides,
+                                        int64_t *paddings,
+                                        int64_t *output_paddings,
+                                        int64_t *dilations, int64_t groups);
+
 extern tensor torchffi_upsample_nearest(tensor input, int64_t *outputSize,
                                         size_t outputSizeLength);
 

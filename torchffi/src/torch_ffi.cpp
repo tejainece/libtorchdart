@@ -576,6 +576,19 @@ tensor torchffi_conv2d(tensor input, tensor weights, tensor bias,
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_conv2d_transpose(tensor input, tensor weights, tensor bias,
+                                 int64_t *strides, int64_t *paddings,
+                                 int64_t *output_paddings, int64_t *dilations,
+                                 int64_t groups) {
+  at::Tensor tensor = torch::conv_transpose2d(
+      *input, *weights,
+      (bias ? std::optional<at::Tensor>(*bias) : ::std::nullopt),
+      at::IntArrayRef(strides, 2), at::IntArrayRef(paddings, 2),
+      at::IntArrayRef(output_paddings, 2), groups,
+      at::IntArrayRef(dilations, 2));
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_upsample_nearest(tensor input, int64_t *outputSize,
                                  size_t outputSizeLength) {
   at::Tensor tensor;

@@ -48,7 +48,9 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
   static Future<DownEncoderBlock2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
-    bool addDownsample = true,
+    String name = 'down_block',
+    String resnetPrefix = 'resnets.',
+    String downsamplePrefix = 'downsamplers.',
     double resnetEps = 1e-6,
     Activation resnetActFn = Activation.silu,
     int resnetGroups = 32,
@@ -56,43 +58,62 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
     double dropout = 0.0,
   }) async {
     final resnets = <ResnetBlock2D>[];
-    for (var i = 0; true; i++) {
-      final name = '${prefix}resnets.$i.';
-      if (!loader.hasTensorWithPrefix(name)) break;
+    int resnetIndex = 0;
+    while (loader.hasTensorWithPrefix('$prefix$resnetPrefix$resnetIndex.') ||
+        resnetIndex > 0) {
       resnets.add(
         await ResnetBlock2D.loadFromSafeTensor(
           loader,
-          prefix: name,
+          prefix: '$prefix$resnetPrefix$resnetIndex.',
           eps: resnetEps,
           activation: resnetActFn,
           numGroups: resnetGroups,
           dropout: dropout,
         ),
       );
+      resnetIndex++;
     }
-    // TODO verify that resnets are not empty
+
+    if (resnets.isEmpty) {
+      throw Exception('No resnets loaded');
+    }
 
     final numOutChannels = resnets.last.conv2.numOutChannels;
 
     final downSamplers = <SimpleModule>[];
-    if (addDownsample) {
+    int downSamplerIndex = 0;
+    while (loader.hasTensorWithPrefix(
+          '$prefix$downsamplePrefix$downSamplerIndex.',
+        ) ||
+        downSamplerIndex > 0) {
       downSamplers.add(
         await DownSample2D.loadFromSafeTensor(
           loader,
-          prefix: '${prefix}downsamplers.0.',
+          prefix: '$prefix$downsamplePrefix$downSamplerIndex.',
           numChannels: numOutChannels,
           padding: downsamplePadding,
         ),
       );
+      downSamplerIndex++;
     }
 
-    return DownEncoderBlock2D(resnets: resnets, downSamplers: downSamplers);
+    return DownEncoderBlock2D(
+      name: name,
+      resnets: resnets,
+      downSamplers: downSamplers,
+    );
   }
 
   static DownEncoderBlock2D make({
     required int numInChannels,
     required int numOutChannels,
     required int numLayers,
+    bool addDownsample = true,
+    double resnetEps = 1e-6,
+    Activation resnetActFn = Activation.silu,
+    int resnetGroups = 32,
+    SymmetricPadding2D downsamplePadding = const SymmetricPadding2D.same(1),
+    double dropout = 0.0,
   }) {
     // TODO
     throw UnimplementedError();
