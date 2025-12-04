@@ -241,6 +241,12 @@ abstract class FFITensor {
         )
       >('torchffi_tensor_to');
 
+  static final copy_ = nativeLib
+      .lookupFunction<
+        Void Function(CTensor, CTensor, Bool),
+        void Function(CTensor, CTensor, bool)
+      >('torchffi_tensor_copy_');
+
   static final index = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Pointer<FFIIndex>, Int64),

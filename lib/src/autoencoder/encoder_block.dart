@@ -50,27 +50,33 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
     String prefix = '',
     String name = 'down_block',
     String resnetPrefix = 'resnets.',
-    String downsamplePrefix = 'downsamplers.',
+    String downSamplePrefix = 'downsamplers.',
     double resnetEps = 1e-6,
     Activation resnetActFn = Activation.silu,
     int resnetGroups = 32,
     SymmetricPadding2D downsamplePadding = const SymmetricPadding2D.same(1),
     double dropout = 0.0,
+    double outputScaleFactor = 1.0,
   }) async {
     final resnets = <ResnetBlock2D>[];
     int resnetIndex = 0;
-    while (loader.hasTensorWithPrefix('$prefix$resnetPrefix$resnetIndex.') ||
-        resnetIndex > 0) {
-      resnets.add(
-        await ResnetBlock2D.loadFromSafeTensor(
-          loader,
-          prefix: '$prefix$resnetPrefix$resnetIndex.',
-          eps: resnetEps,
-          activation: resnetActFn,
-          numGroups: resnetGroups,
-          dropout: dropout,
-        ),
-      );
+    while (true) {
+      final resnetPath = '$prefix$resnetPrefix$resnetIndex.';
+      if (loader.hasTensorWithPrefix(resnetPath)) {
+        resnets.add(
+          await ResnetBlock2D.loadFromSafeTensor(
+            loader,
+            prefix: resnetPath,
+            eps: resnetEps,
+            activation: resnetActFn,
+            numGroups: resnetGroups,
+            dropout: dropout,
+            outputScaleFactor: outputScaleFactor,
+          ),
+        );
+      } else {
+        if (resnetIndex != 0) break;
+      }
       resnetIndex++;
     }
 
@@ -82,18 +88,20 @@ class DownEncoderBlock2D extends Module implements EmbeddableModule {
 
     final downSamplers = <SimpleModule>[];
     int downSamplerIndex = 0;
-    while (loader.hasTensorWithPrefix(
-          '$prefix$downsamplePrefix$downSamplerIndex.',
-        ) ||
-        downSamplerIndex > 0) {
-      downSamplers.add(
-        await DownSample2D.loadFromSafeTensor(
-          loader,
-          prefix: '$prefix$downsamplePrefix$downSamplerIndex.',
-          numChannels: numOutChannels,
-          padding: downsamplePadding,
-        ),
-      );
+    while (true) {
+      final downSamplerPath = '$prefix$downSamplePrefix$downSamplerIndex.';
+      if (loader.hasTensorWithPrefix(downSamplerPath)) {
+        downSamplers.add(
+          await DownSample2D.loadFromSafeTensor(
+            loader,
+            prefix: downSamplerPath,
+            numChannels: numOutChannels,
+            padding: downsamplePadding,
+          ),
+        );
+      } else {
+        if (downSamplerIndex != 0) break;
+      }
       downSamplerIndex++;
     }
 

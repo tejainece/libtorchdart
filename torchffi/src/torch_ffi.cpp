@@ -209,6 +209,10 @@ tensor torchffi_tensor_to(tensor t, TensorOptions options, bool nonBlocking,
   return new torch::Tensor(tensor);
 }
 
+void torchffi_tensor_copy_(tensor t, tensor src, bool nonBlocking) {
+  t->copy_(*src, nonBlocking);
+}
+
 tensor torchffi_tensor_index(tensor t, Index_t *indices, size_t ndims) {
   std::vector<at::indexing::TensorIndex> indexer;
   for (int i = 0; i < ndims; i++) {

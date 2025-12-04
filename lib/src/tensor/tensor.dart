@@ -699,6 +699,10 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  void copy_(Tensor other, {bool nonBlocking = false}) {
+    FFITensor.copy_(nativePtr, other.nativePtr, nonBlocking);
+  }
+
   Tensor contiguous({MemoryFormat format = MemoryFormat.contiguous}) {
     final tensor = FFITensor.contiguous(nativePtr, format.id);
     return Tensor(tensor);

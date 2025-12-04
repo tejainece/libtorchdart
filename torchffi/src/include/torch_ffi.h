@@ -118,6 +118,8 @@ extern int8_t torchffi_tensor_get_datatype(tensor t);
 extern tensor torchffi_tensor_to(tensor t, TensorOptions options,
                                  bool nonBlocking, bool copy);
 
+extern void torchffi_tensor_copy_(tensor t, tensor src, bool nonBlocking);
+
 extern tensor torchffi_tensor_index(tensor t, Index_t *indices, size_t ndims);
 
 extern tensor torchffi_tensor_view(tensor t, int64_t *sizes, size_t ndims);

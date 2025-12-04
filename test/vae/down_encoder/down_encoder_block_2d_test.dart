@@ -7,8 +7,8 @@ void main() async {
 
   final tests = <_TestCase>[];
   final testDataFiles = [
-    './test_data/vae/down_encoder/down_encoder_simple.safetensors',
-    // TODO './test_data/vae/down_encoder/down_encoder_vae.safetensors',
+    './test_data/vae/down_encoder/downencoder_simple.safetensors',
+    './test_data/vae/down_encoder/downencoder_vae.safetensors',
   ];
 
   for (final fileName in testDataFiles) {
@@ -30,18 +30,11 @@ void main() async {
 
       for (final test in tests) {
         print('Running test: ${test.name}');
-        print('Block has ${test.block.resnets.length} resnets');
-        for (var i = 0; i < test.block.resnets.length; i++) {
-          final r = test.block.resnets[i];
-          print(
-            'Resnet $i: ${r.conv1.numInChannels}→${r.conv1.numOutChannels}, ${r.conv2.numInChannels}→${r.conv2.numOutChannels}${r.convShortcut != null ? ", shortcut: ${r.convShortcut!.numInChannels}→${r.convShortcut!.numOutChannels}" : ""}',
-          );
-        }
         final output = test.block.forward(test.input, context: context);
 
         expect(output.shape, equals(test.output.shape));
-        final result = test.output.allCloseSlow(output, atol: 1e-02);
-        print(result);
+        /*final result = test.output.allCloseSlow(output, atol: 1e-02);
+        print(result);*/
 
         expect(
           test.output.allClose(output, atol: 1e-02),
@@ -60,16 +53,12 @@ class _TestCase {
   final Tensor input;
   final Tensor output;
   final DownEncoderBlock2D block;
-  final String downSamplerPrefix;
-  final String resnetPrefix;
 
   _TestCase({
     required this.name,
     required this.input,
     required this.output,
     required this.block,
-    required this.downSamplerPrefix,
-    required this.resnetPrefix,
   });
 
   static Future<_TestCase> loadFromSafeTensor(
@@ -79,21 +68,26 @@ class _TestCase {
   }) async {
     final input = await loader.loadByName('$name.input', device: device);
     final output = await loader.loadByName('$name.output', device: device);
+    final resnetEps = double.parse(loader.header.metadata['$name.resnet_eps']!);
+    final activation = Activation.fromName(
+      loader.header.metadata['$name.resnet_act_fn']!,
+    )!;
+    final downsamplePadding = SymmetricPadding2D.fromPytorchString(
+      loader.header.metadata['$name.downsample_padding']!,
+    );
     final block = await DownEncoderBlock2D.loadFromSafeTensor(
       loader,
       prefix: '$name.block.',
+      resnetEps: resnetEps,
+      resnetActFn: activation,
+      resnetGroups: int.parse(loader.header.metadata['$name.resnet_groups']!),
+      downsamplePadding: downsamplePadding,
+      outputScaleFactor: double.parse(
+        loader.header.metadata['$name.output_scale_factor']!,
+      ),
     );
-    final downSamplerPrefix = 'blockdownsamplers.';
-    final resnetPrefix = 'blockresnets.';
 
-    return _TestCase(
-      name: name,
-      input: input,
-      output: output,
-      block: block,
-      downSamplerPrefix: downSamplerPrefix,
-      resnetPrefix: resnetPrefix,
-    );
+    return _TestCase(name: name, input: input, output: output, block: block);
   }
 
   static Future<List<_TestCase>> loadAllFromSafeTensor(
