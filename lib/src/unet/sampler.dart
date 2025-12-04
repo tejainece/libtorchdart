@@ -6,7 +6,7 @@ import 'package:libtorchdart/src/nn/pooling.dart';
 /// A 2D upsampling layer with an optional convolution.
 class Upsample2D extends Module implements SimpleModule {
   final Normalization? norm;
-  final Conv2D? conv;
+  final Conv2DInterface? conv;
   final bool interpolate;
 
   Upsample2D({
@@ -89,7 +89,7 @@ class Upsample2D extends Module implements SimpleModule {
     if (conv != null) conv!,
   ];
 
-  bool get useConvTransposed => conv is Conv2DTransposed;
+  bool get useConvTransposed => conv is Conv2DTranspose;
 
   int? get numInChannels {
     if (norm != null) {
@@ -146,9 +146,17 @@ class Upsample2D extends Module implements SimpleModule {
       }
     }
 
-    Conv2D? conv;
+    Conv2DInterface? conv;
     if (useConvTransposed) {
-      throw UnimplementedError();
+      if (loader.hasTensorWithPrefix('$prefix$convName')) {
+        conv = await Conv2DTranspose.loadFromSafeTensor(
+          loader,
+          prefix: '$prefix$convName.',
+          name: convName,
+          padding: padding,
+        );
+        assert(numChannels == (conv as Conv2DTranspose).numInChannels);
+      }
     } else {
       if (loader.hasTensorWithPrefix('$prefix$convName')) {
         conv = await Conv2D.loadFromSafeTensor(
@@ -204,11 +212,18 @@ class Upsample2D extends Module implements SimpleModule {
       }
     }
 
-    Conv2D? conv;
+    Conv2DInterface? conv;
     if (useConvTransposed) {
       kernelSize ??= SymmetricPadding2D.same(4);
-
-      throw UnimplementedError();
+      conv = Conv2DTranspose.make(
+        name: convName,
+        numInChannels: numChannels,
+        numOutChannels: numOutChannels ?? numChannels,
+        kernelSize: kernelSize,
+        stride: SymmetricPadding2D.same(2),
+        padding: padding,
+        hasBias: hasBias,
+      );
     } else if (useConv) {
       kernelSize ??= SymmetricPadding2D.same(3);
       conv = Conv2D.make(

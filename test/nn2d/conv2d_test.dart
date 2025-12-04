@@ -5,7 +5,7 @@ void main() async {
   final context = Context.best();
 
   final file = await SafeTensorsFile.load(
-    './test_data/conv2d/conv2d_simple.safetensors',
+    './test_data/nn2d/conv2d/conv2d_simple.safetensors',
   );
   final loader = file.mmapTensorLoader();
   final tests = await _TestCase.loadAllFromSafeTensor(

@@ -130,6 +130,16 @@ tensor torchffi_tensor_new_randn(int64_t *sizes, size_t ndims,
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_tensor_new_randint(int64_t low, int64_t high, int64_t *sizes,
+                                   size_t ndims, Generator generator,
+                                   TensorOptions options) {
+  at::Tensor tensor = at::randint(
+      low, high, at::IntArrayRef(sizes, ndims),
+      generator ? std::optional<at::Generator>(*generator) : std::nullopt,
+      torchffi_make_tensor_options(options));
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_new_eye(int64_t n, int64_t m, TensorOptions options) {
   at::Tensor tensor = at::eye(n, m, torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
@@ -389,6 +399,15 @@ tensor torchffi_tensor_subtraction(tensor a, tensor b, Scalar alpha) {
     opAlpha = at::Scalar(alpha.value.d);
   }
   at::Tensor tensor = a->sub(*b, opAlpha);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_cat(tensor *tensors, int64_t tensorsLength, int64_t dim) {
+  std::vector<at::Tensor> tensorList;
+  for (int i = 0; i < tensorsLength; i++) {
+    tensorList.push_back(*tensors[i]);
+  }
+  at::Tensor tensor = torch::cat(tensorList, dim);
   return new torch::Tensor(tensor);
 }
 

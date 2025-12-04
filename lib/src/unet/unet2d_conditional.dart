@@ -122,6 +122,7 @@ class TimestepEmbedding extends Module implements SimpleModule {
     required this.act,
   });
 
+  @override
   Tensor forward(Tensor sample, {required Context context}) {
     sample = linear1.forward(sample, context: context);
     sample = act.forward(sample, context: context);

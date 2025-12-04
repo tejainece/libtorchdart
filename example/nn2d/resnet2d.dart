@@ -16,25 +16,5 @@ void main() {
     numTembChannels: 128,
   );
   final out = resnet.forward(sample, embeds: temb, context: context);
-  //print('Basic block output shape: ${out.shape}');
-  //print(out);
-
-  /*
-  // Block with time embedding projection
-  final resnetTemb = ResnetBlock2D.make(
-    numInChannels: 32,
-    numOutChannels: 128,
-    tembChannels: 128,
-  );
-  final outTemb = resnetTemb.forward(sample, embeds: temb);
-  print('Block with temb output shape: ${outTemb.shape}');
-
-  // Block with channel mismatch (shortcut)
-  final resnetShortcut = ResnetBlock2D.make(
-    numInChannels: 32,
-    numOutChannels: 64,
-  );
-  final outShortcut = resnetShortcut.forward(sample, embeds: temb);
-  print('Block with shortcut output shape: ${outShortcut.shape}');
-  */
+  print(out);
 }

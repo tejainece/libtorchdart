@@ -123,6 +123,26 @@ abstract class FFITensor {
         CTensor Function(Pointer<Int64>, int dims, CGenerator, CTensorOptions)
       >('torchffi_tensor_new_randn');
 
+  static final randint = nativeLib
+      .lookupFunction<
+        CTensor Function(
+          Int64,
+          Int64,
+          Pointer<Int64>,
+          Size,
+          CGenerator,
+          CTensorOptions,
+        ),
+        CTensor Function(
+          int low,
+          int high,
+          Pointer<Int64>,
+          int dims,
+          CGenerator,
+          CTensorOptions,
+        )
+      >('torchffi_tensor_new_randint');
+
   static final eye = nativeLib
       .lookupFunction<
         CTensor Function(Int64, Int64, CTensorOptions),
@@ -650,6 +670,30 @@ abstract class FFINN2D {
           int groups,
         )
       >('torchffi_conv2d');
+
+  static final conv2dTranspose = nativeLib
+      .lookupFunction<
+        CTensor Function(
+          CTensor,
+          CTensor,
+          CTensor,
+          Pointer<Int64>,
+          Pointer<Int64>,
+          Pointer<Int64>,
+          Pointer<Int64>,
+          Int64,
+        ),
+        CTensor Function(
+          CTensor input,
+          CTensor weight,
+          CTensor bias,
+          Pointer<Int64> stride,
+          Pointer<Int64> padding,
+          Pointer<Int64> outputPadding,
+          Pointer<Int64> dilation,
+          int groups,
+        )
+      >('torchffi_conv2d_transpose');
 
   static final avgPool2D = nativeLib
       .lookupFunction<

@@ -92,6 +92,11 @@ extern tensor torchffi_tensor_new_randn(int64_t *sizes, size_t ndims,
                                         Generator generator,
                                         TensorOptions options);
 
+extern tensor torchffi_tensor_new_randint(int64_t low, int64_t high,
+                                          int64_t *sizes, size_t ndims,
+                                          Generator generator,
+                                          TensorOptions options);
+
 extern void *torchffi_tensor_data_pointer(tensor t);
 
 extern size_t torchffi_tensor_dim(tensor t);
@@ -175,6 +180,8 @@ extern bool torchffi_tensor_allclose(tensor a, tensor b, double rtol,
 extern tensor torchffi_tensor_addition(tensor a, tensor b, Scalar alpha);
 
 extern tensor torchffi_tensor_subtraction(tensor a, tensor b, Scalar alpha);
+
+extern tensor torchffi_cat(tensor *tensors, int64_t tensorsLength, int64_t dim);
 
 extern tensor torchffi_tensor_multiplication(tensor a, tensor b);
 

@@ -229,6 +229,49 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  static Tensor randint(
+    int high,
+    List<int> sizes, {
+    int low = 0,
+    String? name,
+    Generator? generator,
+    Device? device,
+    DataType? datatype,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
+  }) {
+    CGenerator cGenerator = generator?.nativePtr ?? ffi.nullptr;
+    final arena = ffi.Arena();
+    try {
+      final options = CTensorOptions.make(
+        dataType: datatype,
+        device: device,
+        layout: layout,
+        memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
+        allocator: arena,
+      );
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = FFITensor.randint(
+        low,
+        high,
+        sizesPointer,
+        sizes.length,
+        cGenerator,
+        options.ref,
+      );
+      return Tensor(tensor, name: name);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   static Tensor eye(
     int n, {
     String? name,

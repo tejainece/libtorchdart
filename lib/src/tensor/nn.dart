@@ -158,18 +158,9 @@ abstract class NN2DUtil {
     Tensor input,
     Tensor weight, {
     Tensor? bias,
-    SymmetricPadding2D stride = const SymmetricPadding2D(
-      vertical: 1,
-      horizontal: 1,
-    ),
-    SymmetricPadding2D padding = const SymmetricPadding2D(
-      vertical: 0,
-      horizontal: 0,
-    ),
-    SymmetricPadding2D dilation = const SymmetricPadding2D(
-      vertical: 1,
-      horizontal: 1,
-    ),
+    SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
+    SymmetricPadding2D padding = const SymmetricPadding2D.same(0),
+    SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
     int groups = 1,
   }) {
     final arena = ffi.Arena();
@@ -198,6 +189,58 @@ abstract class NN2DUtil {
         bias?.nativePtr ?? ffi.nullptr,
         stridePointer,
         paddingPointer,
+        dilationPointer,
+        groups,
+      );
+      return Tensor(tensorPtr);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  static Tensor conv2dTranspose(
+    Tensor input,
+    Tensor weight, {
+    Tensor? bias,
+    SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
+    SymmetricPadding2D padding = const SymmetricPadding2D.same(0),
+    SymmetricPadding2D outputPadding = const SymmetricPadding2D.same(0),
+    SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
+    int groups = 1,
+  }) {
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Int64> stridePointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * 2,
+      );
+      stridePointer.value = stride.vertical;
+      (stridePointer + 1).value = stride.horizontal;
+
+      ffi.Pointer<ffi.Int64> paddingPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * 2,
+      );
+      paddingPointer.value = padding.vertical;
+      (paddingPointer + 1).value = padding.horizontal;
+
+      ffi.Pointer<ffi.Int64> outputPaddingPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * 2,
+      );
+      outputPaddingPointer.value = outputPadding.vertical;
+      (outputPaddingPointer + 1).value = outputPadding.horizontal;
+
+      ffi.Pointer<ffi.Int64> dilationPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * 2,
+      );
+      dilationPointer.value = dilation.vertical;
+      (dilationPointer + 1).value = dilation.horizontal;
+
+      final tensorPtr = FFINN2D.conv2dTranspose(
+        input.nativePtr,
+        weight.nativePtr,
+        bias?.nativePtr ?? ffi.nullptr,
+        stridePointer,
+        paddingPointer,
+        outputPaddingPointer,
         dilationPointer,
         groups,
       );

@@ -2,15 +2,39 @@ import 'dart:math';
 
 import 'package:libtorchdart/libtorchdart.dart';
 
-class Conv2D extends Module implements SimpleModule {
+abstract class Conv2DInterface extends SimpleModule {
+  Tensor get weight;
+  Tensor? get bias;
+
+  SymmetricPadding2D get stride;
+
+  SymmetricPadding2D? get padding;
+
+  SymmetricPadding2D get dilation;
+
+  int get groups;
+
+  int get numInChannels;
+  int get numOutChannels;
+}
+
+class Conv2D extends Module implements SimpleModule, Conv2DInterface {
+  @override
   final Tensor weight;
+
+  @override
   final Tensor? bias;
+
+  @override
   final SymmetricPadding2D stride;
 
   /// Padding used with [padMode]
   final Conv2DPad? customPad;
+  @override
   final SymmetricPadding2D? padding;
+  @override
   final SymmetricPadding2D dilation;
+  @override
   final int groups;
 
   Conv2D(
@@ -118,8 +142,10 @@ class Conv2D extends Module implements SimpleModule {
   @override
   final Iterable<Module> submodules = const [];
 
+  @override
   int get numInChannels => weight.shape[1] * groups;
 
+  @override
   int get numOutChannels => weight.shape[0] * groups;
 
   SymmetricPadding2D get kernelSize {
@@ -211,32 +237,69 @@ class Conv2D extends Module implements SimpleModule {
   }
 }
 
-class Conv2DTransposed extends Module implements SimpleModule {
+/// Applies a 2D transposed convolution operator over an input image
+/// composed of several input planes.
+///
+/// This module can be seen as the gradient of Conv2d with respect to its input.
+/// It is also known as a fractionally-strided convolution or
+/// a deconvolution (although it is not an actual deconvolution operation as it does
+/// not compute a true inverse of convolution). For more information, see the visualizations
+/// [here](https://github.com/vdumoulin/conv_arithmetic/blob/master/README.md) and the
+/// [Deconvolutional Networks](https://www.matthewzeiler.com/mattzeiler/deconvolutionalnetworks.pdf) paper.
+class Conv2DTranspose extends Module implements Conv2DInterface {
+  @override
   final Tensor weight;
+  @override
   final Tensor? bias;
+  @override
+  final SymmetricPadding2D stride;
+  @override
+  final SymmetricPadding2D padding;
+  final SymmetricPadding2D outputPadding;
+  @override
+  final SymmetricPadding2D dilation;
+  @override
   final int groups;
 
-  Conv2DTransposed(
+  Conv2DTranspose(
     this.weight, {
     super.name = 'conv',
     this.bias,
     this.groups = 1,
-  });
-
-  @override
-  Tensor forward(Tensor x, {required Context context}) {
-    context.onloadModule(this);
-    // TODO: implement forward
-    throw UnimplementedError();
+    this.stride = const SymmetricPadding2D.same(1),
+    this.padding = const SymmetricPadding2D.same(0),
+    this.outputPadding = const SymmetricPadding2D.same(0),
+    this.dilation = const SymmetricPadding2D.same(1),
+  }) : assert(groups > 0) {
+    assert(numInChannels % groups == 0);
+    assert(numOutChannels % groups == 0);
   }
 
   @override
-  // TODO: implement meta
-  Map<String, dynamic> get meta => throw UnimplementedError();
+  Tensor forward(Tensor input, {required Context context}) {
+    context.onloadModule(this);
+    return NN2DUtil.conv2dTranspose(
+      input,
+      weight,
+      bias: bias,
+      stride: stride,
+      padding: padding,
+      outputPadding: outputPadding,
+      dilation: dilation,
+      groups: groups,
+    );
+  }
 
   @override
-  void resetParameters() {
-    // TODO: implement resetParameters
+  void resetParameters({Generator? generator}) {
+    Init.kaimingUniform_(weight, a: sqrt(5), generator: generator);
+    if (bias != null) {
+      final fan = Init.calculateKaimingFan(weight);
+      if (fan.fanIn != 0) {
+        double bound = 1.0 / sqrt(fan.fanIn);
+        bias!.uniform_(from: -bound, to: bound, generator: generator);
+      }
+    }
   }
 
   @override
@@ -244,6 +307,105 @@ class Conv2DTransposed extends Module implements SimpleModule {
 
   @override
   final Iterable<Module> submodules = const [];
+
+  /// For transposed convolution, weight shape is [inChannels, outChannels/groups, kH, kW]
+  @override
+  int get numInChannels => weight.shape[0] * groups;
+
+  /// For transposed convolution, weight shape is [inChannels, outChannels/groups, kH, kW]
+  @override
+  int get numOutChannels => weight.shape[1] * groups;
+
+  SymmetricPadding2D get kernelSize {
+    final size = weight.shape;
+    return SymmetricPadding2D(vertical: size[2], horizontal: size[3]);
+  }
+
+  @override
+  late final Map<String, dynamic> meta = {
+    "inChannel": numInChannels,
+    "outChannel": numOutChannels,
+    "kernelSize": kernelSize.to2List(),
+    "stride": stride.to2List(),
+    "padding": padding.to2List(),
+    "outputPadding": outputPadding.to2List(),
+    "dilation": dilation.to2List(),
+    "groups": groups,
+  };
+
+  @override
+  String toString() =>
+      'Conv2DTransposed(${meta.entries.map((e) => '${e.key}: ${e.value}').join(', ')})';
+
+  static Future<Conv2DTranspose> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+    String name = 'conv',
+    int groups = 1,
+    SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
+    SymmetricPadding2D padding = const SymmetricPadding2D.same(0),
+    SymmetricPadding2D outputPadding = const SymmetricPadding2D.same(0),
+    SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
+  }) async {
+    final weight = await loader.loadByName('${prefix}weight');
+    Tensor? bias;
+    if (loader.hasTensor('${prefix}bias')) {
+      bias = await loader.loadByName('${prefix}bias');
+    }
+
+    return Conv2DTranspose(
+      weight,
+      name: name,
+      bias: bias,
+      groups: groups,
+      padding: padding,
+      stride: stride,
+      outputPadding: outputPadding,
+      dilation: dilation,
+    );
+  }
+
+  static Conv2DTranspose make({
+    String name = 'conv',
+    required int numInChannels,
+    required int numOutChannels,
+    SymmetricPadding2D kernelSize = const SymmetricPadding2D.same(3),
+    int groups = 1,
+    SymmetricPadding2D stride = const SymmetricPadding2D.same(1),
+    SymmetricPadding2D padding = const SymmetricPadding2D.same(0),
+    SymmetricPadding2D outputPadding = const SymmetricPadding2D.same(0),
+    SymmetricPadding2D dilation = const SymmetricPadding2D.same(1),
+    bool hasBias = true,
+    Generator? generator,
+    DataType? dataType,
+    Device? device,
+  }) {
+    // For transposed convolution, weight shape is [inChannels, outChannels/groups, kH, kW]
+    Tensor weights = Tensor.empty(
+      [
+        numInChannels,
+        numOutChannels ~/ groups,
+        kernelSize.vertical,
+        kernelSize.horizontal,
+      ],
+      datatype: dataType,
+      device: device,
+    );
+    Tensor? bias;
+    if (hasBias) {
+      bias = Tensor.empty([numOutChannels], datatype: dataType, device: device);
+    }
+    return Conv2DTranspose(
+      weights,
+      name: name,
+      bias: bias,
+      groups: groups,
+      stride: stride,
+      padding: padding,
+      outputPadding: outputPadding,
+      dilation: dilation,
+    )..resetParameters(generator: generator);
+  }
 }
 
 enum PadMode {

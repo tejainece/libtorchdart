@@ -1,4 +1,18 @@
 {
+    "cmake.sourceDirectory": "${workspaceFolder}/torchffi/src",
+    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 0, ContinuationIndentWidth: 2, AlignWithOpenBracket: BlockIndent, AlignAfterOpenBracket: BlockIndent}",
+    "editor.formatOnSave": true,
+    "debug.toolBarLocation": "docked",
+    "clangd.fallbackFlags": [
+        "-I${workspaceFolder}/torchffi/src/include",
+        "-I${workspaceFolder}/torchffi/libtorch/include/torch/csrc/api/include",
+        "-I${workspaceFolder}/torchffi/libtorch/include"
+    ],
+    "python.defaultInterpreterPath": "${workspaceFolder}/test_gen/venv/bin/python",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.useLibraryCodeForTypes": true,
+    "editor.suggest.insertMode": "insert",
     "files.associations": {
         "all.h": "c",
         "array": "cpp",
@@ -101,13 +115,4 @@
         "expected": "cpp",
         "cfenv": "cpp"
     },
-    "cmake.sourceDirectory": "${workspaceFolder}/torchffi/src",
-    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 0, ContinuationIndentWidth: 2, AlignWithOpenBracket: BlockIndent, AlignAfterOpenBracket: BlockIndent}",
-    "editor.formatOnSave": true,
-    "debug.toolBarLocation": "docked",
-    "clangd.fallbackFlags": [
-        "-I${workspaceFolder}/torchffi/src/include",
-        "-I${workspaceFolder}/torchffi/libtorch/include/torch/csrc/api/include",
-        "-I${workspaceFolder}/torchffi/libtorch/include"
-    ]
 }
