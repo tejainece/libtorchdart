@@ -14,6 +14,10 @@ if(NOT Torch_FOUND)
 else()
   message(STATUS "libtorch ${libtorch_VERSION} - found")
 endif()
+# Define WITH_CUDA for non-mac platforms
+if(NOT APPLE)
+  add_definitions(-DWITH_CUDA)
+endif()
 
 add_library(torchffi SHARED torch_ffi.cpp generator.cpp device.cpp)
 target_include_directories(torchffi PRIVATE ./include)

@@ -1,12 +1,8 @@
-#include <ATen/cuda/CUDAContextLight.h>
 #include <cstdint>
-#include <stdlib.h>
+#include <cstdlib>
 #include <torch/all.h>
 #include <torch_ffi.h>
 
-#include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDACachingAllocator.h>
-#include <c10/cuda/CUDAGuard.h>
 #include <cstring>
 #include <optional>
 
@@ -72,6 +68,10 @@ at::Scalar torchffi_to_scalar(Scalar alpha) {
   }
   return opAlpha;
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void torchffi_tensor_delete(tensor t) { delete t; }
 
@@ -199,9 +199,14 @@ Scalar torchffi_tensor_scalar(tensor t) {
   }
 }
 
-Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index) {
-  auto tensor = torch::Tensor(t->select(0, index));
-  return torchffi_tensor_scalar(&tensor);
+Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index, char **error) {
+  try {
+    auto tensor = torch::Tensor(t->select(0, index));
+    return torchffi_tensor_scalar(&tensor);
+  } catch (const std::exception &e) {
+    *error = strdup(e.what());
+    return Scalar_t();
+  }
 }
 
 tensor torchffi_tensor_get(tensor t, int index) {
@@ -411,6 +416,34 @@ tensor torchffi_cat(tensor *tensors, int64_t tensorsLength, int64_t dim) {
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_stack(tensor *tensors, int64_t tensorsLength, int64_t dim) {
+  std::vector<at::Tensor> tensorList;
+  for (int i = 0; i < tensorsLength; i++) {
+    tensorList.push_back(*tensors[i]);
+  }
+  at::Tensor tensor = torch::stack(tensorList, dim);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_select_dim(tensor t, int64_t dim, int64_t index) {
+  at::Tensor tensor = t->select(dim, index);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_slice(tensor t, int64_t dim, int64_t start, int64_t end,
+                             int64_t step) {
+  at::Tensor tensor = t->slice(dim, start, end, step);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_full(int64_t *sizes, size_t ndims, Scalar fillValue,
+                     TensorOptions options) {
+  at::Scalar opFillValue = torchffi_to_scalar(fillValue);
+  at::Tensor tensor = at::full(at::IntArrayRef(sizes, ndims), opFillValue,
+                               torchffi_make_tensor_options(options));
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_multiplication(tensor a, tensor b) {
   at::Tensor tensor = a->mul(*b);
   return new torch::Tensor(tensor);
@@ -451,6 +484,19 @@ tensor torchffi_tensor_cos(tensor input) {
 tensor torchffi_tensor_exp(tensor input) {
   at::Tensor tensor = torch::exp(*input);
   return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_norm(tensor input, Scalar p, int64_t *dim,
+                            size_t dimLength, bool keepdim) {
+  at::Scalar opP = torchffi_to_scalar(p);
+  if (dim != nullptr) {
+    at::IntArrayRef opDim(dim, dimLength);
+    at::Tensor result = torch::norm(*input, opP, opDim, keepdim);
+    return new torch::Tensor(result);
+  } else {
+    at::Tensor result = torch::norm(*input, opP);
+    return new torch::Tensor(result);
+  }
 }
 
 tensor torchffi_tensor_bitwise_not(tensor a) {
@@ -582,7 +628,7 @@ tensor torchffi_embedding_renorm_(tensor weights, tensor indices,
 }
 
 tensor torchffi_embedding(tensor weights, tensor indices, int64_t paddingIdx,
-                          bool scaleGradByFreq, bool sparse) {
+                          uint8_t scaleGradByFreq, uint8_t sparse) {
   at::Tensor tensor =
       torch::embedding(*weights, *indices, paddingIdx, scaleGradByFreq, sparse);
   return new torch::Tensor(tensor);
@@ -739,3 +785,7 @@ tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH,
                       : std::nullopt);
   return new torch::Tensor(tensor);
 }
+
+#ifdef __cplusplus
+}
+#endif

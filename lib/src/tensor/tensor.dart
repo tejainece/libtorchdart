@@ -502,8 +502,22 @@ class Tensor implements ffi.Finalizable {
   }
 
   dynamic scalarAt(int index) {
-    final scalar = FFITensor.scalarAt(nativePtr, index);
-    return scalar.value;
+    final errorPtr = ffi.malloc.allocate<ffi.Pointer<ffi.Utf8>>(
+      ffi.sizeOf<ffi.Pointer<ffi.Utf8>>(),
+    );
+    try {
+      errorPtr.value = ffi.nullptr;
+      final scalar = FFITensor.scalarAt(nativePtr, index, errorPtr);
+      if (errorPtr.value != ffi.nullptr) {
+        final error = errorPtr.value.toDartString();
+        throw Exception(error);
+      }
+      return scalar.value;
+    } finally {
+      final dataPtr = errorPtr.value;
+      if (dataPtr != ffi.nullptr) ffi.malloc.free(dataPtr);
+      ffi.malloc.free(errorPtr);
+    }
   }
 
   Tensor operator [](int index) => get(index);
@@ -996,6 +1010,61 @@ class Tensor implements ffi.Finalizable {
     return Tensor(tensor);
   }
 
+  /// Compute the matrix or vector norm
+  ///
+  /// Returns the matrix norm or vector norm of a given tensor.
+  ///
+  /// Args:
+  ///   p: The order of norm. Can be a number, 'fro' for Frobenius norm,
+  ///      'nuc' for nuclear norm, or inf/-inf. Default is 2 (L2 norm).
+  ///      Common values:
+  ///      - 1: L1 norm (sum of absolute values)
+  ///      - 2: L2 norm (Euclidean norm, default)
+  ///      - double.infinity: infinity norm (max absolute value)
+  ///   dim: Dimensions to compute norm over. If null, computes norm over all dimensions
+  ///   keepDim: Whether to keep the reduced dimensions
+  ///
+  /// Returns:
+  ///   Tensor containing the norm values
+  ///
+  /// Example:
+  /// ```dart
+  /// final t = Tensor.from([3.0, 4.0], [2], datatype: DataType.float32);
+  /// final l2 = t.norm(2); // sqrt(3^2 + 4^2) = 5.0
+  /// final l1 = t.norm(1); // |3| + |4| = 7.0
+  ///
+  /// final matrix = Tensor.from([1.0, 2.0, 3.0, 4.0], [2, 2], datatype: DataType.float32);
+  /// final colNorms = matrix.norm(2, dim: [0]); // Norm of each column
+  /// ```
+  Tensor norm(num p, {List<int>? dim, bool keepDim = false}) {
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Int64> dimPointer = ffi.nullptr;
+      int dimLen = 0;
+      if (dim != null) {
+        dimLen = dim.length;
+        dimPointer = arena.allocate<ffi.Int64>(
+          ffi.sizeOf<ffi.Int64>() * dim.length,
+        );
+        dimPointer.asTypedList(dim.length).setAll(0, dim);
+      }
+
+      final scalar = CScalar.allocate(arena);
+      scalar.ref.setValue(p);
+
+      final tensor = FFITensor.norm(
+        nativePtr,
+        scalar.ref,
+        dimPointer,
+        dimLen,
+        keepDim,
+      );
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   Tensor bitwiseNot() {
     final tensor = FFITensor.bitwiseNot(nativePtr);
     return Tensor(tensor);
@@ -1157,6 +1226,157 @@ class Tensor implements ffi.Finalizable {
       }
       final tensor = FFITensor.cat(tensorsPtr, tensors.length, dim);
       return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  /// Stack tensors along a new dimension
+  ///
+  /// Concatenates a sequence of tensors along a new dimension.
+  /// All tensors need to be of the same size.
+  ///
+  /// Args:
+  ///   tensors: List of tensors to stack
+  ///   dim: Dimension to insert. Has to be between 0 and the number of dimensions of concatenated tensors (inclusive)
+  ///
+  /// Returns:
+  ///   Stacked tensor with one additional dimension
+  ///
+  /// Example:
+  /// ```dart
+  /// final a = Tensor.from([1.0, 2.0], [2], datatype: DataType.float32);
+  /// final b = Tensor.from([3.0, 4.0], [2], datatype: DataType.float32);
+  /// final stacked = Tensor.stack([a, b], dim: 0);
+  /// // stacked.shape == [2, 2]
+  /// ```
+  static Tensor stack(List<Tensor> tensors, {int dim = 0}) {
+    final arena = ffi.Arena();
+    try {
+      final tensorsPtr = arena.allocate<CTensor>(
+        ffi.sizeOf<CTensor>() * tensors.length,
+      );
+      for (int i = 0; i < tensors.length; i++) {
+        (tensorsPtr + i).value = tensors[i].nativePtr;
+      }
+      final tensor = FFITensor.stack(tensorsPtr, tensors.length, dim);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  /// Select a slice of this tensor along the given dimension at the given index
+  ///
+  /// This is equivalent to tensor[index] along a specific dimension.
+  /// The returned tensor has the given dimension removed.
+  ///
+  /// Args:
+  ///   dim: Dimension to slice
+  ///   index: Index to select
+  ///
+  /// Returns:
+  ///   Tensor with one less dimension
+  ///
+  /// Example:
+  /// ```dart
+  /// final t = Tensor.from([1.0, 2.0, 3.0, 4.0], [2, 2], datatype: DataType.float32);
+  /// final selected = t.select(0, 1); // Select second row
+  /// // selected.shape == [2]
+  /// // selected == [3.0, 4.0]
+  /// ```
+  Tensor select(int dim, int index) {
+    final tensor = FFITensor.selectDim(nativePtr, dim, index);
+    return Tensor(tensor);
+  }
+
+  /// Slice this tensor along the given dimension
+  ///
+  /// Returns a tensor that is a narrowed version of this tensor.
+  /// The dimension dim is sliced in the range [start, end) with the given step.
+  ///
+  /// Args:
+  ///   dim: Dimension to slice
+  ///   start: Starting index (inclusive)
+  ///   end: Ending index (exclusive). If null, slices to the end
+  ///   step: Step size (default: 1)
+  ///
+  /// Returns:
+  ///   Sliced tensor
+  ///
+  /// Example:
+  /// ```dart
+  /// final t = Tensor.from([1.0, 2.0, 3.0, 4.0, 5.0], [5], datatype: DataType.float32);
+  /// final sliced = t.slice(0, 1, 4); // [2.0, 3.0, 4.0]
+  /// final stepped = t.slice(0, 0, 5, step: 2); // [1.0, 3.0, 5.0]
+  /// ```
+  Tensor slice(int dim, int start, int? end, {int step = 1}) {
+    // PyTorch uses a very large number to represent "end of dimension"
+    final int endIndex = end ?? 9223372036854775807; // max int64
+    final tensor = FFITensor.slice(nativePtr, dim, start, endIndex, step);
+    return Tensor(tensor);
+  }
+
+  /// Create a tensor filled with a scalar value
+  ///
+  /// Creates a tensor of the given shape filled with fillValue.
+  ///
+  /// Args:
+  ///   sizes: Shape of the tensor
+  ///   fillValue: Value to fill the tensor with
+  ///   datatype: Data type of the tensor
+  ///   device: Device to create the tensor on
+  ///   layout: Memory layout
+  ///   memoryFormat: Memory format
+  ///   requiresGrad: Whether to track gradients
+  ///   pinnedMemory: Whether to use pinned memory
+  ///
+  /// Returns:
+  ///   Tensor filled with the specified value
+  ///
+  /// Example:
+  /// ```dart
+  /// final t = Tensor.full([2, 3], 5.0, datatype: DataType.float32);
+  /// // t == [[5.0, 5.0, 5.0], [5.0, 5.0, 5.0]]
+  /// ```
+  static Tensor full(
+    List<int> sizes,
+    dynamic fillValue, {
+    String? name,
+    DataType? datatype,
+    Device? device,
+    Layout? layout,
+    MemoryFormat? memoryFormat,
+    bool? requiresGrad,
+    bool? pinnedMemory,
+  }) {
+    final arena = ffi.Arena();
+    try {
+      final options = CTensorOptions.make(
+        dataType: datatype,
+        device: device,
+        layout: layout,
+        memoryFormat: memoryFormat,
+        requiresGrad: requiresGrad,
+        pinnedMemory: pinnedMemory,
+        allocator: arena,
+      );
+
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+
+      final scalar = CScalar.allocate(arena);
+      scalar.ref.setValue(fillValue);
+
+      final tensor = FFITensor.full(
+        sizesPointer,
+        sizes.length,
+        scalar.ref,
+        options.ref,
+      );
+      return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();
     }

@@ -1,5 +1,4 @@
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/transformers/s3dit/s3dit_config.dart';
 
 /// Feed-forward network (MLP) for S3-DiT
 ///
@@ -61,7 +60,7 @@ class S3DiTMLP extends Module {
   ];
 
   @override
-  late final Iterable<Module> submodules = [fc1, fc2, activationFn, dropout];
+  late final Iterable<Module> submodules = [fc1, fc2, dropout];
 
   @override
   Map<String, dynamic> get meta => {
@@ -86,7 +85,7 @@ class S3DiTMLP extends Module {
     Activation activationFn;
     switch (config.hiddenActivation.toLowerCase()) {
       case 'gelu':
-        activationFn = GELU();
+        activationFn = GeluActivation();
         break;
       case 'silu':
       case 'swish':

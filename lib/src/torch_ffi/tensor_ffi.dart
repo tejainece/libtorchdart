@@ -235,8 +235,8 @@ abstract class FFITensor {
 
   static final scalarAt = nativeLib
       .lookupFunction<
-        CScalar Function(CTensor, Int64),
-        CScalar Function(CTensor, int)
+        CScalar Function(CTensor, Int64, Pointer<Pointer<Utf8>>),
+        CScalar Function(CTensor, int, Pointer<Pointer<Utf8>>)
       >('torchffi_tensor_scalar_at');
 
   static final get = nativeLib
@@ -440,6 +440,18 @@ abstract class FFITensor {
         CTensor Function(CTensor tensor)
       >('torchffi_tensor_exp');
 
+  static final norm = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CScalar, Pointer<Int64>, Size, Bool),
+        CTensor Function(
+          CTensor tensor,
+          CScalar p,
+          Pointer<Int64> dim,
+          int dimLength,
+          bool keepdim,
+        )
+      >('torchffi_tensor_norm');
+
   static final bitwiseNot = nativeLib
       .lookupFunction<
         CTensor Function(CTensor),
@@ -510,7 +522,7 @@ abstract class FFITensor {
       .lookupFunction<
         CTensor Function(CTensor, Int64, Pointer<Int8>),
         CTensor Function(CTensor, int, Pointer<Int8>)
-      >('torchffi_softmax');
+      >('torchffi_tensor_softmax');
 
   static final upsampleNearest = nativeLib
       .lookupFunction<
@@ -557,6 +569,35 @@ abstract class FFITensor {
         CTensor Function(Pointer<CTensor>, Int64, Int64),
         CTensor Function(Pointer<CTensor> tensors, int length, int dim)
       >('torchffi_cat');
+
+  static final stack = nativeLib
+      .lookupFunction<
+        CTensor Function(Pointer<CTensor>, Int64, Int64),
+        CTensor Function(Pointer<CTensor> tensors, int length, int dim)
+      >('torchffi_stack');
+
+  static final selectDim = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64, Int64),
+        CTensor Function(CTensor tensor, int dim, int index)
+      >('torchffi_tensor_select_dim');
+
+  static final slice = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64, Int64, Int64, Int64),
+        CTensor Function(CTensor tensor, int dim, int start, int end, int step)
+      >('torchffi_tensor_slice');
+
+  static final full = nativeLib
+      .lookupFunction<
+        CTensor Function(Pointer<Int64>, Size, CScalar, CTensorOptions),
+        CTensor Function(
+          Pointer<Int64> sizes,
+          int ndims,
+          CScalar fillValue,
+          CTensorOptions options,
+        )
+      >('torchffi_full');
 }
 
 abstract class FFINN {

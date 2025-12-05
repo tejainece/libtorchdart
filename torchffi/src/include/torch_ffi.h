@@ -114,7 +114,7 @@ extern tensor torchffi_tensor_new_from_blob(void *data, int64_t *dims,
 
 extern Scalar_t torchffi_tensor_scalar(tensor t);
 
-extern Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index);
+extern Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index, char **error);
 
 extern tensor torchffi_tensor_get(tensor t, int index);
 
@@ -183,6 +183,17 @@ extern tensor torchffi_tensor_subtraction(tensor a, tensor b, Scalar alpha);
 
 extern tensor torchffi_cat(tensor *tensors, int64_t tensorsLength, int64_t dim);
 
+extern tensor torchffi_stack(tensor *tensors, int64_t tensorsLength,
+                             int64_t dim);
+
+extern tensor torchffi_tensor_select_dim(tensor t, int64_t dim, int64_t index);
+
+extern tensor torchffi_tensor_slice(tensor t, int64_t dim, int64_t start,
+                                    int64_t end, int64_t step);
+
+extern tensor torchffi_full(int64_t *sizes, size_t ndims, Scalar fillValue,
+                            TensorOptions options);
+
 extern tensor torchffi_tensor_multiplication(tensor a, tensor b);
 
 extern tensor torchffi_tensor_division(tensor a, tensor b);
@@ -212,6 +223,9 @@ extern tensor torchffi_tensor_sin(tensor input);
 extern tensor torchffi_tensor_cos(tensor input);
 
 extern tensor torchffi_tensor_exp(tensor input);
+
+extern tensor torchffi_tensor_norm(tensor input, Scalar p, int64_t *dim,
+                                   size_t dimLength, bool keepdim);
 
 extern tensor torchffi_tensor_matmul(tensor a, tensor b);
 

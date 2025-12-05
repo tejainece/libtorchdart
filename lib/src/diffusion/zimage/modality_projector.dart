@@ -52,11 +52,7 @@ class ModalityProjector extends Module {
   ];
 
   @override
-  late final Iterable<Module> submodules = [
-    fc1,
-    if (fc2 != null) fc2!,
-    if (activation != null) activation!,
-  ];
+  late final Iterable<Module> submodules = [fc1, if (fc2 != null) fc2!];
 
   @override
   Map<String, dynamic> get meta => {
@@ -110,7 +106,7 @@ class ModalityProjector extends Module {
     Activation activationFn;
     switch (activation.toLowerCase()) {
       case 'gelu':
-        activationFn = GELU();
+        activationFn = GeluActivation();
         break;
       case 'silu':
       case 'swish':
@@ -164,7 +160,7 @@ class ModalityProjector extends Module {
       outputDim: outputDim,
       fc1: fc1,
       fc2: fc2,
-      activation: isTwoLayer ? GELU() : null,
+      activation: isTwoLayer ? GeluActivation() : null,
     );
   }
 }

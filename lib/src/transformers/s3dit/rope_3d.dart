@@ -91,7 +91,8 @@ class RoPE3D {
     pos = pos.unsqueeze(-1); // [batch, seqLen, 1]
 
     // Compute angles [batch, seqLen, dimPerAxis/2]
-    final Tensor angles = pos.toDouble() * freqs.unsqueeze(0).unsqueeze(0);
+    final Tensor angles =
+        pos.to(dataType: DataType.float32) * freqs.unsqueeze(0).unsqueeze(0);
 
     // Compute cos and sin
     final Tensor cosAngles = angles.cos();
@@ -154,8 +155,12 @@ class RoPE3D {
       }
     }
 
-    Tensor posX = Tensor.fromList(posXList, shape: [height * width]);
-    Tensor posY = Tensor.fromList(posYList, shape: [height * width]);
+    Tensor posX = Tensor.from(posXList, [
+      height * width,
+    ], datatype: DataType.int64);
+    Tensor posY = Tensor.from(posYList, [
+      height * width,
+    ], datatype: DataType.int64);
 
     if (batchSize > 1) {
       posX = posX.unsqueeze(0).expand([batchSize, height * width]);
@@ -177,7 +182,7 @@ class RoPE3D {
     required int seqLen,
     int batchSize = 1,
   }) {
-    Tensor pos = Tensor.arange(0, seqLen, dtype: DataType.int64);
+    Tensor pos = Tensor.arange(seqLen, datatype: DataType.int64);
 
     if (batchSize > 1) {
       pos = pos.unsqueeze(0).expand([batchSize, seqLen]);

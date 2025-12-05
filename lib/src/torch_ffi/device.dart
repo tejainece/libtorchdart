@@ -198,29 +198,37 @@ class CudaDevice extends Device {
   @override
   int get allocatedMemory {
     final errorPtr = malloc.allocate<Pointer<Utf8>>(sizeOf<Pointer<Utf8>>());
-    errorPtr.value = nullptr;
-    final ret = _FFIDevice.cudaMemoryAllocated(deviceIndex, errorPtr);
-    if (errorPtr.value != nullptr) {
-      final error = errorPtr.value.toDartString();
-      malloc.free(errorPtr.value);
+    try {
+      errorPtr.value = nullptr;
+      final ret = _FFIDevice.cudaMemoryAllocated(deviceIndex, errorPtr);
+      if (errorPtr.value != nullptr) {
+        final error = errorPtr.value.toDartString();
+        throw Exception(error);
+      }
+      return ret;
+    } finally {
+      final dataPtr = errorPtr.value;
+      if (dataPtr != nullptr) malloc.free(dataPtr);
       malloc.free(errorPtr);
-      throw Exception(error);
     }
-    return ret;
   }
 
   @override
   int get reservedMemory {
     final errorPtr = malloc.allocate<Pointer<Utf8>>(sizeOf<Pointer<Utf8>>());
-    errorPtr.value = nullptr;
-    final ret = _FFIDevice.cudaMemoryReserved(deviceIndex, errorPtr);
-    if (errorPtr.value != nullptr) {
-      final error = errorPtr.value.toDartString();
-      malloc.free(errorPtr.value);
+    try {
+      errorPtr.value = nullptr;
+      final ret = _FFIDevice.cudaMemoryReserved(deviceIndex, errorPtr);
+      if (errorPtr.value != nullptr) {
+        final error = errorPtr.value.toDartString();
+        throw Exception(error);
+      }
+      return ret;
+    } finally {
+      final dataPtr = errorPtr.value;
+      if (dataPtr != nullptr) malloc.free(dataPtr);
       malloc.free(errorPtr);
-      throw Exception(error);
     }
-    return ret;
   }
 
   @override

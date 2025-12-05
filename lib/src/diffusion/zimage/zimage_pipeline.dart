@@ -2,8 +2,6 @@ import 'package:libtorchdart/libtorchdart.dart';
 import 'package:libtorchdart/src/autoencoder/vae.dart';
 import 'package:libtorchdart/src/diffusion/zimage/zimage_config.dart';
 import 'package:libtorchdart/src/diffusion/zimage/modality_projector.dart';
-import 'package:libtorchdart/src/transformers/s3dit/s3dit_model.dart';
-import 'package:libtorchdart/src/transformers/s3dit/rope_3d.dart';
 
 /// Z-Image Diffusion Pipeline
 ///
@@ -262,9 +260,9 @@ class ZImagePipeline extends Module {
 
     // Extract VAE token predictions (skip text and semantic tokens)
     final Tensor vaePredictions = output.slice(
-      dim: 1,
-      start: textSeqLen,
-      end: textSeqLen + vaeSeqLen,
+      1,
+      textSeqLen,
+      textSeqLen + vaeSeqLen,
     );
 
     // Reshape back to latent format

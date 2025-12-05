@@ -1,10 +1,8 @@
 import 'dart:math';
 import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/transformers/s3dit/s3dit_config.dart';
-import 'package:libtorchdart/src/transformers/s3dit/rope_3d.dart';
 
 /// Multi-head self-attention with cosine QK normalization for S3-DiT
-class S3DiTAttention extends Module {
+class S3DiTAttention extends Module implements SimpleModule {
   final int hiddenSize;
   final int numHeads;
   final int headDim;
@@ -62,7 +60,7 @@ class S3DiTAttention extends Module {
   /// Apply cosine normalization to query and key
   Tensor _cosineNorm(Tensor x) {
     // Normalize along the head dimension
-    final Tensor norm = x.norm(2, dim: -1, keepdim: true);
+    final Tensor norm = x.norm(2, dim: [-1], keepDim: true);
     return x / (norm + 1e-6);
   }
 
@@ -190,7 +188,7 @@ class S3DiTAttention extends Module {
     if (qNorm != null) qNorm!,
     if (kNorm != null) kNorm!,
     attnDropout,
-    if (rope != null) rope!,
+    // Note: rope is not a Module, so it's not included in submodules
   ];
 
   @override

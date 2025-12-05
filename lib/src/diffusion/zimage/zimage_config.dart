@@ -38,7 +38,7 @@ class ZImageConfig {
   /// Scheduler type ('euler', 'ddpm', etc.)
   final String schedulerType;
 
-  const ZImageConfig({
+  ZImageConfig({
     this.s3ditConfig = S3DiTConfig.zImageBase,
     this.vaeLatentChannels = 4,
     this.vaeScaleFactor = 0.18215,
@@ -63,7 +63,7 @@ class ZImageConfig {
   int get numLatentTokens => latentHeight * latentWidth;
 
   /// Default configuration for Z-Image Base
-  static const ZImageConfig zImageBase = ZImageConfig(
+  static final ZImageConfig zImageBase = ZImageConfig(
     s3ditConfig: S3DiTConfig.zImageBase,
     vaeLatentChannels: 4,
     vaeScaleFactor: 0.18215,
@@ -77,7 +77,7 @@ class ZImageConfig {
   );
 
   /// Configuration for Z-Image Turbo (fewer steps)
-  static const ZImageConfig zImageTurbo = ZImageConfig(
+  static final ZImageConfig zImageTurbo = ZImageConfig(
     s3ditConfig: S3DiTConfig.zImageTurbo,
     vaeLatentChannels: 4,
     vaeScaleFactor: 0.18215,
@@ -91,7 +91,7 @@ class ZImageConfig {
   );
 
   /// Configuration for Z-Image Edit (includes semantic vision)
-  static const ZImageConfig zImageEdit = ZImageConfig(
+  static final ZImageConfig zImageEdit = ZImageConfig(
     s3ditConfig: S3DiTConfig.zImageBase,
     vaeLatentChannels: 4,
     vaeScaleFactor: 0.18215,
