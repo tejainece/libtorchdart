@@ -5,7 +5,7 @@ class _TestCase {
   final String name;
   final Tensor input;
   final Tensor output;
-  final Conv2DTranspose conv;
+  final ConvTranspose2D conv;
 
   _TestCase({
     required this.name,
@@ -35,7 +35,7 @@ class _TestCase {
     final outputPadding = SymmetricPadding2D.fromPytorchString(
       loader.header.metadata['$name.output_padding']!,
     );
-    final conv = await Conv2DTranspose.loadFromSafeTensor(
+    final conv = await ConvTranspose2D.loadFromSafeTensor(
       loader,
       prefix: '$name.conv.',
       padding: padding,
@@ -90,7 +90,7 @@ void main() async {
 
   group('Conv2DTransposed.make', () {
     test('make creates Conv2DTransposed with correct dimensions', () {
-      final conv = Conv2DTranspose.make(
+      final conv = ConvTranspose2D.make(
         numInChannels: 32,
         numOutChannels: 64,
         kernelSize: SymmetricPadding2D.same(3),
@@ -121,7 +121,7 @@ void main() async {
     // });*/
 
     test('make without bias creates Conv2DTransposed without bias', () {
-      final conv = Conv2DTranspose.make(
+      final conv = ConvTranspose2D.make(
         numInChannels: 16,
         numOutChannels: 32,
         hasBias: false,
@@ -131,7 +131,7 @@ void main() async {
     });
 
     test('forward pass with stride=2 increases spatial dimensions', () {
-      final conv = Conv2DTranspose.make(
+      final conv = ConvTranspose2D.make(
         numInChannels: 32,
         numOutChannels: 16,
         kernelSize: SymmetricPadding2D.same(4),
@@ -149,7 +149,7 @@ void main() async {
     });
 
     test('forward pass with kernel_size=3, stride=1 works correctly', () {
-      final conv = Conv2DTranspose.make(
+      final conv = ConvTranspose2D.make(
         numInChannels: 16,
         numOutChannels: 32,
         kernelSize: SymmetricPadding2D.same(3),
@@ -166,7 +166,7 @@ void main() async {
     });
 
     test('forward pass with output_padding adds extra output size', () {
-      final conv = Conv2DTranspose.make(
+      final conv = ConvTranspose2D.make(
         numInChannels: 16,
         numOutChannels: 16,
         kernelSize: SymmetricPadding2D.same(3),
@@ -184,7 +184,7 @@ void main() async {
     });
 
     test('forward pass with non-square kernel works', () {
-      final conv = Conv2DTranspose.make(
+      final conv = ConvTranspose2D.make(
         numInChannels: 8,
         numOutChannels: 16,
         kernelSize: SymmetricPadding2D(vertical: 3, horizontal: 5),
@@ -201,7 +201,7 @@ void main() async {
     });
 
     test('forward pass with asymmetric stride works', () {
-      final conv = Conv2DTranspose.make(
+      final conv = ConvTranspose2D.make(
         numInChannels: 8,
         numOutChannels: 16,
         kernelSize: SymmetricPadding2D.same(3),
@@ -218,7 +218,7 @@ void main() async {
     });
 
     test('weight dimensions follow PyTorch convention', () {
-      final conv = Conv2DTranspose.make(
+      final conv = ConvTranspose2D.make(
         numInChannels: 64,
         numOutChannels: 32,
         kernelSize: SymmetricPadding2D.same(4),

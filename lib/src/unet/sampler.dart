@@ -89,7 +89,7 @@ class Upsample2D extends Module implements SimpleModule {
     if (conv != null) conv!,
   ];
 
-  bool get useConvTransposed => conv is Conv2DTranspose;
+  bool get useConvTransposed => conv is ConvTranspose2D;
 
   int? get numInChannels {
     if (norm != null) {
@@ -149,13 +149,13 @@ class Upsample2D extends Module implements SimpleModule {
     Conv2DInterface? conv;
     if (useConvTransposed) {
       if (loader.hasTensorWithPrefix('$prefix$convName')) {
-        conv = await Conv2DTranspose.loadFromSafeTensor(
+        conv = await ConvTranspose2D.loadFromSafeTensor(
           loader,
           prefix: '$prefix$convName.',
           name: convName,
           padding: padding,
         );
-        assert(numChannels == (conv as Conv2DTranspose).numInChannels);
+        assert(numChannels == (conv as ConvTranspose2D).numInChannels);
       }
     } else {
       if (loader.hasTensorWithPrefix('$prefix$convName')) {
@@ -215,7 +215,7 @@ class Upsample2D extends Module implements SimpleModule {
     Conv2DInterface? conv;
     if (useConvTransposed) {
       kernelSize ??= SymmetricPadding2D.same(4);
-      conv = Conv2DTranspose.make(
+      conv = ConvTranspose2D.make(
         name: convName,
         numInChannels: numChannels,
         numOutChannels: numOutChannels ?? numChannels,

@@ -18,6 +18,8 @@ abstract class Conv2DInterface extends SimpleModule {
   int get numOutChannels;
 }
 
+/// For pytorch behavior of padding="valid", pass padding=0
+/// For pytorch behavior of padding="same", pass padding=0 or set padMode
 class Conv2D extends Module implements SimpleModule, Conv2DInterface {
   @override
   final Tensor weight;
@@ -246,7 +248,7 @@ class Conv2D extends Module implements SimpleModule, Conv2DInterface {
 /// not compute a true inverse of convolution). For more information, see the visualizations
 /// [here](https://github.com/vdumoulin/conv_arithmetic/blob/master/README.md) and the
 /// [Deconvolutional Networks](https://www.matthewzeiler.com/mattzeiler/deconvolutionalnetworks.pdf) paper.
-class Conv2DTranspose extends Module implements Conv2DInterface {
+class ConvTranspose2D extends Module implements Conv2DInterface {
   @override
   final Tensor weight;
   @override
@@ -261,7 +263,7 @@ class Conv2DTranspose extends Module implements Conv2DInterface {
   @override
   final int groups;
 
-  Conv2DTranspose(
+  ConvTranspose2D(
     this.weight, {
     super.name = 'conv',
     this.bias,
@@ -276,8 +278,16 @@ class Conv2DTranspose extends Module implements Conv2DInterface {
   }
 
   @override
-  Tensor forward(Tensor input, {required Context context}) {
+  Tensor forward(
+    Tensor input, {
+    required Context context,
+    List<int>? outputSize,
+  }) {
     context.onloadModule(this);
+    SymmetricPadding2D outputPadding = _outputPadding(
+      input,
+      outputSize: outputSize,
+    );
     return NN2DUtil.conv2dTranspose(
       input,
       weight,
@@ -288,6 +298,37 @@ class Conv2DTranspose extends Module implements Conv2DInterface {
       dilation: dilation,
       groups: groups,
     );
+  }
+
+  SymmetricPadding2D _outputPadding(Tensor input, {List<int>? outputSize}) {
+    if (outputSize == null) return outputPadding;
+    final hasBatchDim = input.dim == 4;
+    final numNonSpatialDims = hasBatchDim ? 2 : 1;
+    if (outputSize.length == numNonSpatialDims + 2) {
+      outputSize = outputSize.sublist(numNonSpatialDims);
+    }
+    if (outputSize.length != 2) {
+      throw ArgumentError('outputSize must be a list of length 2 or 4');
+    }
+
+    final ret = [0, 0];
+    for (int i = 0; i < 2; i++) {
+      int minSizes =
+          (input.shape[i + numNonSpatialDims] - 1) * stride.to2List()[i];
+      minSizes -= 2 * padding.to2List()[i];
+      minSizes += dilation.to2List()[i] * (kernelSize.to2List()[i] - 1);
+      minSizes += 1;
+      int maxSizes = minSizes + stride.to2List()[i] - 1;
+      if (outputSize[i] < minSizes || outputSize[i] > maxSizes) {
+        throw ArgumentError(
+          'outputSize must be between $minSizes and $maxSizes',
+        );
+      }
+
+      ret[i] = outputSize[i] - minSizes;
+    }
+
+    return SymmetricPadding2D(vertical: ret[0], horizontal: ret[1]);
   }
 
   @override
@@ -337,7 +378,7 @@ class Conv2DTranspose extends Module implements Conv2DInterface {
   String toString() =>
       'Conv2DTransposed(${meta.entries.map((e) => '${e.key}: ${e.value}').join(', ')})';
 
-  static Future<Conv2DTranspose> loadFromSafeTensor(
+  static Future<ConvTranspose2D> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
     String name = 'conv',
@@ -353,7 +394,7 @@ class Conv2DTranspose extends Module implements Conv2DInterface {
       bias = await loader.loadByName('${prefix}bias');
     }
 
-    return Conv2DTranspose(
+    return ConvTranspose2D(
       weight,
       name: name,
       bias: bias,
@@ -365,7 +406,7 @@ class Conv2DTranspose extends Module implements Conv2DInterface {
     );
   }
 
-  static Conv2DTranspose make({
+  static ConvTranspose2D make({
     String name = 'conv',
     required int numInChannels,
     required int numOutChannels,
@@ -395,7 +436,7 @@ class Conv2DTranspose extends Module implements Conv2DInterface {
     if (hasBias) {
       bias = Tensor.empty([numOutChannels], datatype: dataType, device: device);
     }
-    return Conv2DTranspose(
+    return ConvTranspose2D(
       weights,
       name: name,
       bias: bias,

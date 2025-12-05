@@ -5,7 +5,7 @@ void main() {
   print('Using device: ${context.device}');
 
   // Create a Conv2DTransposed layer for upsampling
-  final conv = Conv2DTranspose.make(
+  final conv = ConvTranspose2D.make(
     numInChannels: 64,
     numOutChannels: 32,
     kernelSize: SymmetricPadding2D.same(4),
