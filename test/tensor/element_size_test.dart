@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('Tensor element_size', () {
     test('float32 element size', () {
-      final tensor = Tensor.zeros([10], datatype: DataType.float);
+      final tensor = Tensor.zeros([10], datatype: DataType.float32);
       expect(tensor.elementSize, 4);
     });
 

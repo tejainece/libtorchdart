@@ -106,13 +106,13 @@ class LayerNorm extends Module implements Normalization {
     if (isElementwiseAffine) {
       weight = Tensor.ones(
         normalizedShape,
-        datatype: dataType ?? DataType.float,
+        datatype: dataType ?? DataType.float32,
         device: device ?? Device.cpu,
       );
       if (hasBias) {
         bias = Tensor.zeros(
           normalizedShape,
-          datatype: dataType ?? DataType.float,
+          datatype: dataType ?? DataType.float32,
           device: device ?? Device.cpu,
         );
       }
@@ -232,13 +232,13 @@ class GroupNorm extends Module implements Normalization {
     if (isElementwiseAffine) {
       weight = Tensor.empty(
         [numChannels],
-        datatype: dataType ?? DataType.float,
+        datatype: dataType ?? DataType.float32,
         device: device ?? Device.cpu,
       );
       if (hasBias) {
         bias = Tensor.empty(
           [numChannels],
-          datatype: dataType ?? DataType.float,
+          datatype: dataType ?? DataType.float32,
           device: device ?? Device.cpu,
         );
       }
@@ -312,7 +312,7 @@ class RMSNorm extends Module implements Normalization {
     if (isElementwiseAffine) {
       weight = Tensor.empty(
         normalizedShape,
-        datatype: dataType ?? DataType.float,
+        datatype: dataType ?? DataType.float32,
         device: device ?? Device.cpu,
       );
     }
@@ -407,13 +407,13 @@ class RMSNormWithBias extends Module implements Normalization {
     if (isElementwiseAffine) {
       weight = Tensor.empty(
         normalizedShape,
-        datatype: dataType ?? DataType.float,
+        datatype: dataType ?? DataType.float32,
         device: device ?? Device.cpu,
       );
       if (hasBias) {
         bias = Tensor.empty(
           normalizedShape,
-          datatype: dataType ?? DataType.float,
+          datatype: dataType ?? DataType.float32,
           device: device ?? Device.cpu,
         );
       }

@@ -60,7 +60,7 @@ class DecisionTransformerModel extends Module {
     if (attentionMask == null) {
       attentionMask = Tensor.ones(
         [batchSize, seqLen],
-        datatype: DataType.float,
+        datatype: DataType.float32,
         device: states.device,
       );
     }

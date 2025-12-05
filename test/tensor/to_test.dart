@@ -7,9 +7,9 @@ void main() {
       final tensor = Tensor.from(
         [1.0, 2.0, 3.0],
         [3],
-        datatype: DataType.float,
+        datatype: DataType.float32,
       );
-      expect(tensor.dataType, DataType.float);
+      expect(tensor.dataType, DataType.float32);
       final oldPtr = tensor.nativePtr;
 
       tensor.to_(dataType: DataType.float64);
@@ -25,14 +25,14 @@ void main() {
       final tensor = Tensor.from(
         [1.0, 2.0, 3.0],
         [3],
-        datatype: DataType.float,
+        datatype: DataType.float32,
       );
 
-      tensor.to_(dataType: DataType.float);
+      tensor.to_(dataType: DataType.float32);
 
       // It seems PyTorch might still create a new tensor even if parameters are same if copy=false isn't strictly honored or if it decides to re-allocate.
       // But let's check if the values are preserved.
-      expect(tensor.dataType, DataType.float);
+      expect(tensor.dataType, DataType.float32);
       expect(tensor[0].scalar, 1.0);
     });
   });

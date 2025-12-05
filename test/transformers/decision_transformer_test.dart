@@ -43,7 +43,7 @@ void main() {
       ], datatype: DataType.int64);
       final attentionMask = Tensor.ones(
         [batchSize, seqLen],
-        datatype: DataType.float,
+        datatype: DataType.float32,
         device: Device.cpu,
       );
 

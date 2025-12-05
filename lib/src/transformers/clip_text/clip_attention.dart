@@ -157,7 +157,7 @@ class EagerAttentionFunction implements AttentionFunction {
     }
 
     attentionWeights = attentionWeights
-        .softmax(-1, dataType: DataType.float)
+        .softmax(-1, dataType: DataType.float32)
         .to(dataType: q.dataType);
     attentionWeights = NNUtil.dropout(
       attentionWeights,

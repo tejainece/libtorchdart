@@ -45,10 +45,10 @@ void main() {
 
       final tensor = Tensor.fromBlob(ptr.cast(), [
         size,
-      ], datatype: DataType.float);
+      ], datatype: DataType.float32);
 
       expect(tensor.shape, [size]);
-      expect(tensor.dataType, DataType.float);
+      expect(tensor.dataType, DataType.float32);
       expect(tensor.dataPointer, ptr);
       for (var i = 0; i < size; i++) {
         // Float32 precision might be an issue, but for small integers it should be fine

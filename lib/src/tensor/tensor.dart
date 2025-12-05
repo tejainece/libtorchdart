@@ -317,7 +317,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       ffi.Pointer<ffi.Void> dataPointer;
-      if (datatype == DataType.float) {
+      if (datatype == DataType.float32) {
         final ptr = arena.allocate<ffi.Float>(
           data.length * ffi.sizeOf<ffi.Float>(),
         );
@@ -1286,7 +1286,11 @@ class DataType {
   static const int32 = DataType(name: 'Int32', type: 3, safetensorName: 'I32');
   static const int64 = DataType(name: 'Int64', type: 4, safetensorName: 'I64');
   static const half = DataType(name: 'Half', type: 5, safetensorName: 'F16');
-  static const float = DataType(name: 'Float', type: 6, safetensorName: 'F32');
+  static const float32 = DataType(
+    name: 'Float',
+    type: 6,
+    safetensorName: 'F32',
+  );
   static const float64 = DataType(
     name: 'Float64',
     type: 7,
@@ -1363,7 +1367,7 @@ class DataType {
     int32,
     int64,
     half,
-    float,
+    float32,
     float64,
     complexHalf,
     complexFloat,
