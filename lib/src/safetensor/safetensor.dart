@@ -1,4 +1,4 @@
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 import 'package:universal_io/io.dart';
 
 export 'metadata.dart';

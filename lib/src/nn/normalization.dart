@@ -1,5 +1,5 @@
 import 'package:collection/collection.dart';
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 
 abstract class Normalization implements SimpleModule {}
 
@@ -31,8 +31,9 @@ class LayerNorm extends Module implements Normalization {
   @override
   Tensor forward(Tensor x, {Tensor? embeds, required Context context}) {
     context.onloadModule(this);
+    final inputs = x.to(device: context.device); // TODO remove if possible
     return NNUtil.layerNorm(
-      x,
+      inputs,
       normalizedShape,
       weight: weight,
       bias: bias,
@@ -66,6 +67,20 @@ class LayerNorm extends Module implements Normalization {
     "hasBias": hasBias,
     "normalizedShape": normalizedShape,
   };
+
+  Future<void> loadFromSafeTensor_(
+    SafeTensorLoader loader, {
+    String prefix = '',
+  }) async {
+    if (weight != null && loader.hasTensor('${prefix}weight')) {
+      final newWeight = await loader.loadByName('${prefix}weight');
+      weight!.copy_(newWeight);
+    }
+    if (bias != null && loader.hasTensor('${prefix}bias')) {
+      final newBias = await loader.loadByName('${prefix}bias');
+      bias!.copy_(newBias);
+    }
+  }
 
   static Future<LayerNorm> loadFromSafeTensor(
     SafeTensorLoader loader, {
@@ -157,7 +172,14 @@ class GroupNorm extends Module implements Normalization {
   @override
   Tensor forward(Tensor x, {required Context context}) {
     context.onloadModule(this);
-    return NNUtil.groupNorm(x, numGroups, weight: weight, bias: bias, eps: eps);
+    final inputs = x.to(device: context.device); // TODO remove if possible
+    return NNUtil.groupNorm(
+      inputs,
+      numGroups,
+      weight: weight,
+      bias: bias,
+      eps: eps,
+    );
   }
 
   @override
@@ -264,7 +286,9 @@ class RMSNorm extends Module implements Normalization {
   @override
   Tensor forward(Tensor x, {required Context context}) {
     context.onloadModule(this);
-    return NNUtil.rmsNorm(x, normalizedShape, weight: weight, eps: eps);
+    // TODO remove if possible
+    final inputs = x.to(device: context.device);
+    return NNUtil.rmsNorm(inputs, normalizedShape, weight: weight, eps: eps);
   }
 
   @override
@@ -337,8 +361,10 @@ class RMSNormWithBias extends Module implements Normalization {
   @override
   Tensor forward(Tensor x, {required Context context}) {
     context.onloadModule(this);
-    Tensor variance = x.pow(2).mean(dim: [-1], keepDim: true);
-    x = x * (variance + eps).rsqrt();
+    // TOD= remove if possible
+    final inputs = x.to(device: context.device);
+    Tensor variance = inputs.pow(2).mean(dim: [-1], keepDim: true);
+    x = inputs * (variance + eps).rsqrt();
 
     if (weight != null) {
       x = x * weight!;

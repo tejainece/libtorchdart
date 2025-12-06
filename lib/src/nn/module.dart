@@ -1,4 +1,4 @@
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 
 abstract class Module {
   String name;
@@ -10,6 +10,9 @@ abstract class Module {
   Map<String, dynamic> get meta;
 
   Iterable<Tensor> get parameters;
+
+  // TODO force children to implement this
+  Iterable<Tensor> get buffers => [];
 
   Iterable<Module> get submodules;
 

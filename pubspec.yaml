@@ -1,16 +1,16 @@
-name: libtorchdart
-description: A starting point for Dart libraries or applications.
+name: tensor
+description: Tensor library for Dart using libtorch FFI.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/tejainece/tensor
 
 environment:
   sdk: ^3.10.0
 
-# Add regular dependencies here.
 dependencies:
   ffi: ^2.1.4
   universal_io: ^2.2.0
   collection: ^1.19.1
+  path: ^1.9.1
 
 dev_dependencies:
   lints: ^6.0.0

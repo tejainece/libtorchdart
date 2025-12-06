@@ -1,8 +1,6 @@
 export 'src/safetensor/safetensor.dart';
 export 'src/tensor/tensor.dart';
-export 'src/transformers/transformers.dart';
 export 'src/nn/nn.dart';
-export 'src/unet/unet.dart';
 export 'src/init/init.dart';
 
 export 'src/torch_ffi/torch_ffi.dart'

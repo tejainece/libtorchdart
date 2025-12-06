@@ -1,4 +1,4 @@
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 import 'package:test/test.dart';
 
 void main() async {

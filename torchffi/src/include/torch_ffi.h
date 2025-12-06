@@ -114,7 +114,8 @@ extern tensor torchffi_tensor_new_from_blob(void *data, int64_t *dims,
 
 extern Scalar_t torchffi_tensor_scalar(tensor t);
 
-extern Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index, char **error);
+extern Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index,
+                                          char **error);
 
 extern tensor torchffi_tensor_get(tensor t, int index);
 
@@ -208,6 +209,8 @@ extern tensor torchffi_tensor_bitwise_and(tensor a, tensor b);
 
 extern tensor torchffi_tensor_bitwise_xor(tensor a, tensor b);
 
+extern tensor torchffi_tensor_argmax(tensor t, int64_t *dim, bool keepdim);
+
 extern tensor torchffi_tensor_sum(tensor input, int64_t *dim, size_t dimLength,
                                   bool keepdim, uint8_t *dtype);
 
@@ -292,6 +295,25 @@ extern tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH,
                                   int64_t paddingW, bool ceilMode,
                                   bool countIncludePad,
                                   int64_t *divisorOverride);
+
+extern tensor *torchffi_tensor_topk(tensor t, int64_t k, int64_t dim,
+                                    bool largest, bool sorted);
+
+extern tensor *torchffi_tensor_sort(tensor t, int64_t dim, bool descending);
+
+extern tensor torchffi_tensor_cumsum(tensor t, int64_t dim, uint8_t *dtype);
+
+extern tensor torchffi_tensor_multinomial(tensor t, int64_t num_samples,
+                                          bool replacement,
+                                          Generator generator);
+
+extern tensor torchffi_tensor_lt(tensor t, Scalar value);
+extern tensor torchffi_tensor_gt(tensor t, Scalar value);
+extern tensor torchffi_tensor_eq(tensor t, Scalar value);
+extern tensor torchffi_tensor_lt_tensor(tensor t, tensor other);
+extern tensor torchffi_tensor_gt_tensor(tensor t, tensor other);
+extern tensor torchffi_tensor_eq_tensor(tensor t, tensor other);
+extern tensor torchffi_tensor_masked_fill(tensor t, tensor mask, Scalar value);
 
 // Generators
 

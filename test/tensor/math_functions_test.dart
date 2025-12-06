@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 import 'package:test/test.dart';
 
 void main() {

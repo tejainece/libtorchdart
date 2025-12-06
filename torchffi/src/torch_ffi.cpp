@@ -519,6 +519,16 @@ tensor torchffi_tensor_bitwise_xor(tensor a, tensor b) {
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_tensor_argmax(tensor t, int64_t *dim, bool keepdim) {
+  at::Tensor tensor;
+  if (dim != nullptr) {
+    tensor = t->argmax(*dim, keepdim);
+  } else {
+    tensor = t->argmax(std::nullopt, keepdim);
+  }
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_sum(tensor input, int64_t *dim, size_t dimLength,
                            bool keepdim, uint8_t *dtype) {
   std::optional<at::ScalarType> dopt = std::nullopt;
@@ -784,6 +794,105 @@ tensor torchffi_avg_pool2d(tensor input, int64_t kernelSizeH,
       divisorOverride ? std::optional<int64_t>(*divisorOverride)
                       : std::nullopt);
   return new torch::Tensor(tensor);
+}
+
+tensor *torchffi_tensor_topk(tensor t, int64_t k, int64_t dim, bool largest,
+                             bool sorted) {
+  auto result = t->topk(k, dim, largest, sorted);
+  tensor *ret = (tensor *)malloc(3 * sizeof(tensor));
+  ret[0] = new torch::Tensor(std::get<0>(result)); // values
+  ret[1] = new torch::Tensor(std::get<1>(result)); // indices
+  ret[2] = nullptr;
+  return ret;
+}
+
+tensor *torchffi_tensor_sort(tensor t, int64_t dim, bool descending) {
+  auto result = t->sort(dim, descending);
+  tensor *ret = (tensor *)malloc(3 * sizeof(tensor));
+  ret[0] = new torch::Tensor(std::get<0>(result)); // values
+  ret[1] = new torch::Tensor(std::get<1>(result)); // indices
+  ret[2] = nullptr;
+  return ret;
+}
+
+tensor torchffi_tensor_cumsum(tensor t, int64_t dim, uint8_t *dtype) {
+  std::optional<at::ScalarType> dopt = std::nullopt;
+  if (dtype != nullptr) {
+    dopt = at::ScalarType(*dtype);
+  }
+  at::Tensor tensor = torch::cumsum(*t, dim, dopt);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_multinomial(tensor t, int64_t num_samples,
+                                   bool replacement, Generator generator) {
+  std::optional<at::Generator> opGenerator = std::nullopt;
+  if (generator != nullptr) {
+    opGenerator = *generator;
+  }
+  at::Tensor tensor =
+      torch::multinomial(*t, num_samples, replacement, opGenerator);
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_lt(tensor t, Scalar value) {
+  at::Scalar s;
+  if (value.dtype == 0) {
+    s = value.value.b;
+  } else if (value.dtype == 1) {
+    s = value.value.i;
+  } else {
+    s = value.value.d;
+  }
+  return new torch::Tensor(torch::lt(*t, s));
+}
+
+tensor torchffi_tensor_gt(tensor t, Scalar value) {
+  at::Scalar s;
+  if (value.dtype == 0) {
+    s = value.value.b;
+  } else if (value.dtype == 1) {
+    s = value.value.i;
+  } else {
+    s = value.value.d;
+  }
+  return new torch::Tensor(torch::gt(*t, s));
+}
+
+tensor torchffi_tensor_eq(tensor t, Scalar value) {
+  at::Scalar s;
+  if (value.dtype == 0) {
+    s = value.value.b;
+  } else if (value.dtype == 1) {
+    s = value.value.i;
+  } else {
+    s = value.value.d;
+  }
+  return new torch::Tensor(torch::eq(*t, s));
+}
+
+tensor torchffi_tensor_lt_tensor(tensor t, tensor other) {
+  return new torch::Tensor(torch::lt(*t, *other));
+}
+
+tensor torchffi_tensor_gt_tensor(tensor t, tensor other) {
+  return new torch::Tensor(torch::gt(*t, *other));
+}
+
+tensor torchffi_tensor_eq_tensor(tensor t, tensor other) {
+  return new torch::Tensor(torch::eq(*t, *other));
+}
+
+tensor torchffi_tensor_masked_fill(tensor t, tensor mask, Scalar value) {
+  at::Scalar s;
+  if (value.dtype == 0) {
+    s = value.value.b;
+  } else if (value.dtype == 1) {
+    s = value.value.i;
+  } else {
+    s = value.value.d;
+  }
+  return new torch::Tensor(t->masked_fill(*mask, s));
 }
 
 #ifdef __cplusplus

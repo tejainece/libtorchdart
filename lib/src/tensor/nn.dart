@@ -1,5 +1,5 @@
-import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
+import 'package:tensor/tensor.dart';
+import 'package:tensor/src/torch_ffi/torch_ffi.dart';
 
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;

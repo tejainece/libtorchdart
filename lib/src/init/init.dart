@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 
 abstract class Init {
   static void uniform_({

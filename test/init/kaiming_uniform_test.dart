@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 
 abstract class SafeTensorLoader {
   SafeTensorHeader get header;

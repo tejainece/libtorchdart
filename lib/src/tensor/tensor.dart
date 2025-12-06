@@ -1,8 +1,8 @@
 import 'dart:ffi' as ffi;
 import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart' as ffi;
-import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
+import 'package:tensor/tensor.dart';
+import 'package:tensor/src/torch_ffi/torch_ffi.dart';
 
 export 'nn.dart';
 
@@ -1070,6 +1070,149 @@ class Tensor implements ffi.Finalizable {
     return Tensor(tensor);
   }
 
+  /// Returns the indices of the maximum value of all elements in the input tensor.
+  ///
+  /// Args:
+  ///   dim: The dimension to reduce. If null, the argmax of the flattened input is returned.
+  ///   keepDim: Whether the output tensor has dim retained or not.
+  ///
+  /// Returns:
+  ///   A new tensor containing the indices of the maximum values.
+  Tensor argmax({int? dim, bool keepDim = false}) {
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Int64> dimPtr = ffi.nullptr;
+      if (dim != null) {
+        dimPtr = arena.allocate<ffi.Int64>(ffi.sizeOf<ffi.Int64>());
+        dimPtr.value = dim;
+      }
+      final tensor = FFITensor.argmax(nativePtr, dimPtr, keepDim);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  (Tensor values, Tensor indices) topk(
+    int k, {
+    int dim = -1,
+    bool largest = true,
+    bool sorted = true,
+  }) {
+    final ptr = FFITensor.topk(nativePtr, k, dim, largest, sorted);
+    final values = Tensor(ptr[0]);
+    final indices = Tensor(ptr[1]);
+    ffi.calloc.free(ptr);
+    return (values, indices);
+  }
+
+  (Tensor values, Tensor indices) sort({
+    int dim = -1,
+    bool descending = false,
+  }) {
+    final ptr = FFITensor.sort(nativePtr, dim, descending);
+    final values = Tensor(ptr[0]);
+    final indices = Tensor(ptr[1]);
+    ffi.calloc.free(ptr);
+    return (values, indices);
+  }
+
+  Tensor cumsum(int dim, {DataType? dtype}) {
+    final arena = ffi.Arena();
+    try {
+      ffi.Pointer<ffi.Uint8> dtypePtr = ffi.nullptr;
+      if (dtype != null) {
+        dtypePtr = arena.allocate<ffi.Uint8>(ffi.sizeOf<ffi.Uint8>());
+        dtypePtr.value = dtype.type;
+      }
+      final tensor = FFITensor.cumsum(nativePtr, dim, dtypePtr);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor multinomial(
+    int numSamples, {
+    bool replacement = false,
+    Generator? generator,
+  }) {
+    final tensor = FFITensor.multinomial(
+      nativePtr,
+      numSamples,
+      replacement,
+      generator?.nativePtr ?? ffi.nullptr,
+    );
+    return Tensor(tensor);
+  }
+
+  Tensor lt(dynamic other) {
+    if (other is Tensor) {
+      final tensor = FFITensor.ltTensor(nativePtr, other.nativePtr);
+      return Tensor(tensor);
+    } else {
+      final arena = ffi.Arena();
+      try {
+        final scalar = CScalar.allocate(arena);
+        scalar.ref.setValue(other);
+        final tensor = FFITensor.lt(nativePtr, scalar.ref);
+        return Tensor(tensor);
+      } finally {
+        arena.releaseAll();
+      }
+    }
+  }
+
+  Tensor gt(dynamic other) {
+    if (other is Tensor) {
+      final tensor = FFITensor.gtTensor(nativePtr, other.nativePtr);
+      return Tensor(tensor);
+    } else {
+      final arena = ffi.Arena();
+      try {
+        final scalar = CScalar.allocate(arena);
+        scalar.ref.setValue(other);
+        final tensor = FFITensor.gt(nativePtr, scalar.ref);
+        return Tensor(tensor);
+      } finally {
+        arena.releaseAll();
+      }
+    }
+  }
+
+  Tensor eq(dynamic other) {
+    if (other is Tensor) {
+      final tensor = FFITensor.eqTensor(nativePtr, other.nativePtr);
+      return Tensor(tensor);
+    } else {
+      final arena = ffi.Arena();
+      try {
+        final scalar = CScalar.allocate(arena);
+        scalar.ref.setValue(other);
+        final tensor = FFITensor.eq(nativePtr, scalar.ref);
+        return Tensor(tensor);
+      } finally {
+        arena.releaseAll();
+      }
+    }
+  }
+
+  Tensor maskedFill(Tensor mask, dynamic value) {
+    final arena = ffi.Arena();
+    try {
+      final scalar = CScalar.allocate(arena);
+      scalar.ref.setValue(value);
+      final tensor = FFITensor.maskedFill(
+        nativePtr,
+        mask.nativePtr,
+        scalar.ref,
+      );
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   Tensor squeeze({int? dim}) {
     final arena = ffi.Arena();
     try {
@@ -1310,7 +1453,7 @@ class Tensor implements ffi.Finalizable {
   /// final sliced = t.slice(0, 1, 4); // [2.0, 3.0, 4.0]
   /// final stepped = t.slice(0, 0, 5, step: 2); // [1.0, 3.0, 5.0]
   /// ```
-  Tensor slice(int dim, int start, int? end, {int step = 1}) {
+  Tensor slice(int dim, int start, {int step = 1, int? end}) {
     // PyTorch uses a very large number to represent "end of dimension"
     final int endIndex = end ?? 9223372036854775807; // max int64
     final tensor = FFITensor.slice(nativePtr, dim, start, endIndex, step);
@@ -1380,6 +1523,32 @@ class Tensor implements ffi.Finalizable {
     } finally {
       arena.releaseAll();
     }
+  }
+
+  List<num> toList() {
+    if (dataType == DataType.float32) {
+      final ptr = dataPointer.cast<ffi.Float>();
+      return ptr.asTypedList(numel).toList();
+    } else if (dataType == DataType.int64) {
+      final ptr = dataPointer.cast<ffi.Int64>();
+      return ptr.asTypedList(numel).toList();
+    } else if (dataType == DataType.float64) {
+      final ptr = dataPointer.cast<ffi.Double>();
+      return ptr.asTypedList(numel).toList();
+    } else if (dataType == DataType.int32) {
+      final ptr = dataPointer.cast<ffi.Int32>();
+      return ptr.asTypedList(numel).toList();
+    } else if (dataType == DataType.int16) {
+      final ptr = dataPointer.cast<ffi.Int16>();
+      return ptr.asTypedList(numel).toList();
+    } else if (dataType == DataType.int8) {
+      final ptr = dataPointer.cast<ffi.Int8>();
+      return ptr.asTypedList(numel).toList();
+    } else if (dataType == DataType.uint8) {
+      final ptr = dataPointer.cast<ffi.Uint8>();
+      return ptr.asTypedList(numel).toList();
+    }
+    throw Exception('Unsupported data type: $dataType');
   }
 
   static void _print1d(StringBuffer sb, int size, Tensor tensor) {

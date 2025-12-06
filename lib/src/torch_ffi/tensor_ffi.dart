@@ -1,8 +1,8 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:libtorchdart/libtorchdart.dart';
-import 'package:libtorchdart/src/torch_ffi/torch_ffi.dart';
+import 'package:tensor/tensor.dart';
+import 'package:tensor/src/torch_ffi/torch_ffi.dart';
 
 typedef CTensor = Pointer<Void>;
 
@@ -476,6 +476,12 @@ abstract class FFITensor {
         CTensor Function(CTensor tensor1, CTensor tensor2)
       >('torchffi_tensor_bitwise_xor');
 
+  static final argmax = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Bool),
+        CTensor Function(CTensor tensor, Pointer<Int64> dim, bool keepdim)
+      >('torchffi_tensor_argmax');
+
   static final sum = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Pointer<Int64>, Size, Bool, Pointer<Uint8>),
@@ -598,6 +604,72 @@ abstract class FFITensor {
           CTensorOptions options,
         )
       >('torchffi_full');
+
+  static final topk = nativeLib
+      .lookupFunction<
+        Pointer<CTensor> Function(CTensor, Int64, Int64, Bool, Bool),
+        Pointer<CTensor> Function(CTensor, int, int, bool, bool)
+      >('torchffi_tensor_topk');
+
+  static final sort = nativeLib
+      .lookupFunction<
+        Pointer<CTensor> Function(CTensor, Int64, Bool),
+        Pointer<CTensor> Function(CTensor, int, bool)
+      >('torchffi_tensor_sort');
+
+  static final cumsum = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64, Pointer<Uint8>),
+        CTensor Function(CTensor, int, Pointer<Uint8>)
+      >('torchffi_tensor_cumsum');
+
+  static final multinomial = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64, Bool, CGenerator),
+        CTensor Function(CTensor, int, bool, CGenerator)
+      >('torchffi_tensor_multinomial');
+
+  static final lt = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CScalar),
+        CTensor Function(CTensor, CScalar)
+      >('torchffi_tensor_lt');
+
+  static final gt = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CScalar),
+        CTensor Function(CTensor, CScalar)
+      >('torchffi_tensor_gt');
+
+  static final eq = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CScalar),
+        CTensor Function(CTensor, CScalar)
+      >('torchffi_tensor_eq');
+
+  static final ltTensor = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor),
+        CTensor Function(CTensor, CTensor)
+      >('torchffi_tensor_lt_tensor');
+
+  static final gtTensor = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor),
+        CTensor Function(CTensor, CTensor)
+      >('torchffi_tensor_gt_tensor');
+
+  static final eqTensor = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor),
+        CTensor Function(CTensor, CTensor)
+      >('torchffi_tensor_eq_tensor');
+
+  static final maskedFill = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor, CScalar),
+        CTensor Function(CTensor, CTensor, CScalar)
+      >('torchffi_tensor_masked_fill');
 }
 
 abstract class FFINN {

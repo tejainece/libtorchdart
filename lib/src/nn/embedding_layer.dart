@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 
 /// A simple lookup table that stores embeddings of a fixed dictionary and size.
 ///
@@ -35,9 +35,11 @@ class EmbeddingLayer extends Module implements SimpleModule {
   @override
   Tensor forward(Tensor x, {required Context context}) {
     context.onloadModule(this);
+    // Ensure input is on the same device as the weights
+    final inputs = x.to(device: context.device); // TODO remove if possible
     return NNUtil.embedding(
       weights,
-      x,
+      inputs,
       paddingIdx: paddingIdx,
       scaleGradByFreq: scaleGradByFreq,
       sparse: sparse,
@@ -74,7 +76,17 @@ class EmbeddingLayer extends Module implements SimpleModule {
     'normType': norm?.normType,
   };
 
-  static Future<EmbeddingLayer> loadFromSafeTensor(
+  Future<void> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+  }) async {
+    if (loader.hasTensor('${prefix}weight')) {
+      final newWeights = await loader.loadByName('${prefix}weight');
+      weights.copy_(newWeights);
+    }
+  }
+
+  static Future<EmbeddingLayer> loadFromSafeTensorStatic(
     SafeTensorLoader loader, {
     String prefix = '',
     required String name,
@@ -110,7 +122,7 @@ class EmbeddingLayer extends Module implements SimpleModule {
       scaleGradByFreq: scaleGradByFreq,
       sparse: sparse,
       norm: norm,
-    );
+    )..resetParameters();
   }
 }
 
@@ -159,7 +171,9 @@ class LinearLayer extends Module implements SimpleModule {
   @override
   Tensor forward(Tensor x, {required Context context}) {
     context.onloadModule(this);
-    return NNUtil.linear(x, weight, bias: bias);
+    // Ensure input is on the same device as the weights
+    final inputs = x.to(device: context.device); // TODO remove if possible
+    return NNUtil.linear(inputs, weight, bias: bias);
   }
 
   @override
@@ -185,7 +199,21 @@ class LinearLayer extends Module implements SimpleModule {
   @override
   final Iterable<Module> submodules = const [];
 
-  static Future<LinearLayer> loadFromSafeTensor(
+  Future<void> loadFromSafeTensor(
+    SafeTensorLoader loader, {
+    String prefix = '',
+  }) async {
+    if (loader.hasTensor('${prefix}weight')) {
+      final newWeight = await loader.loadByName('${prefix}weight');
+      weight.copy_(newWeight);
+    }
+    if (bias != null && loader.hasTensor('${prefix}bias')) {
+      final newBias = await loader.loadByName('${prefix}bias');
+      bias!.copy_(newBias);
+    }
+  }
+
+  static Future<LinearLayer> loadFromSafeTensorStatic(
     SafeTensorLoader loader, {
     String prefix = '',
     String name = 'linear',

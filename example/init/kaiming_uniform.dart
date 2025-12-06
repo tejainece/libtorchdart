@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 
 void main() {
   Device device = Device(deviceType: DeviceType.cpu, deviceIndex: -1);

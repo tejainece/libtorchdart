@@ -1,4 +1,4 @@
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 
 class AvgPool2D extends Module implements SimpleModule {
   final SymmetricPadding2D kernelSize;

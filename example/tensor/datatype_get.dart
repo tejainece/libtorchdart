@@ -1,4 +1,4 @@
-import 'package:libtorchdart/src/tensor/tensor.dart';
+import 'package:tensor/src/tensor/tensor.dart';
 
 void main() {
   final f32 = Tensor.arange(10);

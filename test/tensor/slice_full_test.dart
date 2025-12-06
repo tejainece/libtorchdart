@@ -1,4 +1,4 @@
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -10,7 +10,8 @@ void main() {
         datatype: DataType.float32,
       );
 
-      final sliced = t.slice(0, 1, 4);
+      final sliced = t.slice(0, 1, end: 4);
+      print(sliced);
       expect(sliced.shape, [3]);
       expect(sliced.scalarAt(0), 2.0);
       expect(sliced.scalarAt(1), 3.0);
@@ -24,7 +25,7 @@ void main() {
         datatype: DataType.float32,
       );
 
-      final sliced = t.slice(0, 0, 6, step: 2);
+      final sliced = t.slice(0, 0, end: 6, step: 2);
       expect(sliced.shape, [3]);
       expect(sliced.scalarAt(0), 1.0);
       expect(sliced.scalarAt(1), 3.0);
@@ -38,7 +39,7 @@ void main() {
         datatype: DataType.float32,
       );
 
-      final sliced = t.slice(0, 2, null);
+      final sliced = t.slice(0, 2);
       expect(sliced.shape, [3]);
       expect(sliced.scalarAt(0), 3.0);
       expect(sliced.scalarAt(1), 4.0);
@@ -52,12 +53,12 @@ void main() {
         datatype: DataType.float32,
       );
 
-      final sliced = t.slice(0, 1, 3);
+      final sliced = t.slice(0, 1, end: 3);
       expect(sliced.shape, [2, 2]);
-      expect(sliced.scalarAt(0), 3.0);
-      expect(sliced.scalarAt(1), 4.0);
-      expect(sliced.scalarAt(2), 5.0);
-      expect(sliced.scalarAt(3), 6.0);
+      expect(sliced[0][0].scalar, 3.0);
+      expect(sliced[0][1].scalar, 4.0);
+      expect(sliced[1][0].scalar, 5.0);
+      expect(sliced[1][1].scalar, 6.0);
     });
 
     test('slice 2D tensor along dim 1', () {
@@ -67,12 +68,12 @@ void main() {
         datatype: DataType.float32,
       );
 
-      final sliced = t.slice(1, 0, 2);
+      final sliced = t.slice(1, 0, end: 2);
       expect(sliced.shape, [2, 2]);
-      expect(sliced.scalarAt(0), 1.0);
-      expect(sliced.scalarAt(1), 2.0);
-      expect(sliced.scalarAt(2), 4.0);
-      expect(sliced.scalarAt(3), 5.0);
+      expect(sliced[0][0].scalar, 1.0);
+      expect(sliced[0][1].scalar, 2.0);
+      expect(sliced[1][0].scalar, 4.0);
+      expect(sliced[1][1].scalar, 5.0);
     });
   });
 
@@ -91,7 +92,7 @@ void main() {
 
       expect(t.shape, [2, 3]);
       for (int i = 0; i < 6; i++) {
-        expect(t.scalarAt(i), 7.5);
+        expect(t.flatten().scalarAt(i), 7.5);
       }
     });
 
@@ -100,7 +101,7 @@ void main() {
 
       expect(t.shape, [3, 2]);
       for (int i = 0; i < 6; i++) {
-        expect(t.scalarAt(i), 42);
+        expect(t.flatten().scalarAt(i), 42);
       }
     });
 
@@ -118,7 +119,7 @@ void main() {
 
       expect(t.shape, [2, 2, 2]);
       for (int i = 0; i < 8; i++) {
-        expect(t.scalarAt(i), 1.5);
+        expect(t.flatten().scalarAt(i), 1.5);
       }
     });
   });
@@ -126,7 +127,7 @@ void main() {
   group('Tensor.slice and full integration', () {
     test('slice a full tensor', () {
       final full = Tensor.full([10], 5.0, datatype: DataType.float32);
-      final sliced = full.slice(0, 2, 7);
+      final sliced = full.slice(0, 2, end: 7);
 
       expect(sliced.shape, [5]);
       for (int i = 0; i < 5; i++) {

@@ -1,4 +1,4 @@
-import 'package:libtorchdart/libtorchdart.dart';
+import 'package:tensor/tensor.dart';
 
 void main() async {
   final safeTensors = await SafeTensorsFile.load(
