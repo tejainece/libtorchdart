@@ -82,7 +82,8 @@ extern tensor torchffi_tensor_new_zeros(int64_t *sizes, size_t ndims,
 extern tensor torchffi_tensor_new_ones(int64_t *sizes, size_t ndims,
                                        TensorOptions options);
 
-extern tensor torchffi_tensor_new_arange(int64_t end, TensorOptions options);
+extern tensor torchffi_tensor_new_arange(Scalar *start, Scalar *end,
+                                         Scalar *step, TensorOptions options);
 
 extern tensor torchffi_tensor_new_rand(int64_t *sizes, size_t ndims,
                                        Generator generator,

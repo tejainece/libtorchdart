@@ -11,11 +11,11 @@ export 'tensor_ffi.dart';
 
 String getLibraryPath() {
   if (Platform.isMacOS) {
-    return 'torchffi/src/build/libtorchffi.dylib';
+    return 'torchffi/build/libtorchffi.dylib';
   } else if (Platform.isLinux) {
-    return 'torchffi/src/build/libtorchffi.so';
+    return 'torchffi/build/libtorchffi.so';
   } else if (Platform.isWindows) {
-    return 'torchffi/src/build/libtorchffi.dll';
+    return 'torchffi/build/libtorchffi.dll';
   } else {
     throw UnsupportedError('Unsupported platform: ${Platform.operatingSystem}');
   }
@@ -134,4 +134,9 @@ final class CScalar extends Struct {
 
   static Pointer<CScalar> allocate(Allocator allocator) =>
       malloc.allocate<CScalar>(sizeOf<CScalar>());
+
+  static Pointer<CScalar> allocateWithValue(
+    Allocator allocator,
+    dynamic value,
+  ) => malloc.allocate<CScalar>(sizeOf<CScalar>())..ref.setValue(value);
 }

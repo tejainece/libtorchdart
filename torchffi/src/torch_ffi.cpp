@@ -107,8 +107,11 @@ tensor torchffi_tensor_new_ones(int64_t *sizes, size_t ndims,
   return new torch::Tensor(tensor);
 }
 
-tensor torchffi_tensor_new_arange(int64_t end, TensorOptions options) {
-  at::Tensor tensor = at::arange(end, torchffi_make_tensor_options(options));
+tensor torchffi_tensor_new_arange(Scalar *start, Scalar *end, Scalar *step,
+                                  TensorOptions options) {
+  at::Tensor tensor = at::arange(
+      torchffi_to_scalar(*start), torchffi_to_scalar(*end),
+      torchffi_to_scalar(*step), torchffi_make_tensor_options(options));
   return new torch::Tensor(tensor);
 }
 

@@ -22,5 +22,5 @@ populate_compile_commands:
 	(cd build && cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
 
 .PHONY: build
-build: src/torch_ffi.cpp src/generator.cpp src/include/torch_ffi.h
-	(cd build && cmake ../src -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON && cmake --build .)
+build:
+	(cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON && cmake --build .)

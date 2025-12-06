@@ -2,7 +2,7 @@ import 'dart:ffi' as ffi;
 import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:tensor/tensor.dart';
-import 'package:tensor/src/torch_ffi/torch_ffi.dart';
+import 'package:tensor/src/ffi/torch_ffi.dart';
 
 export 'nn.dart';
 
@@ -124,7 +124,9 @@ class Tensor implements ffi.Finalizable {
   }
 
   static Tensor arange(
-    int end, {
+    num start,
+    num end, {
+    num step = 1,
     String? name,
     Device? device,
     DataType? datatype,
@@ -144,7 +146,13 @@ class Tensor implements ffi.Finalizable {
         pinnedMemory: pinnedMemory,
         allocator: arena,
       );
-      final tensor = FFITensor.arange(end, options.ref);
+
+      final tensor = FFITensor.arange(
+        CScalar.allocateWithValue(arena, start),
+        CScalar.allocateWithValue(arena, end),
+        CScalar.allocateWithValue(arena, step),
+        options.ref,
+      );
       return Tensor(tensor, name: name);
     } finally {
       arena.releaseAll();

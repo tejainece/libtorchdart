@@ -108,15 +108,15 @@ abstract class FFITensor {
   static final arange = nativeLib
       .lookupFunction<
         CTensor Function(
-          CScalar start,
-          CScalar end,
-          CScalar step,
+          Pointer<CScalar>,
+          Pointer<CScalar>,
+          Pointer<CScalar>,
           CTensorOptions,
         ),
         CTensor Function(
-          CScalar start,
-          CScalar end,
-          CScalar step,
+          Pointer<CScalar> start,
+          Pointer<CScalar> end,
+          Pointer<CScalar> step,
           CTensorOptions,
         )
       >('torchffi_tensor_new_arange');

@@ -1,2 +1,2 @@
 build_torchffi:
-	(cd torchffi/src && ./build.sh)
+	(cd torchffi/ && ./build.sh)
