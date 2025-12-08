@@ -66,6 +66,7 @@ typedef void *Generator;
 extern "C" {
 #endif
 extern bool torchffi_is_cuda_available();
+extern bool torchffi_is_mps_available();
 
 extern tensor torchffi_tensor_new(void);
 
@@ -358,6 +359,12 @@ extern int64_t torchffi_cuda_memory_total(int deviceIndex);
 extern int64_t torchffi_cuda_memory_allocated(int8_t deviceIndex, char **error);
 
 extern int64_t torchffi_cuda_memory_reserved(int8_t deviceIndex, char **error);
+
+extern int64_t torchffi_mps_current_allocated_memory();
+
+extern int64_t torchffi_mps_driver_allocated_memory();
+
+extern int64_t torchffi_mps_recommended_max_memory();
 
 #ifdef __cplusplus
 }

@@ -89,6 +89,8 @@ abstract class Device {
         return cpu;
       case DeviceType.cuda:
         return CudaDevice(deviceIndex: deviceIndex);
+      case DeviceType.mps:
+        return MPSDevice(deviceIndex: deviceIndex);
       default:
         return UnknownDevice(deviceType: deviceType, deviceIndex: deviceIndex);
     }
@@ -104,10 +106,18 @@ abstract class Device {
     return cuda(deviceIndex: deviceIndex);
   }
 
+  static MPSDevice mps({int deviceIndex = -1}) =>
+      MPSDevice(deviceIndex: deviceIndex);
+
+  static Device tryMps([int deviceIndex = -1]) {
+    if (!isMpsAvailable) return cpu;
+    return mps(deviceIndex: deviceIndex);
+  }
+
   static Device best() {
     if (isCudaAvailable) return cuda();
-    // TODO check for metal
-    // TODO check for mps
+    if (isMpsAvailable) return mps();
+    // TODO try other devices
     return cpu;
   }
 
@@ -129,6 +139,7 @@ abstract class Device {
   String toString() => '$deviceType:$deviceIndex';
 
   static bool get isCudaAvailable => _FFIDevice.isCudaAvailable();
+  static bool get isMpsAvailable => _FFIDevice.isMpsAvailable();
 
   @override
   int get hashCode => Object.hashAll([deviceType.type, deviceIndex]);
@@ -235,6 +246,25 @@ class CudaDevice extends Device {
   String toString() => '$deviceType:$deviceIndex';
 }
 
+class MPSDevice extends Device {
+  @override
+  DeviceType get deviceType => DeviceType.mps;
+  @override
+  final int deviceIndex;
+
+  const MPSDevice({this.deviceIndex = -1}) : super.constant();
+
+  @override
+  @override
+  int get totalMemory => _FFIDevice.mpsRecommendedMaxMemory();
+
+  @override
+  int get allocatedMemory => _FFIDevice.mpsCurrentAllocatedMemory();
+
+  @override
+  int get reservedMemory => _FFIDevice.mpsDriverAllocatedMemory();
+}
+
 final class CDevice extends Struct {
   @Int8()
   external int deviceType;
@@ -298,6 +328,26 @@ abstract class _FFIDevice {
   static final isCudaAvailable = nativeLib
       .lookupFunction<Bool Function(), bool Function()>(
         'torchffi_is_cuda_available',
+      );
+
+  static final isMpsAvailable = nativeLib
+      .lookupFunction<Bool Function(), bool Function()>(
+        'torchffi_is_mps_available',
+      );
+
+  static final mpsCurrentAllocatedMemory = nativeLib
+      .lookupFunction<Int64 Function(), int Function()>(
+        'torchffi_mps_current_allocated_memory',
+      );
+
+  static final mpsDriverAllocatedMemory = nativeLib
+      .lookupFunction<Int64 Function(), int Function()>(
+        'torchffi_mps_driver_allocated_memory',
+      );
+
+  static final mpsRecommendedMaxMemory = nativeLib
+      .lookupFunction<Int64 Function(), int Function()>(
+        'torchffi_mps_recommended_max_memory',
       );
 
   static final getDeviceProperties = nativeLib

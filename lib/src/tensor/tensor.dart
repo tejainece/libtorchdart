@@ -367,7 +367,7 @@ class Tensor implements ffi.Finalizable {
 
       final options = CTensorOptions.make(
         dataType: datatype,
-        device: device,
+        device: Device.cpu,
         layout: layout,
         memoryFormat: memoryFormat,
         requiresGrad: requiresGrad,
@@ -380,13 +380,18 @@ class Tensor implements ffi.Finalizable {
       );
       sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
       // TODO check if there is way to avoid clone
-      final tensor = FFITensor.fromBlob(
+      // TODO fromBlob only works on cpu, fix it
+      final tensorPtr = FFITensor.fromBlob(
         dataPointer.cast<ffi.Void>(),
         sizesPointer,
         sizes.length,
         options.ref,
       );
-      return Tensor(tensor, name: name).clone();
+      final tensor = Tensor(tensorPtr, name: name);
+      if (device != null && device.deviceType != DeviceType.cpu) {
+        return tensor.to(device: device);
+      }
+      return tensor.clone();
     } finally {
       arena.releaseAll();
     }
@@ -1592,6 +1597,9 @@ class Tensor implements ffi.Finalizable {
   }
 
   List<num> toList() {
+    if (device.deviceType != DeviceType.cpu) {
+      return to(device: Device.cpu).toList();
+    }
     if (dataType == DataType.float32) {
       final ptr = dataPointer.cast<ffi.Float>();
       return ptr.asTypedList(numel).toList();
