@@ -648,11 +648,33 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  /// Flattens input by reshaping it into a one-dimensional tensor. If start_dim or end_dim
+  /// are passed, only dimensions starting with start_dim and ending with end_dim are
+  /// flattened. The order of elements in input is unchanged.
+  ///
+  /// This function may return the original object, a view, or copy. If no dimensions
+  /// are flattened, then the original object input is returned. Otherwise, if input
+  /// can be viewed as the flattened shape, then that view is returned. Finally,
+  /// only if the input cannot be viewed as the flattened shape is input’s data copied.
   Tensor flatten({int startDim = 0, int endDim = -1}) {
     final tensor = FFITensor.flatten(nativePtr, startDim, endDim);
     return Tensor(tensor);
   }
 
+  /// Returns a new view of [this] tensor with the singleton dimensions expanded to a given larger size.
+  ///
+  /// Passing -1 as the size for a dimension means not changing the size of the dimensions.
+  ///
+  /// Tensor can be also expanded to a larger number of dimensions, and the new ones will
+  /// be appended at the front. For the new dimensions, the size cannot be set to -1.
+  ///
+  /// Expanding a tensor does not allocate new memory, but only creates a new view on the
+  /// existing tensor where a dimension of size one is expanded to a larger size by
+  /// setting the stride to 0. Any dimension of size 1 can be expanded to an
+  /// arbitrary value without allocating new memory.
+  ///
+  /// To expand non-singleton dimensions to a larger size, use [repeat]. Note that [repeat]
+  /// always copies data while [expand] does not.
   Tensor expand(List<int> sizes) {
     final arena = ffi.Arena();
     try {
@@ -666,6 +688,20 @@ class Tensor implements ffi.Finalizable {
         sizes.length,
         false,
       );
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor repeat(List<int> sizes) {
+    final arena = ffi.Arena();
+    try {
+      final sizesPointer = arena.allocate<ffi.Int64>(
+        ffi.sizeOf<ffi.Int64>() * sizes.length,
+      );
+      sizesPointer.asTypedList(sizes.length).setAll(0, sizes);
+      final tensor = FFITensor.repeat(nativePtr, sizesPointer, sizes.length);
       return Tensor(tensor);
     } finally {
       arena.releaseAll();

@@ -337,6 +337,12 @@ abstract class FFITensor {
         CTensor Function(CTensor, Pointer<Int64>, int, bool)
       >('torchffi_tensor_expand');
 
+  static final repeat = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Pointer<Int64>, Size),
+        CTensor Function(CTensor, Pointer<Int64>, int)
+      >('torchffi_tensor_repeat');
+
   static final contiguous = nativeLib
       .lookupFunction<
         CTensor Function(CTensor, Int8),

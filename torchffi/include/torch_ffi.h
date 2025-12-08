@@ -149,6 +149,8 @@ extern tensor torchffi_tensor_permute(tensor t, int64_t *dims, size_t ndims);
 extern tensor torchffi_tensor_expand(tensor t, int64_t *sizes, size_t ndims,
                                      bool implicit);
 
+extern tensor torchffi_tensor_repeat(tensor t, int64_t *sizes, size_t ndims);
+
 extern tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat);
 
 extern tensor torchffi_tensor_squeeze(tensor t, int64_t *dim);

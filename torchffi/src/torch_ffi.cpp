@@ -294,6 +294,11 @@ tensor torchffi_tensor_expand(tensor t, int64_t *sizes, size_t ndims,
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_tensor_repeat(tensor t, int64_t *sizes, size_t ndims) {
+  at::Tensor tensor = t->repeat(at::IntArrayRef(sizes, ndims));
+  return new torch::Tensor(tensor);
+}
+
 tensor torchffi_tensor_permute(tensor t, int64_t *dims, size_t ndims) {
   at::Tensor tensor = t->permute(at::IntArrayRef(dims, ndims));
   return new torch::Tensor(tensor);
