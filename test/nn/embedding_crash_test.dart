@@ -5,7 +5,11 @@ void main() {
   test('EmbeddingLayer crash reproduction', () {
     final vocabSize = 14;
     final embedDim = 32;
-    final embedding = EmbeddingLayer.make(vocabSize, embedDim, name: 'emb');
+    final embedding = EmbeddingLayer.make(
+      numEmbeddings: vocabSize,
+      embedDim: embedDim,
+      name: 'emb',
+    );
 
     final context = Context.best();
 

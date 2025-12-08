@@ -4,7 +4,11 @@ void main() {
   print('Starting reproduction script...');
   final vocabSize = 14;
   final embedDim = 32;
-  final embedding = EmbeddingLayer.make(vocabSize, embedDim, name: 'emb');
+  final embedding = EmbeddingLayer.make(
+    numEmbeddings: vocabSize,
+    embedDim: embedDim,
+    name: 'emb',
+  );
   print('Weights device: ${embedding.weights.device}');
 
   final context = Context.best();

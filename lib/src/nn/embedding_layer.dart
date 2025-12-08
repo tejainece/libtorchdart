@@ -76,17 +76,7 @@ class EmbeddingLayer extends Module implements SimpleModule {
     'normType': norm?.normType,
   };
 
-  Future<void> loadFromSafeTensor(
-    SafeTensorLoader loader, {
-    String prefix = '',
-  }) async {
-    if (loader.hasTensor('${prefix}weight')) {
-      final newWeights = await loader.loadByName('${prefix}weight');
-      weights.copy_(newWeights);
-    }
-  }
-
-  static Future<EmbeddingLayer> loadFromSafeTensorStatic(
+  static Future<EmbeddingLayer> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
     required String name,
@@ -106,9 +96,9 @@ class EmbeddingLayer extends Module implements SimpleModule {
     );
   }
 
-  static EmbeddingLayer make(
-    int numEmbeddings,
-    int embeddingDim, {
+  static EmbeddingLayer make({
+    required int numEmbeddings,
+    required int embedDim,
     required String name,
     bool sparse = false,
     bool scaleGradByFreq = false,
@@ -117,7 +107,7 @@ class EmbeddingLayer extends Module implements SimpleModule {
   }) {
     return EmbeddingLayer(
       name: name,
-      weights: Tensor.empty([numEmbeddings, embeddingDim]),
+      weights: Tensor.empty([numEmbeddings, embedDim]),
       paddingIdx: paddingIdx,
       scaleGradByFreq: scaleGradByFreq,
       sparse: sparse,
@@ -199,7 +189,7 @@ class LinearLayer extends Module implements SimpleModule {
   @override
   final Iterable<Module> submodules = const [];
 
-  Future<void> loadFromSafeTensor(
+  Future<void> copyFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
   }) async {
@@ -213,7 +203,7 @@ class LinearLayer extends Module implements SimpleModule {
     }
   }
 
-  static Future<LinearLayer> loadFromSafeTensorStatic(
+  static Future<LinearLayer> loadFromSafeTensor(
     SafeTensorLoader loader, {
     String prefix = '',
     String name = 'linear',

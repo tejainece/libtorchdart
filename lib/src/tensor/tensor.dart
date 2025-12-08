@@ -852,6 +852,9 @@ class Tensor implements ffi.Finalizable {
           [1],
           datatype: dataType,
         );
+        if (device != Device.cpu) {
+          scalarTensor = scalarTensor.to(device: device);
+        }
         final alpha = CScalar.allocate(arena);
         alpha.ref.setInt(1);
         final tensor = FFITensor.addition(
@@ -915,7 +918,23 @@ class Tensor implements ffi.Finalizable {
         );
         return Tensor(tensor);
       } else if (other is num) {
-        throw UnimplementedError('operator+num not implemented for Tensor');
+        final alpha = CScalar.allocate(arena);
+        alpha.ref.setInt(1);
+
+        var scalarTensor = Tensor.from(
+          [other.toDouble()],
+          [1],
+          datatype: dataType,
+        );
+        if (device != Device.cpu) {
+          scalarTensor = scalarTensor.to(device: device);
+        }
+        final tensor = FFITensor.subtraction(
+          nativePtr,
+          scalarTensor.nativePtr,
+          alpha.ref,
+        );
+        return Tensor(tensor);
       } else if (other is (Tensor, dynamic)) {
         final alpha = CScalar.allocate(arena);
         alpha.ref.setValue(other.$2);
@@ -948,6 +967,9 @@ class Tensor implements ffi.Finalizable {
           [1],
           datatype: dataType,
         );
+        if (device != Device.cpu) {
+          scalarTensor = scalarTensor.to(device: device);
+        }
         final tensor = FFITensor.multiplication(
           nativePtr,
           scalarTensor.nativePtr,

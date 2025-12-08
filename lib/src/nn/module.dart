@@ -32,6 +32,19 @@ abstract class Module {
   String toString() {
     return '$runtimeType(${meta.entries.map((e) => '${e.key}: ${e.value}').join(', ')})';
   }
+
+  static String combineDirs(String prefix, String name) {
+    StringBuffer sb = StringBuffer();
+    if (prefix.isNotEmpty) {
+      sb.write(prefix);
+      sb.write('.');
+    }
+    if (name.isNotEmpty) {
+      sb.write(name);
+      sb.write('.');
+    }
+    return sb.toString();
+  }
 }
 
 extension ModuleExtension on Module {
