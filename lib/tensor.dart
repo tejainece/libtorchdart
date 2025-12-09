@@ -4,4 +4,10 @@ export 'src/nn/nn.dart';
 export 'src/init/init.dart';
 
 export 'src/ffi/torch_ffi.dart'
-    show DeviceType, Device, CudaDeviceProperties, Generator;
+    show
+        DeviceType,
+        Device,
+        CudaDeviceProperties,
+        Generator,
+        XPUDevice,
+        CudaDevice;

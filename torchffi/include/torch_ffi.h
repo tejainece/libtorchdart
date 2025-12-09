@@ -67,6 +67,13 @@ extern "C" {
 #endif
 extern bool torchffi_is_cuda_available();
 extern bool torchffi_is_mps_available();
+extern bool torchffi_is_xpu_available();
+
+extern int64_t torchffi_xpu_memory_total(int deviceIndex);
+
+extern int64_t torchffi_xpu_memory_allocated(int deviceIndex);
+
+extern int64_t torchffi_xpu_memory_reserved(int deviceIndex);
 
 extern tensor torchffi_tensor_new(void);
 
@@ -365,6 +372,12 @@ extern int64_t torchffi_mps_current_allocated_memory();
 extern int64_t torchffi_mps_driver_allocated_memory();
 
 extern int64_t torchffi_mps_recommended_max_memory();
+
+extern int64_t torchffi_cuda_device_count();
+
+extern int64_t torchffi_mps_device_count();
+
+extern int64_t torchffi_xpu_device_count();
 
 #ifdef __cplusplus
 }

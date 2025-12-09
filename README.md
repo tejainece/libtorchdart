@@ -1,9 +1,13 @@
 # Roadmap
 
+# Low VRAM
+
++ Intelligent Tensor offloading
++ Compute a model's and its submodule's memory footprint. It is enough to have one working module in VRAM at a time. See if any single module cannot fit into available VRAM.
++ If VRAM is low, always first load the tensors into RAM, otherwise load them into VRAM directly.
+
 ## Phase 0
 + Save Module to disk as Safetensor
-+ Module Device
-+ Intelligent Tensor offloading
 
 ## Phase 1: DownSample2D, UpSample2D
 

@@ -91,6 +91,8 @@ abstract class Device {
         return CudaDevice(deviceIndex: deviceIndex);
       case DeviceType.mps:
         return MPSDevice(deviceIndex: deviceIndex);
+      case DeviceType.xpu:
+        return XPUDevice(deviceIndex: deviceIndex);
       default:
         return UnknownDevice(deviceType: deviceType, deviceIndex: deviceIndex);
     }
@@ -117,8 +119,17 @@ abstract class Device {
   static Device best() {
     if (isCudaAvailable) return cuda();
     if (isMpsAvailable) return mps();
+    if (isXpuAvailable) return xpu();
     // TODO try other devices
     return cpu;
+  }
+
+  static XPUDevice xpu({int deviceIndex = -1}) =>
+      XPUDevice(deviceIndex: deviceIndex);
+
+  static Device tryXpu([int deviceIndex = -1]) {
+    if (!isXpuAvailable) return cpu;
+    return xpu(deviceIndex: deviceIndex);
   }
 
   int get totalMemory;
@@ -140,9 +151,30 @@ abstract class Device {
 
   static bool get isCudaAvailable => _FFIDevice.isCudaAvailable();
   static bool get isMpsAvailable => _FFIDevice.isMpsAvailable();
+  static bool get isXpuAvailable => _FFIDevice.isXpuAvailable();
 
   @override
   int get hashCode => Object.hashAll([deviceType.type, deviceIndex]);
+}
+
+class XPUDevice extends Device {
+  @override
+  DeviceType get deviceType => DeviceType.xpu;
+  @override
+  final int deviceIndex;
+
+  const XPUDevice({this.deviceIndex = -1}) : super.constant();
+
+  @override
+  int get totalMemory => _FFIDevice.xpuMemoryTotal(deviceIndex);
+
+  @override
+  int get allocatedMemory => _FFIDevice.xpuMemoryAllocated(deviceIndex);
+
+  @override
+  int get reservedMemory => _FFIDevice.xpuMemoryReserved(deviceIndex);
+
+  static int get deviceCount => _FFIDevice.xpuDeviceCount();
 }
 
 class CPUDevice extends Device {
@@ -244,6 +276,8 @@ class CudaDevice extends Device {
 
   @override
   String toString() => '$deviceType:$deviceIndex';
+
+  static int get deviceCount => _FFIDevice.cudaDeviceCount();
 }
 
 class MPSDevice extends Device {
@@ -263,6 +297,8 @@ class MPSDevice extends Device {
 
   @override
   int get reservedMemory => _FFIDevice.mpsDriverAllocatedMemory();
+
+  static int get deviceCount => _FFIDevice.mpsDeviceCount();
 }
 
 final class CDevice extends Struct {
@@ -335,6 +371,11 @@ abstract class _FFIDevice {
         'torchffi_is_mps_available',
       );
 
+  static final isXpuAvailable = nativeLib
+      .lookupFunction<Bool Function(), bool Function()>(
+        'torchffi_is_xpu_available',
+      );
+
   static final mpsCurrentAllocatedMemory = nativeLib
       .lookupFunction<Int64 Function(), int Function()>(
         'torchffi_mps_current_allocated_memory',
@@ -372,4 +413,34 @@ abstract class _FFIDevice {
         Int64 Function(Int8, Pointer<Pointer<Utf8>>),
         int Function(int, Pointer<Pointer<Utf8>>)
       >('torchffi_cuda_memory_reserved');
+
+  static final cudaDeviceCount = nativeLib
+      .lookupFunction<Int64 Function(), int Function()>(
+        'torchffi_cuda_device_count',
+      );
+
+  static final mpsDeviceCount = nativeLib
+      .lookupFunction<Int64 Function(), int Function()>(
+        'torchffi_mps_device_count',
+      );
+
+  static final xpuMemoryTotal = nativeLib
+      .lookupFunction<Int64 Function(Int32), int Function(int)>(
+        'torchffi_xpu_memory_total',
+      );
+
+  static final xpuMemoryAllocated = nativeLib
+      .lookupFunction<Int64 Function(Int32), int Function(int)>(
+        'torchffi_xpu_memory_allocated',
+      );
+
+  static final xpuMemoryReserved = nativeLib
+      .lookupFunction<Int64 Function(Int32), int Function(int)>(
+        'torchffi_xpu_memory_reserved',
+      );
+
+  static final xpuDeviceCount = nativeLib
+      .lookupFunction<Int64 Function(), int Function()>(
+        'torchffi_xpu_device_count',
+      );
 }

@@ -103,6 +103,17 @@ int64_t torchffi_cuda_memory_reserved(int8_t deviceIndex, char **error) {
 #endif
 }
 
+int64_t torchffi_cuda_device_count() {
+#if defined(WITH_CUDA)
+  if (!torch::cuda::is_available()) {
+    return 0;
+  }
+  return torch::cuda::device_count();
+#else
+  return 0;
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif
