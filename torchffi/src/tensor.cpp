@@ -939,6 +939,26 @@ bool torchffi_is_autocast_enabled(int8_t device) {
   return at::autocast::is_autocast_enabled(at::DeviceType(device));
 }
 
+tensor torchffi_tensor_where(tensor condition, Scalar input, Scalar other) {
+  if (input.dtype == 70 && other.dtype == 70) {
+    at::Tensor tensor =
+        torch::where(*condition, *input.value.t, *other.value.t);
+    return new torch::Tensor(tensor);
+  } else if (input.dtype == 70) {
+    at::Tensor tensor =
+        torch::where(*condition, torchffi_to_scalar(input), *other.value.t);
+    return new torch::Tensor(tensor);
+  } else if (other.dtype == 70) {
+    at::Tensor tensor =
+        torch::where(*condition, *input.value.t, torchffi_to_scalar(other));
+    return new torch::Tensor(tensor);
+  } else {
+    at::Tensor tensor = torch::where(*condition, torchffi_to_scalar(input),
+                                     torchffi_to_scalar(other));
+    return new torch::Tensor(tensor);
+  }
+}
+
 #ifdef __cplusplus
 }
 #endif

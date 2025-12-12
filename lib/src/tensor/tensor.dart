@@ -4,6 +4,7 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:tensor/tensor.dart';
 import 'package:tensor/src/ffi/torch_ffi.dart';
 
+export 'finfo.dart';
 export 'nn.dart';
 
 class Tensor implements ffi.Finalizable {
@@ -728,6 +729,22 @@ class Tensor implements ffi.Finalizable {
   }
 
   DataType get dataType => DataType.fromId(FFITensor.datatype(nativePtr));
+
+  bool get isFloat16 => dataType == DataType.half16;
+
+  bool get isFloat32 => dataType == DataType.float32;
+
+  bool get isFloat64 => dataType == DataType.float64;
+
+  bool get isInt8 => dataType == DataType.int8;
+
+  bool get isInt16 => dataType == DataType.int16;
+
+  bool get isInt32 => dataType == DataType.int32;
+
+  bool get isInt64 => dataType == DataType.int64;
+
+  bool get isBoolean => dataType == DataType.boolean;
 
   Tensor to({
     DataType? dataType,
@@ -1585,6 +1602,20 @@ class Tensor implements ffi.Finalizable {
     return Tensor(tensor);
   }
 
+  Tensor where(dynamic onTrue, dynamic onFalse) {
+    final allocator = ffi.Arena();
+    try {
+      final tensor = FFITensor.where(
+        nativePtr,
+        CScalar.allocateWithValue(allocator, onTrue).ref,
+        CScalar.allocateWithValue(allocator, onFalse).ref,
+      );
+      return Tensor(tensor);
+    } finally {
+      allocator.releaseAll();
+    }
+  }
+
   /// Create a tensor filled with a scalar value
   ///
   /// Creates a tensor of the given shape filled with fillValue.
@@ -1843,6 +1874,26 @@ class DataType {
     this.numBytes = 0,
   });
 
+  bool get isFloatingPoint =>
+      this == DataType.float32 ||
+      this == DataType.float64 ||
+      this == DataType.half16 ||
+      this == DataType.bFloat16;
+
+  FInfo get fInfo {
+    if (!isFloatingPoint) {
+      throw ArgumentError('finfo is only supported for floating point types');
+    }
+    final allocator = ffi.Arena();
+    try {
+      final infoPtr = CFInfo.allocate(allocator);
+      FFIFInfo.finfo(type, infoPtr);
+      return FInfo.fromCFInfo(infoPtr, this);
+    } finally {
+      allocator.releaseAll();
+    }
+  }
+
   @override
   String toString() =>
       'DataType{name: $name, type: $type, safetensorName: $safetensorName}';
@@ -1852,7 +1903,7 @@ class DataType {
   static const int16 = DataType(name: 'Int16', type: 2, safetensorName: 'I16');
   static const int32 = DataType(name: 'Int32', type: 3, safetensorName: 'I32');
   static const int64 = DataType(name: 'Int64', type: 4, safetensorName: 'I64');
-  static const half = DataType(name: 'Half', type: 5, safetensorName: 'F16');
+  static const half16 = DataType(name: 'Half', type: 5, safetensorName: 'F16');
   static const float32 = DataType(
     name: 'Float',
     type: 6,
@@ -1933,7 +1984,7 @@ class DataType {
     int16,
     int32,
     int64,
-    half,
+    half16,
     float32,
     float64,
     complexHalf,

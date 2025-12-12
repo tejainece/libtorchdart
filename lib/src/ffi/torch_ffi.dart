@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:tensor/src/ffi/tensor_ffi.dart';
 
 import 'package:tensor/tensor.dart';
 import 'package:universal_io/io.dart';
@@ -84,6 +85,8 @@ final class _ScalarValue extends Union {
 
   @Double()
   external double d;
+
+  external CTensor t;
 }
 
 final class CScalar extends Struct {
@@ -107,6 +110,11 @@ final class CScalar extends Struct {
     _value.d = value;
   }
 
+  void setTensor(Tensor value) {
+    dataType = 70;
+    _value.t = value.nativePtr;
+  }
+
   void setValue(dynamic value) {
     if (value is bool) {
       setBool(value);
@@ -114,6 +122,8 @@ final class CScalar extends Struct {
       setInt(value);
     } else if (value is double) {
       setDouble(value);
+    } else if (value is Tensor) {
+      setTensor(value);
     } else {
       throw ArgumentError('Unsupported scalar type: ${value.runtimeType}');
     }
@@ -139,4 +149,32 @@ final class CScalar extends Struct {
     Allocator allocator,
     dynamic value,
   ) => malloc.allocate<CScalar>(sizeOf<CScalar>())..ref.setValue(value);
+}
+
+final class CFInfo extends Struct {
+  @Double()
+  external double min;
+
+  @Double()
+  external double max;
+
+  @Double()
+  external double eps;
+
+  @Double()
+  external double tiny;
+
+  @Double()
+  external double resolution;
+
+  static Pointer<CFInfo> allocate(Allocator allocator) =>
+      malloc.allocate<CFInfo>(sizeOf<CFInfo>());
+}
+
+abstract class FFIFInfo {
+  static final finfo = nativeLib
+      .lookupFunction<
+        Void Function(Int8 dtype, Pointer<CFInfo> info),
+        void Function(int dtype, Pointer<CFInfo> info)
+      >('torchffi_finfo');
 }

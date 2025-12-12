@@ -47,7 +47,7 @@ void main() {
 
       device.withAutocast(true, () {
         final cAuto = a.matmul(b);
-        expect(cAuto.dataType, DataType.half);
+        expect(cAuto.dataType, DataType.half16);
       });
     });
   });

@@ -20,7 +20,7 @@ if(NOT APPLE)
   add_definitions(-DWITH_CUDA)
 endif()
 
-add_library(torchffi SHARED src/tensor.cpp src/generator.cpp src/cuda.cpp src/mps.cpp src/xpu.cpp)
+add_library(torchffi SHARED src/tensor.cpp src/generator.cpp src/cuda.cpp src/mps.cpp src/xpu.cpp src/finfo.cpp)
 target_include_directories(torchffi PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(torchffi PRIVATE ./libtorch/include)
 target_include_directories(torchffi PRIVATE ./libtorch/include/torch/csrc/api/include)

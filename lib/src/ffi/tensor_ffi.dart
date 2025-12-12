@@ -648,6 +648,12 @@ abstract class FFITensor {
         CTensor Function(CTensor tensor, int dim, int start, int end, int step)
       >('torchffi_tensor_slice');
 
+  static final where = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CScalar, CScalar),
+        CTensor Function(CTensor condition, CScalar input, CScalar other)
+      >('torchffi_tensor_where');
+
   static final full = nativeLib
       .lookupFunction<
         CTensor Function(Pointer<Int64>, Size, CScalar, CTensorOptions),

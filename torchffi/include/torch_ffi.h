@@ -8,6 +8,11 @@
 
 using namespace std;
 
+extern "C" {
+typedef torch::Tensor *tensor;
+typedef torch::Generator *Generator;
+}
+
 typedef struct Device_t {
   int8_t type;
   int8_t index;
@@ -28,6 +33,7 @@ typedef struct Scalar_t {
     bool b;
     int64_t i;
     double d;
+    tensor t;
   } value;
 } Scalar;
 
@@ -52,10 +58,13 @@ static const char *padModeNameReflect = "reflect";
 static const char *padModeNameReplicate = "replicate";
 static const char *padModeNameCircular = "circular";
 
-extern "C" {
-typedef torch::Tensor *tensor;
-typedef torch::Generator *Generator;
-}
+typedef struct FInfo_t {
+  double min;
+  double max;
+  double eps;
+  double tiny;
+  double resolution;
+} FInfo;
 
 #else
 typedef void *tensor;
@@ -334,9 +343,13 @@ extern tensor torchffi_tensor_lt(tensor t, Scalar value);
 extern tensor torchffi_tensor_gt(tensor t, Scalar value);
 extern tensor torchffi_tensor_eq(tensor t, Scalar value);
 extern tensor torchffi_tensor_lt_tensor(tensor t, tensor other);
+extern tensor torchffi_tensor_where(tensor condition, Scalar input,
+                                    Scalar other);
 extern tensor torchffi_tensor_gt_tensor(tensor t, tensor other);
 extern tensor torchffi_tensor_eq_tensor(tensor t, tensor other);
 extern tensor torchffi_tensor_masked_fill(tensor t, tensor mask, Scalar value);
+
+extern void torchffi_finfo(int8_t dtype, FInfo *info);
 
 // Generators
 

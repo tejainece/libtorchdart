@@ -24,7 +24,6 @@ void main() {
       );
 
       final sliced = t.slice(0, 0, end: 6, step: 2);
-      print(sliced);
       expect(sliced.shape, [3]);
       expect(sliced.toList(), [1.0, 3.0, 5.0]);
     });
