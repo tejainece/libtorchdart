@@ -13,9 +13,7 @@ void main() {
       final sliced = t.slice(0, 1, end: 4);
       print(sliced);
       expect(sliced.shape, [3]);
-      expect(sliced.scalarAt(0), 2.0);
-      expect(sliced.scalarAt(1), 3.0);
-      expect(sliced.scalarAt(2), 4.0);
+      expect(sliced.toList(), [2.0, 3.0, 4.0]);
     });
 
     test('slice with step', () {
@@ -26,10 +24,9 @@ void main() {
       );
 
       final sliced = t.slice(0, 0, end: 6, step: 2);
+      print(sliced);
       expect(sliced.shape, [3]);
-      expect(sliced.scalarAt(0), 1.0);
-      expect(sliced.scalarAt(1), 3.0);
-      expect(sliced.scalarAt(2), 5.0);
+      expect(sliced.toList(), [1.0, 3.0, 5.0]);
     });
 
     test('slice to end with null', () {
@@ -41,9 +38,7 @@ void main() {
 
       final sliced = t.slice(0, 2);
       expect(sliced.shape, [3]);
-      expect(sliced.scalarAt(0), 3.0);
-      expect(sliced.scalarAt(1), 4.0);
-      expect(sliced.scalarAt(2), 5.0);
+      expect(sliced.toList(), [3.0, 4.0, 5.0]);
     });
 
     test('slice 2D tensor along dim 0', () {
@@ -55,10 +50,9 @@ void main() {
 
       final sliced = t.slice(0, 1, end: 3);
       expect(sliced.shape, [2, 2]);
-      expect(sliced[0][0].scalar, 3.0);
-      expect(sliced[0][1].scalar, 4.0);
-      expect(sliced[1][0].scalar, 5.0);
-      expect(sliced[1][1].scalar, 6.0);
+      expect(sliced.toList(), [
+        [3.0, 4.0, 5.0, 6.0],
+      ]);
     });
 
     test('slice 2D tensor along dim 1', () {
@@ -70,10 +64,9 @@ void main() {
 
       final sliced = t.slice(1, 0, end: 2);
       expect(sliced.shape, [2, 2]);
-      expect(sliced[0][0].scalar, 1.0);
-      expect(sliced[0][1].scalar, 2.0);
-      expect(sliced[1][0].scalar, 4.0);
-      expect(sliced[1][1].scalar, 5.0);
+      expect(sliced.toList(), [
+        [1.0, 2.0, 4.0, 5.0],
+      ]);
     });
   });
 
@@ -83,7 +76,7 @@ void main() {
 
       expect(t.shape, [5]);
       for (int i = 0; i < 5; i++) {
-        expect(t.scalarAt(i), 3.0);
+        expect(t.at([i]).scalar, 3.0);
       }
     });
 
@@ -92,7 +85,7 @@ void main() {
 
       expect(t.shape, [2, 3]);
       for (int i = 0; i < 6; i++) {
-        expect(t.flatten().scalarAt(i), 7.5);
+        expect(t.flatten().at([i]).scalar, 7.5);
       }
     });
 
@@ -101,7 +94,7 @@ void main() {
 
       expect(t.shape, [3, 2]);
       for (int i = 0; i < 6; i++) {
-        expect(t.flatten().scalarAt(i), 42);
+        expect(t.flatten().at([i]).scalar, 42);
       }
     });
 
@@ -110,7 +103,7 @@ void main() {
 
       expect(t.shape, [4]);
       for (int i = 0; i < 4; i++) {
-        expect(t.scalarAt(i), 0.0);
+        expect(t.at([i]).scalar, 0.0);
       }
     });
 
@@ -119,7 +112,7 @@ void main() {
 
       expect(t.shape, [2, 2, 2]);
       for (int i = 0; i < 8; i++) {
-        expect(t.flatten().scalarAt(i), 1.5);
+        expect(t.flatten().at([i]).scalar, 1.5);
       }
     });
   });
@@ -131,7 +124,7 @@ void main() {
 
       expect(sliced.shape, [5]);
       for (int i = 0; i < 5; i++) {
-        expect(sliced.scalarAt(i), 5.0);
+        expect(sliced.at([i]).scalar, 5.0);
       }
     });
   });

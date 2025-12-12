@@ -12,7 +12,7 @@ void main() {
     test('creates tensor with values in range [0, high)', () {
       final tensor = Tensor.randint(10, [100]);
       for (int i = 0; i < 100; i++) {
-        final value = tensor.scalarAt(i);
+        final value = tensor.at([i]).scalar;
         expect(value, greaterThanOrEqualTo(0));
         expect(value, lessThan(10));
       }
@@ -21,7 +21,7 @@ void main() {
     test('creates tensor with values in range [low, high)', () {
       final tensor = Tensor.randint(20, [100], low: 10);
       for (int i = 0; i < 100; i++) {
-        final value = tensor.scalarAt(i);
+        final value = tensor.at([i]).scalar;
         expect(value, greaterThanOrEqualTo(10));
         expect(value, lessThan(20));
       }
@@ -47,7 +47,7 @@ void main() {
 
       // With same seed, should produce same values
       for (int i = 0; i < 5; i++) {
-        expect(tensor1.scalarAt(i), tensor2.scalarAt(i));
+        expect(tensor1.at([i]).scalar, tensor2.at([i]).scalar);
       }
     });
 

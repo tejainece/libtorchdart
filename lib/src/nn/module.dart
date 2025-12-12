@@ -12,7 +12,7 @@ abstract class Module {
   Iterable<Tensor> get parameters;
 
   // TODO force children to implement this
-  Iterable<Tensor> get buffers => [];
+  Iterable<Tensor> get nonTrainableParameters => [];
 
   Iterable<Module> get submodules;
 

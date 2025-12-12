@@ -5,7 +5,7 @@ void main() {
   group('Tensor.copy_', () {
     test('copy_ from same shape and type', () {
       final t1 = Tensor.zeros([2, 2], datatype: DataType.float32);
-      final t2 = Tensor.ones([2, 2], datatype: DataType.float32);
+      final t2 = Tensor.ones([2, 2], dataType: DataType.float32);
 
       t1.copy_(t2);
 
@@ -18,7 +18,7 @@ void main() {
 
       t1.copy_(t2);
 
-      final expected = Tensor.ones([2, 2], datatype: DataType.float32);
+      final expected = Tensor.ones([2, 2], dataType: DataType.float32);
       expect(t1.allClose(expected), isTrue);
     });
 

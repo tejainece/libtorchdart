@@ -13,11 +13,11 @@ void main() {
       final result = t1.sin();
 
       expect(result.shape, [5]);
-      expect(result.scalarAt(0), closeTo(0.0, 1e-6));
-      expect(result.scalarAt(1), closeTo(0.5, 1e-6));
-      expect(result.scalarAt(2), closeTo(math.sqrt(2) / 2, 1e-6));
-      expect(result.scalarAt(3), closeTo(math.sqrt(3) / 2, 1e-6));
-      expect(result.scalarAt(4), closeTo(1.0, 1e-6));
+      expect(result.at([0]).scalar, closeTo(0.0, 1e-6));
+      expect(result.at([1]).scalar, closeTo(0.5, 1e-6));
+      expect(result.at([2]).scalar, closeTo(math.sqrt(2) / 2, 1e-6));
+      expect(result.at([3]).scalar, closeTo(math.sqrt(3) / 2, 1e-6));
+      expect(result.at([4]).scalar, closeTo(1.0, 1e-6));
     });
 
     test('cos function', () {
@@ -29,10 +29,10 @@ void main() {
       final result = t1.cos();
 
       expect(result.shape, [4]);
-      expect(result.scalarAt(0), closeTo(1.0, 1e-6));
-      expect(result.scalarAt(1), closeTo(0.5, 1e-6));
-      expect(result.scalarAt(2), closeTo(0.0, 1e-6));
-      expect(result.scalarAt(3), closeTo(-1.0, 1e-6));
+      expect(result.at([0]).scalar, closeTo(1.0, 1e-6));
+      expect(result.at([1]).scalar, closeTo(0.5, 1e-6));
+      expect(result.at([2]).scalar, closeTo(0.0, 1e-6));
+      expect(result.at([3]).scalar, closeTo(-1.0, 1e-6));
     });
 
     test('exp function', () {
@@ -44,10 +44,10 @@ void main() {
       final result = t1.exp();
 
       expect(result.shape, [4]);
-      expect(result.scalarAt(0), closeTo(1.0, 1e-6));
-      expect(result.scalarAt(1), closeTo(math.e, 1e-6));
-      expect(result.scalarAt(2), closeTo(math.e * math.e, 1e-6));
-      expect(result.scalarAt(3), closeTo(1.0 / math.e, 1e-6));
+      expect(result.at([0]).scalar, closeTo(1.0, 1e-6));
+      expect(result.at([1]).scalar, closeTo(math.e, 1e-6));
+      expect(result.at([2]).scalar, closeTo(math.e * math.e, 1e-6));
+      expect(result.at([3]).scalar, closeTo(1.0 / math.e, 1e-6));
     });
 
     test('rsqrt function', () {
@@ -59,10 +59,10 @@ void main() {
       final result = t1.rsqrt();
 
       expect(result.shape, [4]);
-      expect(result.scalarAt(0), closeTo(1.0, 1e-6));
-      expect(result.scalarAt(1), closeTo(0.5, 1e-6));
-      expect(result.scalarAt(2), closeTo(1.0 / 3.0, 1e-6));
-      expect(result.scalarAt(3), closeTo(0.25, 1e-6));
+      expect(result.at([0]).scalar, closeTo(1.0, 1e-6));
+      expect(result.at([1]).scalar, closeTo(0.5, 1e-6));
+      expect(result.at([2]).scalar, closeTo(1.0 / 3.0, 1e-6));
+      expect(result.at([3]).scalar, closeTo(0.25, 1e-6));
     });
 
     test('pow function with scalar exponent', () {
@@ -74,10 +74,10 @@ void main() {
       final result = t1.pow(2.0);
 
       expect(result.shape, [4]);
-      expect(result.scalarAt(0), closeTo(4.0, 1e-6));
-      expect(result.scalarAt(1), closeTo(9.0, 1e-6));
-      expect(result.scalarAt(2), closeTo(16.0, 1e-6));
-      expect(result.scalarAt(3), closeTo(25.0, 1e-6));
+      expect(result.at([0]).scalar, closeTo(4.0, 1e-6));
+      expect(result.at([1]).scalar, closeTo(9.0, 1e-6));
+      expect(result.at([2]).scalar, closeTo(16.0, 1e-6));
+      expect(result.at([3]).scalar, closeTo(25.0, 1e-6));
     });
 
     test('pow function with negative exponent', () {
@@ -85,8 +85,8 @@ void main() {
       final result = t1.pow(-1.0);
 
       expect(result.shape, [2]);
-      expect(result.scalarAt(0), closeTo(0.5, 1e-6));
-      expect(result.scalarAt(1), closeTo(0.25, 1e-6));
+      expect(result.at([0]).scalar, closeTo(0.5, 1e-6));
+      expect(result.at([1]).scalar, closeTo(0.25, 1e-6));
     });
 
     test('sin with multi-dimensional tensor', () {
@@ -98,10 +98,10 @@ void main() {
       final result = t1.sin();
 
       expect(result.shape, [2, 2]);
-      expect(result[0].scalarAt(0), closeTo(0.0, 1e-6));
-      expect(result[0].scalarAt(1), closeTo(1.0, 1e-6));
-      expect(result[1].scalarAt(0), closeTo(0.0, 1e-6));
-      expect(result[1].scalarAt(1), closeTo(-1.0, 1e-6));
+      expect(result.at([0]).scalar, closeTo(0.0, 1e-6));
+      expect(result.at([1]).scalar, closeTo(1.0, 1e-6));
+      expect(result.at([2]).scalar, closeTo(0.0, 1e-6));
+      expect(result.at([3]).scalar, closeTo(-1.0, 1e-6));
     });
 
     test('exp with multi-dimensional tensor', () {
@@ -113,8 +113,8 @@ void main() {
       final result = t1.exp();
 
       expect(result.shape, [2, 2]);
-      expect(result[0].scalarAt(0), closeTo(1.0, 1e-6));
-      expect(result[0].scalarAt(1), closeTo(math.e, 1e-6));
+      expect(result.at([0]).scalar, closeTo(1.0, 1e-6));
+      expect(result.at([1]).scalar, closeTo(math.e, 1e-6));
     });
 
     test('chaining mathematical operations', () {
@@ -124,9 +124,9 @@ void main() {
       final squared = rsqrtResult.pow(-2.0);
 
       expect(squared.shape, [3]);
-      expect(squared.scalarAt(0), closeTo(1.0, 1e-6));
-      expect(squared.scalarAt(1), closeTo(4.0, 1e-6));
-      expect(squared.scalarAt(2), closeTo(9.0, 1e-6));
+      expect(squared.at([0]).scalar, closeTo(1.0, 1e-6));
+      expect(squared.at([1]).scalar, closeTo(4.0, 1e-6));
+      expect(squared.at([2]).scalar, closeTo(9.0, 1e-6));
     });
   });
 }

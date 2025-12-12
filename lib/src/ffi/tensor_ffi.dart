@@ -45,27 +45,29 @@ final class FFIIndex extends Struct {
   external int type;
   external Pointer<Void> value;
 
-  void fromIndex(dynamic index, Allocator allocator) {
-    if (index is int) {
+  void fromIndex(Index index, Allocator allocator) {
+    if (index is IndexOne) {
       type = FFIIndexType.intType.index;
       value = (allocator.allocate<Int64>(
         sizeOf<Int64>(),
-      )..value = index).cast();
+      )..value = index.index).cast();
     } else if (index is Slice) {
       type = FFIIndexType.sliceType.index;
       value = FFISlice.fromSlice(index, allocator).cast();
-    } else if (index is Ellipsis) {
+    } else if (index is Rest) {
       type = FFIIndexType.ellipsisType.index;
       value = nullptr;
     } else if (index is NewDim) {
       type = FFIIndexType.newDimType.index;
       value = nullptr;
-    } else if (index is Tensor) {
+    } else if (index is IndexTensor) {
       type = FFIIndexType.tensorType.index;
-      value = index.nativePtr;
-    } else if (index is bool) {
+      value = index.tensor.nativePtr;
+    } else if (index is IndexBool) {
       type = FFIIndexType.boolType.index;
-      value = (allocator.allocate<Bool>(sizeOf<Bool>())..value = index).cast();
+      value = (allocator.allocate<Bool>(
+        sizeOf<Bool>(),
+      )..value = index.index).cast();
     } else {
       throw UnimplementedError('Unsupported index type: ${index.runtimeType}');
     }
@@ -245,8 +247,8 @@ abstract class FFITensor {
 
   static final scalarAt = nativeLib
       .lookupFunction<
-        CScalar Function(CTensor, Int64, Pointer<Pointer<Utf8>>),
-        CScalar Function(CTensor, int, Pointer<Pointer<Utf8>>)
+        CScalar Function(CTensor, Pointer<Int64>, Size, Pointer<Pointer<Utf8>>),
+        CScalar Function(CTensor, Pointer<Int64>, int, Pointer<Pointer<Utf8>>)
       >('torchffi_tensor_scalar_at');
 
   static final get = nativeLib
@@ -348,6 +350,12 @@ abstract class FFITensor {
         CTensor Function(CTensor, Int8),
         CTensor Function(CTensor, int)
       >('torchffi_tensor_contiguous');
+
+  static final isContiguous = nativeLib
+      .lookupFunction<
+        Bool Function(CTensor, Int8),
+        bool Function(CTensor, int)
+      >('torchffi_tensor_is_contiguous');
 
   static final squeeze = nativeLib
       .lookupFunction<
@@ -516,6 +524,36 @@ abstract class FFITensor {
         CTensor Function(CTensor tensor1, CTensor tensor2)
       >('torchffi_tensor_matmul');
 
+  static final baddbmm = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor, CTensor, Double, Double),
+        CTensor Function(
+          CTensor input,
+          CTensor batch1,
+          CTensor batch2,
+          double beta,
+          double alpha,
+        )
+      >('torchffi_tensor_baddbmm');
+
+  static final bmm = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, CTensor),
+        CTensor Function(CTensor input, CTensor mat2)
+      >('torchffi_tensor_bmm');
+
+  static final baddbmm_ = nativeLib
+      .lookupFunction<
+        Void Function(CTensor, CTensor, CTensor, Double, Double),
+        void Function(
+          CTensor input,
+          CTensor batch1,
+          CTensor batch2,
+          double beta,
+          double alpha,
+        )
+      >('torchffi_tensor_baddbmm_');
+
   static final sigmoid = nativeLib
       .lookupFunction<
         CTensor Function(CTensor),
@@ -620,6 +658,12 @@ abstract class FFITensor {
           CTensorOptions options,
         )
       >('torchffi_full');
+
+  static final tril = nativeLib
+      .lookupFunction<
+        CTensor Function(CTensor, Int64),
+        CTensor Function(CTensor, int)
+      >('torchffi_tensor_tril');
 
   static final topk = nativeLib
       .lookupFunction<

@@ -11,10 +11,10 @@ void main() {
       );
       final t2 = t1 / 2.0;
       expect(t2.shape, [4]);
-      expect(t2.scalarAt(0), 1.0);
-      expect(t2.scalarAt(1), 2.0);
-      expect(t2.scalarAt(2), 3.0);
-      expect(t2.scalarAt(3), 4.0);
+      expect(t2.at([0]).scalar, 1.0);
+      expect(t2.at([1]).scalar, 2.0);
+      expect(t2.at([2]).scalar, 3.0);
+      expect(t2.at([3]).scalar, 4.0);
     });
   });
 }

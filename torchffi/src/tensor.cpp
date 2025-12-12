@@ -3,6 +3,7 @@
 #include <torch/all.h>
 #include <torch_ffi.h>
 
+#include <ATen/autocast_mode.h>
 #include <cstring>
 #include <optional>
 
@@ -155,6 +156,20 @@ tensor torchffi_tensor_new_from_blob(void *data, int64_t *dims, size_t ndims,
   return new torch::Tensor(tensor);
 }
 
+tensor torchffi_tensor_baddbmm(tensor input, tensor batch1, tensor batch2,
+                               double beta, double alpha) {
+  return new torch::Tensor(input->baddbmm(*batch1, *batch2, beta, alpha));
+}
+
+void torchffi_tensor_baddbmm_(tensor input, tensor batch1, tensor batch2,
+                              double beta, double alpha) {
+  input->baddbmm_(*batch1, *batch2, beta, alpha);
+}
+
+tensor torchffi_tensor_bmm(tensor input, tensor mat2) {
+  return new torch::Tensor(input->bmm(*mat2));
+}
+
 void *torchffi_tensor_data_pointer(tensor t) { return t->data_ptr(); }
 
 size_t torchffi_tensor_dim(tensor t) { return t->dim(); }
@@ -202,10 +217,14 @@ Scalar torchffi_tensor_scalar(tensor t) {
   }
 }
 
-Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index, char **error) {
+Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t *indices,
+                                   size_t indicesLength, char **error) {
   try {
-    auto tensor = torch::Tensor(t->select(0, index));
-    return torchffi_tensor_scalar(&tensor);
+    at::Tensor current = *t;
+    for (size_t i = 0; i < indicesLength; i++) {
+      current = current.select(0, indices[i]);
+    }
+    return torchffi_tensor_scalar(&current);
   } catch (const std::exception &e) {
     *error = strdup(e.what());
     return Scalar_t();
@@ -312,6 +331,10 @@ tensor torchffi_tensor_transpose(tensor t, int64_t dim1, int64_t dim2) {
 tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat) {
   at::Tensor tensor = t->contiguous(at::MemoryFormat(memoryFormat));
   return new torch::Tensor(tensor);
+}
+
+bool torchffi_tensor_is_contiguous(tensor t, int8_t memoryFormat) {
+  return t->is_contiguous(at::MemoryFormat(memoryFormat));
 }
 
 tensor torchffi_tensor_squeeze(tensor t, int64_t *dim) {
@@ -449,6 +472,11 @@ tensor torchffi_full(int64_t *sizes, size_t ndims, Scalar fillValue,
   at::Scalar opFillValue = torchffi_to_scalar(fillValue);
   at::Tensor tensor = at::full(at::IntArrayRef(sizes, ndims), opFillValue,
                                torchffi_make_tensor_options(options));
+  return new torch::Tensor(tensor);
+}
+
+tensor torchffi_tensor_tril(tensor t, int64_t diagonal) {
+  at::Tensor tensor = t->tril(diagonal);
   return new torch::Tensor(tensor);
 }
 
@@ -901,6 +929,14 @@ tensor torchffi_tensor_masked_fill(tensor t, tensor mask, Scalar value) {
     s = value.value.d;
   }
   return new torch::Tensor(t->masked_fill(*mask, s));
+}
+
+void torchffi_set_autocast_enabled(int8_t device, bool enabled) {
+  at::autocast::set_autocast_enabled(at::DeviceType(device), enabled);
+}
+
+bool torchffi_is_autocast_enabled(int8_t device) {
+  return at::autocast::is_autocast_enabled(at::DeviceType(device));
 }
 
 #ifdef __cplusplus

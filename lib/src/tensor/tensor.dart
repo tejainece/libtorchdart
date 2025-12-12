@@ -95,7 +95,7 @@ class Tensor implements ffi.Finalizable {
     List<int> sizes, {
     String? name,
     Device? device,
-    DataType? datatype,
+    DataType? dataType,
     Layout? layout,
     MemoryFormat? memoryFormat,
     bool? requiresGrad,
@@ -104,7 +104,7 @@ class Tensor implements ffi.Finalizable {
     final arena = ffi.Arena();
     try {
       final options = CTensorOptions.make(
-        dataType: datatype,
+        dataType: dataType,
         device: device,
         layout: layout,
         memoryFormat: memoryFormat,
@@ -514,28 +514,7 @@ class Tensor implements ffi.Finalizable {
     return scalar.value;
   }
 
-  dynamic scalarAt(int index) {
-    final errorPtr = ffi.malloc.allocate<ffi.Pointer<ffi.Utf8>>(
-      ffi.sizeOf<ffi.Pointer<ffi.Utf8>>(),
-    );
-    try {
-      errorPtr.value = ffi.nullptr;
-      final scalar = FFITensor.scalarAt(nativePtr, index, errorPtr);
-      if (errorPtr.value != ffi.nullptr) {
-        final error = errorPtr.value.toDartString();
-        throw Exception(error);
-      }
-      return scalar.value;
-    } finally {
-      final dataPtr = errorPtr.value;
-      if (dataPtr != ffi.nullptr) ffi.malloc.free(dataPtr);
-      ffi.malloc.free(errorPtr);
-    }
-  }
-
-  Tensor operator [](int index) => get(index);
-
-  Tensor get(int index) {
+  Tensor operator [](int index) {
     /*if (isScalar) {
       throw Exception('Scalar tensor cannot be indexed');
     }
@@ -552,8 +531,24 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
-  // TODO improve and dartify the arguments
-  Tensor index(List<dynamic> indices) {
+  Tensor at(List<int> indices) {
+    final arena = ffi.Arena();
+    try {
+      final indicesPointer = arena.allocate<FFIIndex>(
+        ffi.sizeOf<FFIIndex>() * indices.length,
+      );
+      for (int i = 0; i < indices.length; i++) {
+        final index = indices[i];
+        (indicesPointer + i).ref.fromIndex(IndexOne(index), arena);
+      }
+      final tensor = FFITensor.index(nativePtr, indicesPointer, indices.length);
+      return Tensor(tensor);
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
+  Tensor index(List<Index> indices) {
     final arena = ffi.Arena();
     try {
       final indicesPointer = arena.allocate<FFIIndex>(
@@ -651,6 +646,11 @@ class Tensor implements ffi.Finalizable {
     } finally {
       arena.releaseAll();
     }
+  }
+
+  Tensor tril({int diagonal = 0}) {
+    final tensor = FFITensor.tril(nativePtr, diagonal);
+    return Tensor(tensor);
   }
 
   /// Flattens input by reshaping it into a one-dimensional tensor. If start_dim or end_dim
@@ -812,6 +812,13 @@ class Tensor implements ffi.Finalizable {
   Tensor contiguous({MemoryFormat format = MemoryFormat.contiguous}) {
     final tensor = FFITensor.contiguous(nativePtr, format.id);
     return Tensor(tensor);
+  }
+
+  bool isContiguous({MemoryFormat? memoryFormat}) {
+    return FFITensor.isContiguous(
+      nativePtr,
+      memoryFormat?.id ?? MemoryFormat.contiguous.id,
+    );
   }
 
   /// Returns the transposed version of the tensor. Swaps [dim0] and [dim1].
@@ -1383,9 +1390,56 @@ class Tensor implements ffi.Finalizable {
     }
   }
 
+  Tensor bmm(Tensor other) {
+    return Tensor(FFITensor.bmm(nativePtr, other.nativePtr));
+  }
+
   Tensor matmul(Tensor other) {
     final tensor = FFITensor.matmul(nativePtr, other.nativePtr);
     return Tensor(tensor);
+  }
+
+  /// Performs a batch matrix-matrix product of matrices in [batch1] and [batch2].
+  /// [input] is added to the final result.
+  ///
+  /// [batch1] and [batch2] must be 3-D tensors each containing the same number of matrices.
+  ///
+  /// If [batch1] is a (b x n x m) tensor, [batch2] is a (b x m x p) tensor, then [input]
+  /// must be broadcastable with a (b x n x p) tensor and out will be a (b x n x p) tensor.
+  ///
+  /// out = beta * input + alpha * (batch1 @ batch2)
+  ///
+  /// For inputs of type FloatTensor or DoubleTensor, arguments [beta] and [alpha] define
+  /// the scaling factors for the operation.
+  Tensor baddbmm(
+    Tensor batch1,
+    Tensor batch2, {
+    double beta = 1.0,
+    double alpha = 1.0,
+  }) {
+    final tensor = FFITensor.baddbmm(
+      nativePtr,
+      batch1.nativePtr,
+      batch2.nativePtr,
+      beta,
+      alpha,
+    );
+    return Tensor(tensor);
+  }
+
+  void baddbmm_(
+    Tensor batch1,
+    Tensor batch2, {
+    double beta = 1.0,
+    double alpha = 1.0,
+  }) {
+    FFITensor.baddbmm_(
+      nativePtr,
+      batch1.nativePtr,
+      batch2.nativePtr,
+      beta,
+      alpha,
+    );
   }
 
   Tensor softmax(int dim, {DataType? dataType}) {
@@ -1598,7 +1652,10 @@ class Tensor implements ffi.Finalizable {
 
   List<num> toList() {
     if (device.deviceType != DeviceType.cpu) {
-      return to(device: Device.cpu).toList();
+      return to(device: Device.cpu).contiguous().toList();
+    }
+    if (!isContiguous()) {
+      return contiguous().toList();
     }
     if (dataType == DataType.float32) {
       final ptr = dataPointer.cast<ffi.Float>();
@@ -1629,7 +1686,7 @@ class Tensor implements ffi.Finalizable {
     sb.write('[');
     for (int i = 0; i < size; i++) {
       if (i > 0) sb.write(', ');
-      final scalar = tensor.scalarAt(i);
+      final scalar = tensor.at([i]).scalar;
       if (scalar is double) {
         sb.write(scalar.toStringAsFixed(4));
       } else {
@@ -1646,7 +1703,7 @@ class Tensor implements ffi.Finalizable {
   static void _print2d(StringBuffer sb, int size0, int size1, Tensor tensor) {
     sb.write('[');
     for (int i = 0; i < size0; i++) {
-      _print1d(sb, size1, tensor.get(i));
+      _print1d(sb, size1, tensor[i]);
       if (i == 3 && size0 > 6) {
         sb.writeln(',\n ..............');
         i = size0 - 3;
@@ -1672,7 +1729,7 @@ class Tensor implements ffi.Finalizable {
     if (dim == 3) {
       for (int i = 0; i < count; i++) {
         sb.writeln('(${(indexPrefix.followedBy([i])).join(',')},*,*) = ');
-        _print2d(sb, sizes[1], sizes[2], tensor.get(i));
+        _print2d(sb, sizes[1], sizes[2], tensor[i]);
         if (i < count - 1) {
           sb.writeln();
         }
@@ -1683,7 +1740,7 @@ class Tensor implements ffi.Finalizable {
           sb,
           indexPrefix.followedBy([i]).toList(),
           sizes.sublist(1),
-          tensor.get(i),
+          tensor[i],
         );
         sb.writeln();
       }
@@ -1708,20 +1765,67 @@ class Tensor implements ffi.Finalizable {
   }
 }
 
-abstract class Index {}
+abstract class Index {
+  static const newDim = NewDim.newDim;
 
-class NewDim implements Index {}
+  static const all = Slice.all;
 
-class Ellipsis implements Index {}
+  static const rest = Rest.rest;
+
+  factory Index.slice([int? start, int? end, int step = 1]) =>
+      Slice(start, end, step);
+
+  factory Index.to(int end, [int step = 1]) => Slice(null, end, step);
+
+  factory Index.i(int index) => IndexOne(index);
+
+  factory Index.b(bool index) => IndexBool(index);
+
+  factory Index.t(Tensor tensor) => IndexTensor(tensor);
+}
+
+class IndexOne implements Index {
+  final int index;
+
+  const IndexOne(this.index);
+}
+
+extension IntSlice on int {
+  Index to(int end, [int step = 1]) => Index.to(end, step);
+}
+
+class IndexBool implements Index {
+  final bool index;
+
+  const IndexBool(this.index);
+}
+
+class IndexTensor implements Index {
+  final Tensor tensor;
+
+  const IndexTensor(this.tensor);
+}
+
+class NewDim implements Index {
+  const NewDim._();
+
+  static const newDim = NewDim._();
+}
+
+class Rest implements Index {
+  const Rest._();
+
+  static const rest = Rest._();
+}
 
 class Slice implements Index {
   final int? start;
   final int? end;
   final int step;
 
-  Slice({this.start, this.end, this.step = 1});
+  const Slice([this.start, this.end, this.step = 1]);
 
-  Slice.all() : start = 0, end = null, step = 1;
+  static const all = Slice();
 }
 
 enum GeluApporimate { none, tanh }

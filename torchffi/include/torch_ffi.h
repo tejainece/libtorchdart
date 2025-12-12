@@ -123,8 +123,8 @@ extern tensor torchffi_tensor_new_from_blob(void *data, int64_t *dims,
 
 extern Scalar_t torchffi_tensor_scalar(tensor t);
 
-extern Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t index,
-                                          char **error);
+extern Scalar_t torchffi_tensor_scalar_at(tensor t, int64_t *indices,
+                                          size_t indicesLength, char **error);
 
 extern tensor torchffi_tensor_get(tensor t, int index);
 
@@ -160,6 +160,8 @@ extern tensor torchffi_tensor_expand(tensor t, int64_t *sizes, size_t ndims,
 extern tensor torchffi_tensor_repeat(tensor t, int64_t *sizes, size_t ndims);
 
 extern tensor torchffi_tensor_contiguous(tensor t, int8_t memoryFormat);
+
+extern bool torchffi_tensor_is_contiguous(tensor t, int8_t memoryFormat);
 
 extern tensor torchffi_tensor_squeeze(tensor t, int64_t *dim);
 
@@ -206,6 +208,8 @@ extern tensor torchffi_tensor_slice(tensor t, int64_t dim, int64_t start,
 extern tensor torchffi_full(int64_t *sizes, size_t ndims, Scalar fillValue,
                             TensorOptions options);
 
+extern tensor torchffi_tensor_tril(tensor t, int64_t diagonal);
+
 extern tensor torchffi_tensor_multiplication(tensor a, tensor b);
 
 extern tensor torchffi_tensor_division(tensor a, tensor b);
@@ -219,6 +223,14 @@ extern tensor torchffi_tensor_bitwise_or(tensor a, tensor b);
 extern tensor torchffi_tensor_bitwise_and(tensor a, tensor b);
 
 extern tensor torchffi_tensor_bitwise_xor(tensor a, tensor b);
+
+extern tensor torchffi_tensor_baddbmm(tensor input, tensor batch1,
+                                      tensor batch2, double beta, double alpha);
+
+extern void torchffi_tensor_baddbmm_(tensor input, tensor batch1, tensor batch2,
+                                     double beta, double alpha);
+
+extern tensor torchffi_tensor_bmm(tensor input, tensor mat2);
 
 extern tensor torchffi_tensor_argmax(tensor t, int64_t *dim, bool keepdim);
 
@@ -378,6 +390,10 @@ extern int64_t torchffi_cuda_device_count();
 extern int64_t torchffi_mps_device_count();
 
 extern int64_t torchffi_xpu_device_count();
+
+extern void torchffi_set_autocast_enabled(int8_t device, bool enabled);
+
+extern bool torchffi_is_autocast_enabled(int8_t device);
 
 #ifdef __cplusplus
 }

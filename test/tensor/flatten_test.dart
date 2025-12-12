@@ -12,8 +12,8 @@ void main() {
 
       final flattened = t.flatten();
       expect(flattened.shape, [6]);
-      expect(flattened.scalarAt(0), 1.0);
-      expect(flattened.scalarAt(5), 6.0);
+      expect(flattened.at([0]).scalar, 1.0);
+      expect(flattened.at([5]).scalar, 6.0);
     });
 
     test('flatten with startDim', () {

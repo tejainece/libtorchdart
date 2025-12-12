@@ -9,7 +9,7 @@ void main() {
 
     test('index', () {
       Tensor tensor = Tensor.arange(0, 70).view([2, 35]);
-      tensor = tensor.index([Slice(), Slice(end: 14)]);
+      tensor = tensor.index([.all, .to(14)]);
       print(tensor);
     });
   });

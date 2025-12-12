@@ -11,12 +11,12 @@ void main() {
       Tensor stacked = Tensor.stack([a, b, c], dim: 0);
 
       expect(stacked.shape, [3, 2]);
-      expect(stacked.index([0, 0]).scalar, 1.0);
-      expect(stacked.index([0, 1]).scalar, 2.0);
-      expect(stacked.index([1, 0]).scalar, 3.0);
-      expect(stacked.index([1, 1]).scalar, 4.0);
-      expect(stacked.index([2, 0]).scalar, 5.0);
-      expect(stacked.index([2, 1]).scalar, 6.0);
+      expect(stacked.index([.i(0), .i(0)]).scalar, 1.0);
+      expect(stacked.index([.i(0), .i(1)]).scalar, 2.0);
+      expect(stacked.index([.i(1), .i(0)]).scalar, 3.0);
+      expect(stacked.index([.i(1), .i(1)]).scalar, 4.0);
+      expect(stacked.index([.i(2), .i(0)]).scalar, 5.0);
+      expect(stacked.index([.i(2), .i(1)]).scalar, 6.0);
     });
 
     test('stack 1D tensors along dim 1', () {
@@ -26,10 +26,10 @@ void main() {
       final stacked = Tensor.stack([a, b], dim: 1);
 
       expect(stacked.shape, [2, 2]);
-      expect(stacked.index([0, 0]).scalar, 1.0);
-      expect(stacked.index([0, 1]).scalar, 3.0);
-      expect(stacked.index([1, 0]).scalar, 2.0);
-      expect(stacked.index([1, 1]).scalar, 4.0);
+      expect(stacked.index([.i(0), .i(0)]).scalar, 1.0);
+      expect(stacked.index([.i(0), .i(1)]).scalar, 3.0);
+      expect(stacked.index([.i(1), .i(0)]).scalar, 2.0);
+      expect(stacked.index([.i(1), .i(1)]).scalar, 4.0);
     });
 
     test('stack 2D tensors', () {
@@ -48,15 +48,15 @@ void main() {
 
       expect(stacked.shape, [2, 2, 2]);
       // First matrix
-      expect(stacked.index([0, 0, 0]).scalar, 1.0);
-      expect(stacked.index([0, 0, 1]).scalar, 2.0);
-      expect(stacked.index([0, 1, 0]).scalar, 3.0);
-      expect(stacked.index([0, 1, 1]).scalar, 4.0);
+      expect(stacked.index([.i(0), .i(0), .i(0)]).scalar, 1.0);
+      expect(stacked.index([.i(0), .i(0), .i(1)]).scalar, 2.0);
+      expect(stacked.index([.i(0), .i(1), .i(0)]).scalar, 3.0);
+      expect(stacked.index([.i(0), .i(1), .i(1)]).scalar, 4.0);
       // Second matrix
-      expect(stacked.index([1, 0, 0]).scalar, 5.0);
-      expect(stacked.index([1, 0, 1]).scalar, 6.0);
-      expect(stacked.index([1, 1, 0]).scalar, 7.0);
-      expect(stacked.index([1, 1, 1]).scalar, 8.0);
+      expect(stacked.index([.i(1), .i(0), .i(0)]).scalar, 5.0);
+      expect(stacked.index([.i(1), .i(0), .i(1)]).scalar, 6.0);
+      expect(stacked.index([.i(1), .i(1), .i(0)]).scalar, 7.0);
+      expect(stacked.index([.i(1), .i(1), .i(1)]).scalar, 8.0);
     });
 
     test('stack single tensor', () {
@@ -64,9 +64,9 @@ void main() {
       final stacked = Tensor.stack([a], dim: 0);
 
       expect(stacked.shape, [1, 3]);
-      expect(stacked.index([0, 0]).scalar, 1.0);
-      expect(stacked.index([0, 1]).scalar, 2.0);
-      expect(stacked.index([0, 2]).scalar, 3.0);
+      expect(stacked.index([.i(0), .i(0)]).scalar, 1.0);
+      expect(stacked.index([.i(0), .i(1)]).scalar, 2.0);
+      expect(stacked.index([.i(0), .i(2)]).scalar, 3.0);
     });
   });
 
@@ -80,18 +80,15 @@ void main() {
 
       final row0 = t.select(0, 0);
       expect(row0.shape, [2]);
-      expect(row0.scalarAt(0), 1.0);
-      expect(row0.scalarAt(1), 2.0);
+      expect(row0.toList(), [1.0, 2.0]);
 
       final row1 = t.select(0, 1);
       expect(row1.shape, [2]);
-      expect(row1.scalarAt(0), 3.0);
-      expect(row1.scalarAt(1), 4.0);
+      expect(row1.toList(), [3.0, 4.0]);
 
       final row2 = t.select(0, 2);
       expect(row2.shape, [2]);
-      expect(row2.scalarAt(0), 5.0);
-      expect(row2.scalarAt(1), 6.0);
+      expect(row2.toList(), [5.0, 6.0]);
     });
 
     test('select from 2D tensor along dim 1', () {
@@ -103,15 +100,11 @@ void main() {
 
       final col0 = t.select(1, 0);
       expect(col0.shape, [3]);
-      expect(col0.scalarAt(0), 1.0);
-      expect(col0.scalarAt(1), 3.0);
-      expect(col0.scalarAt(2), 5.0);
+      expect(col0.toList(), [1.0, 3.0, 5.0]);
 
       final col1 = t.select(1, 1);
       expect(col1.shape, [3]);
-      expect(col1.scalarAt(0), 2.0);
-      expect(col1.scalarAt(1), 4.0);
-      expect(col1.scalarAt(2), 6.0);
+      expect(col1.toList(), [2.0, 4.0, 6.0]);
     });
 
     test('select from 3D tensor', () {

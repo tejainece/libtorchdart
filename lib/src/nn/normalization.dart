@@ -121,7 +121,7 @@ class LayerNorm extends Module implements Normalization {
     if (isElementwiseAffine) {
       weight = Tensor.ones(
         normalizedShape,
-        datatype: dataType ?? DataType.float32,
+        dataType: dataType ?? DataType.float32,
         device: device ?? Device.cpu,
       );
       if (hasBias) {

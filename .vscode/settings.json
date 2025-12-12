@@ -8,7 +8,7 @@
         "-I${workspaceFolder}/torchffi/libtorch/include/torch/csrc/api/include",
         "-I${workspaceFolder}/torchffi/libtorch/include"
     ],
-    "python.defaultInterpreterPath": "${workspaceFolder}/test_gen/venv/bin/python",
+    "python.defaultInterpreterPath": "${workspaceFolder}/../venv/bin/python",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.useLibraryCodeForTypes": true,

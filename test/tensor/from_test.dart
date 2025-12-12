@@ -11,9 +11,7 @@ void main() {
       );
 
       expect(tensor.shape, [3]);
-      expect(tensor.scalarAt(0), 1.0);
-      expect(tensor.scalarAt(1), 2.0);
-      expect(tensor.scalarAt(2), 3.0);
+      expect(tensor.toList(), [1.0, 2.0, 3.0]);
     });
   });
 }

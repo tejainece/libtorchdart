@@ -20,16 +20,16 @@ void main() {
       expect(tensor.dataType, DataType.float64);
       expect(tensor.dataPointer, ptr);
       for (var i = 0; i < size; i++) {
-        expect(tensor.scalarAt(i), i.toDouble());
+        expect(tensor.at([i]).scalar, i.toDouble());
       }
 
       // Modify memory, check tensor
       ptr[0] = 100.0;
-      expect(tensor.scalarAt(0), 100.0);
+      expect(tensor.at([0]).scalar, 100.0);
 
       // Modify tensor, check memory
       // tensor.get(1) returns a view of the element at index 1
-      tensor.get(1).fill_(200.0);
+      tensor.at([1]).fill_(200.0);
       expect(ptr[1], 200.0);
 
       // Clean up
@@ -52,15 +52,15 @@ void main() {
       expect(tensor.dataPointer, ptr);
       for (var i = 0; i < size; i++) {
         // Float32 precision might be an issue, but for small integers it should be fine
-        expect(tensor.scalarAt(i), i.toDouble());
+        expect(tensor.at([i]).scalar, i.toDouble());
       }
 
       // Modify memory
       ptr[0] = 50.0;
-      expect(tensor.scalarAt(0), 50.0);
+      expect(tensor.at([0]).scalar, 50.0);
 
       // Modify tensor
-      tensor.get(1).fill_(200.0);
+      tensor.at([1]).fill_(200.0);
       expect(ptr[1], 200.0);
 
       calloc.free(ptr);
@@ -81,14 +81,14 @@ void main() {
       expect(tensor.dataType, DataType.int64);
       expect(tensor.dataPointer, ptr);
       for (var i = 0; i < size; i++) {
-        expect(tensor.scalarAt(i), i);
+        expect(tensor.at([i]).scalar, i);
       }
 
       ptr[0] = 99;
-      expect(tensor.scalarAt(0), 99);
+      expect(tensor.at([0]).scalar, 99);
 
       // Modify tensor
-      tensor.get(1).fill_(200);
+      tensor.at([1]).fill_(200);
       expect(ptr[1], 200);
 
       calloc.free(ptr);
@@ -109,14 +109,14 @@ void main() {
       expect(tensor.dataType, DataType.int32);
       expect(tensor.dataPointer, ptr);
       for (var i = 0; i < size; i++) {
-        expect(tensor.scalarAt(i), i);
+        expect(tensor.at([i]).scalar, i);
       }
 
       ptr[0] = 99;
-      expect(tensor.scalarAt(0), 99);
+      expect(tensor.at([0]).scalar, 99);
 
       // Modify tensor
-      tensor.get(1).fill_(200);
+      tensor.at([1]).fill_(200);
       expect(ptr[1], 200);
 
       calloc.free(ptr);

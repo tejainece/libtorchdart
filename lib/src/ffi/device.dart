@@ -140,6 +140,22 @@ abstract class Device {
 
   int get freeMemory => totalMemory - allocatedMemory;
 
+  bool get autocastEnabled => _FFIDevice.autocastEnabled(deviceType.type);
+
+  void setAutocastEnabled(bool enabled) =>
+      _FFIDevice.setAutocastEnabled(deviceType.type, enabled);
+
+  // TODO make async?
+  void withAutocast(bool enabled, Function body) {
+    final previous = autocastEnabled;
+    setAutocastEnabled(enabled);
+    try {
+      body();
+    } finally {
+      setAutocastEnabled(previous);
+    }
+  }
+
   @override
   bool operator ==(Object other) {
     if (other is! Device) return false;
@@ -442,5 +458,15 @@ abstract class _FFIDevice {
   static final xpuDeviceCount = nativeLib
       .lookupFunction<Int64 Function(), int Function()>(
         'torchffi_xpu_device_count',
+      );
+
+  static final autocastEnabled = nativeLib
+      .lookupFunction<Bool Function(Int8), bool Function(int)>(
+        'torchffi_is_autocast_enabled',
+      );
+
+  static final setAutocastEnabled = nativeLib
+      .lookupFunction<Void Function(Int8, Bool), void Function(int, bool)>(
+        'torchffi_set_autocast_enabled',
       );
 }

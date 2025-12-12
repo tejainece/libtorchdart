@@ -44,11 +44,11 @@ void main() {
       final colNorm = t.norm(2, dim: [0]);
       expect(colNorm.shape, [2]);
       expect(
-        colNorm.scalarAt(0),
+        colNorm.at([0]).scalar,
         closeTo(math.sqrt(1 + 9), 1e-6),
       ); // sqrt(1^2 + 3^2)
       expect(
-        colNorm.scalarAt(1),
+        colNorm.at([1]).scalar,
         closeTo(math.sqrt(4 + 16), 1e-6),
       ); // sqrt(2^2 + 4^2)
     });
@@ -87,9 +87,9 @@ void main() {
       expect(norm.shape, [2]);
 
       // First slice: sqrt(1 + 4 + 9 + 16)
-      expect(norm.scalarAt(0), closeTo(math.sqrt(30), 1e-6));
+      expect(norm.at([0]).scalar, closeTo(math.sqrt(30), 1e-6));
       // Second slice: sqrt(25 + 36 + 49 + 64)
-      expect(norm.scalarAt(1), closeTo(math.sqrt(174), 1e-6));
+      expect(norm.at([1]).scalar, closeTo(math.sqrt(174), 1e-6));
     });
 
     test('L2 norm for normalization', () {
